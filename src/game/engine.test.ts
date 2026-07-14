@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { PROSPECT_EMAIL_PROVIDERS } from "../content/emailAddresses";
 import { GAME_CONFIG } from "./config";
 import { canFoundSchool, createInitialState, gameReducer } from "./engine";
 import { getEmailBookingChance, getEnrollmentChance } from "./formulas";
+import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import {
   selectActiveEmail,
   selectIncomePerMinute,
@@ -15,6 +17,12 @@ describe("game engine", () => {
 
     expect(state.contacts).toHaveLength(10);
     expect(state.contacts.filter((contact) => contact.status === "available")).toHaveLength(9);
+    expect(state.contacts.map((contact) => contact.email.split("@")[1])).toEqual([
+      ...PROSPECT_EMAIL_PROVIDERS,
+      ...PROSPECT_EMAIL_PROVIDERS,
+      "cmail.com",
+      "hotlook.it",
+    ]);
     expect(selectActiveEmail(state)?.status).toBe("writing");
     expect(state.school.euros).toBe(0);
   });
@@ -56,6 +64,30 @@ describe("game engine", () => {
     expect(sent.statistics.emailsSent).toBe(1);
     expect(tickedAgain.pendingEmailOutcomes).toHaveLength(1);
     expect(tickedAgain.statistics.emailsSent).toBe(1);
+  });
+
+  it("does not notify when contacts are running low or exhausted", () => {
+    const initial = createInitialState(1_000);
+    const activeEmail = selectActiveEmail(initial)!;
+    const ready = {
+      ...initial,
+      contacts: initial.contacts.map((contact) =>
+        contact.id === activeEmail.contactId
+          ? contact
+          : { ...contact, status: "lost" as const },
+      ),
+      emails: [{ ...activeEmail, revealedCharacters: activeEmail.body.length - 1 }],
+    };
+
+    const sending = gameReducer(ready, { type: "WRITE", now: 2_000 });
+    const sent = gameReducer(sending, {
+      type: "TICK",
+      now: 2_000 + GAME_CONFIG.sendDelayMs,
+    });
+
+    expect(sent.messages.some((message) => message.subject === "Stiamo finendo i contatti"))
+      .toBe(false);
+    expect(sent.messages.some((message) => message.subject === "Contatti terminati")).toBe(false);
   });
 
   it("completes the protected tutorial funnel and unlocks the first upgrade", () => {
@@ -149,6 +181,10 @@ describe("game engine", () => {
     expect(started.school.euros).toBe(0);
     expect(event.status).toBe("running");
     expect(completed.contacts).toHaveLength(state.contacts.length + 2);
+    expect(completed.contacts.slice(-2).map((contact) => contact.email.split("@")[1])).toEqual([
+      "cmail.com",
+      "hotlook.it",
+    ]);
     expect(completed.statistics.contactsAcquired).toBe(2);
     expect(completed.statistics.peopleMet).toBe(event.peopleMet);
     expect(completed.statistics.demonstrationsGiven).toBe(event.demonstrationsGiven);
@@ -542,5 +578,82 @@ describe("game engine", () => {
     expect(founded.network.schools[0].membersAtTransfer).toBe(80);
     expect(founded.player.writingPower).toBeCloseTo(1.375);
     expect(selectIncomePerMinute(founded)).toBeCloseTo(6.25);
+  });
+
+  it("guarantees a booking after four consecutive lost email outcomes", () => {
+    const initial = createInitialState(1_000);
+    const active = initial.emails[0];
+    const previous = Array.from({ length: 4 }, (_, index) => ({
+      ...active,
+      id: `lost-email-${index}`,
+      contactId: initial.contacts[index + 1].id,
+      status: "lost" as const,
+      revealedCharacters: active.body.length,
+      sentAt: 1_100 + index,
+    }));
+    const ready = {
+      ...initial,
+      emails: [...previous, { ...active, revealedCharacters: active.body.length - 1 }],
+      statistics: { ...initial.statistics, emailsSent: 4 },
+    };
+
+    const sending = gameReducer(ready, { type: "WRITE", now: 2_000 });
+    const sent = gameReducer(sending, { type: "TICK", now: 2_000 + GAME_CONFIG.sendDelayMs });
+
+    expect(sent.pendingEmailOutcomes.at(-1)?.result).toBe("trialBooked");
+  });
+
+  it("guarantees enrollment after four consecutive unsuccessful trials", () => {
+    const initial = createInitialState(1_000);
+    const completedTrials = initial.contacts.slice(0, 4).map((contact, index) => ({
+      id: `completed-trial-${index}`,
+      contactId: contact.id,
+      startsAt: 1_000,
+      resolvesAt: 1_100 + index,
+      resultSeed: index,
+      status: "completed" as const,
+    }));
+    const currentContact = initial.contacts[4];
+    const currentTrial = {
+      id: "current-trial",
+      contactId: currentContact.id,
+      startsAt: 1_500,
+      resolvesAt: 2_000,
+      resultSeed: 123,
+      status: "scheduled" as const,
+    };
+    const ready = {
+      ...initial,
+      school: { ...initial.school, historicMembers: 1 },
+      contacts: initial.contacts.map((contact, index) => ({
+        ...contact,
+        status: (index < 4 ? "lost" : index === 4 ? "trialScheduled" : contact.status) as typeof contact.status,
+      })),
+      scheduledTrials: [...completedTrials, currentTrial],
+    };
+
+    const resolved = gameReducer(ready, { type: "TICK", now: 2_000 });
+
+    expect(resolved.contacts.find((contact) => contact.id === currentContact.id)?.status).toBe("enrolled");
+  });
+
+  it("prevents a third consecutive negative narrative event", () => {
+    const initial = createInitialState(1_000);
+    const ready = {
+      ...initial,
+      school: { ...initial.school, activeMembers: 6 },
+      narrative: {
+        nextEventAt: 2_000,
+        history: [
+          { id: "negative-1", definitionId: "missed-renewal" as const, title: "Mancato rinnovo", occurredAt: 1_000, summary: "" },
+          { id: "negative-2", definitionId: "unexpected-repair" as const, title: "Riparazione", occurredAt: 1_500, summary: "" },
+        ],
+      },
+    };
+
+    const resolved = gameReducer(ready, { type: "TICK", now: 2_000 });
+    const selected = NARRATIVE_EVENTS.find((event) => event.id === resolved.narrative.history.at(-1)?.definitionId);
+
+    expect(selected?.kind).not.toBe("negative");
   });
 });

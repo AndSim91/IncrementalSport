@@ -1,6 +1,6 @@
 # Oggetto: Nuovi Iscritti
 
-Prototipo browser del loop principale descritto nel [Game Design Document](./GAME_DESIGN_DOCUMENT.md).
+Incremental game browser completo basato sul [Game Design Document](./GAME_DESIGN_DOCUMENT.md), presentato come una sobria applicazione di posta e organizzazione.
 
 ## Avvio
 
@@ -15,6 +15,7 @@ npm run dev
 npm test
 npm run lint
 npm run build
+npm run test:e2e
 ```
 
 Il gioco non invia email e non accede a servizi esterni: destinatari, messaggi e progressi sono simulati e salvati esclusivamente in `localStorage`.
@@ -27,4 +28,13 @@ Il gioco non invia email e non accede a servizi esterni: destinatari, messaggi e
 - shop Miglioramenti con entrate previste al minuto;
 - Eventi con sparring gratuito e dimostrazione programmata;
 - conversione contatto → prova → iscritto → quote;
-- salvataggi locali versionati e migrazione dello schema.
+- collaboratori, assegnazioni automatiche, Social e percorso delle Forme;
+- attrezzatura, manutenzione, 47 potenziamenti e 100 modelli email;
+- traguardi, eventi narrativi e protezione dalle serie sfortunate;
+- progresso offline con riepilogo e limite di 8 ore;
+- fondazione di nuove scuole, reputazione e bonus permanenti di rete;
+- salvataggi locali versionati, backup, migrazioni, export/import e reset con doppia conferma.
+
+## Nota sui marchi
+
+Questo progetto è un'opera indipendente e non è affiliato, sponsorizzato o approvato da Microsoft, Outlook, Windows, LudoSport o da altri titolari di marchi eventualmente citati. I nomi e i riferimenti sono usati esclusivamente a scopo descrittivo e parodistico; tutti gli indirizzi e i destinatari del gioco sono inventati.

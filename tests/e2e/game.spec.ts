@@ -36,7 +36,7 @@ test("invia automaticamente la mail completa e apre il contatto successivo", asy
   await expect(page.getByRole("button", { name: "Archivio" })).toHaveCount(0);
   await sentFolder.click();
   await expect(page.locator(".campaign-status")).toHaveText("In attesa");
-  await expect(page.getByText("Ciao Giulia,")).toBeVisible();
+  await expect(page.getByRole("article")).toContainText("Buongiorno Giulia,");
 });
 
 test("legge le notifiche e apre shop ed eventi", async ({ page }) => {
@@ -47,7 +47,7 @@ test("legge le notifiche e apre shop ed eventi", async ({ page }) => {
 
   await page.getByRole("button", { name: /Miglioramenti/ }).click();
   await expect(page.getByRole("heading", { name: "Miglioramenti" })).toBeVisible();
-  await expect(page.getByText(/0,00 € al minuto/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Entrate dell'Ordine" })).toContainText("0,00 € al minuto");
   if (process.env.QA_SCREENSHOT_DIR) {
     await page.screenshot({ path: `${process.env.QA_SCREENSHOT_DIR}/improvements-shop.png` });
   }

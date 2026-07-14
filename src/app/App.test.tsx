@@ -9,6 +9,12 @@ afterEach(() => {
 });
 
 describe("App calendar flow", () => {
+  it("shows the LudoSport Genova sender in the active draft", () => {
+    render(<App />);
+
+    expect(screen.getByText("genova@ludosport.net")).toBeVisible();
+  });
+
   it("opens the associated campaign in Sent mail", () => {
     const now = Date.now();
     const initial = createInitialState(now);
@@ -41,6 +47,7 @@ describe("App calendar flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apri mail inviata" }));
 
     expect(screen.getByRole("region", { name: "Posta inviata" })).toBeVisible();
+    expect(screen.getByText("genova@ludosport.net")).toBeVisible();
     expect(screen.getAllByText(email.subject)).toHaveLength(2);
     expect(screen.getAllByText("Prova in palestra")).toHaveLength(2);
   });

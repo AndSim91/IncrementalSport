@@ -19,6 +19,33 @@ describe("local save", () => {
     expect(state.contacts).toHaveLength(10);
   });
 
+  it("updates legacy prospect providers without resetting the save", () => {
+    const state = createInitialState(1_000);
+    const legacy = {
+      ...state,
+      contacts: state.contacts.map((contact) => ({
+        ...contact,
+        email: `${contact.email.split("@")[0]}@esempio.test`,
+      })),
+    };
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.contacts.map((contact) => contact.email.split("@")[1])).toEqual([
+      "cmail.com",
+      "hotlook.it",
+      "yabadabadoo.it",
+      "gspot.com",
+      "cmail.com",
+      "hotlook.it",
+      "yabadabadoo.it",
+      "gspot.com",
+      "cmail.com",
+      "hotlook.it",
+    ]);
+  });
+
   it("migrates an existing version 1 save without losing progress", () => {
     const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
     legacy.version = 1;
@@ -219,16 +246,20 @@ describe("local save", () => {
     expect(localStorage.getItem("oggetto-nuovi-iscritti.save.backup")).toBeNull();
   });
 
-  it("removes previously saved trial-booking messages", () => {
+  it("removes previously saved obsolete messages", () => {
     const state = createInitialState(1_000);
-    const bookingMessage = {
+    const obsoleteMessages = [
+      "Nuova lezione di prova prenotata",
+      "Stiamo finendo i contatti",
+      "Contatti terminati",
+    ].map((subject, index) => ({
       ...state.messages[0],
-      id: "message-booking",
-      subject: "Nuova lezione di prova prenotata",
-    };
+      id: `message-obsolete-${index}`,
+      subject,
+    }));
     localStorage.setItem(
       "oggetto-nuovi-iscritti.save",
-      JSON.stringify({ ...state, messages: [bookingMessage, ...state.messages] }),
+      JSON.stringify({ ...state, messages: [...obsoleteMessages, ...state.messages] }),
     );
 
     const loaded = loadGame(5_000);

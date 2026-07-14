@@ -1,4 +1,5 @@
 import { EMAIL_TEMPLATES } from "../content/emailTemplates";
+import { createProspectEmail } from "../content/emailAddresses";
 import { getNewAchievements } from "../content/achievements";
 import { getAcquisitionEventDefinition } from "../content/events";
 import { canTrainForm, getCollaboratorProductivity, getFormDefinition } from "../content/forms";
@@ -43,7 +44,7 @@ function createContacts(now: number): Contact[] {
     id: makeId("contact", now, index),
     firstName,
     lastName,
-    email: `${firstName}.${lastName}`.toLocaleLowerCase("it-IT") + "@esempio.test",
+    email: createProspectEmail(`${firstName}.${lastName}`.toLocaleLowerCase("it-IT"), index),
     source: "tutorial",
     acquiredAt: now,
     status: index === 0 ? "writing" : "available",
@@ -162,7 +163,7 @@ function createAcquiredContacts(
       id: makeId("contact", now, `acquired-${sequence}`),
       firstName,
       lastName,
-      email: `${localPart}@esempio.test`,
+      email: createProspectEmail(localPart, sequence),
       source,
       acquiredAt: now,
       status: "available",
@@ -192,18 +193,7 @@ function addMessage(
 function startNextCampaign(state: GameState, now: number): GameState {
   if (selectActiveEmail(state)) return state;
   const nextContact = state.contacts.find((contact) => contact.status === "available");
-  if (!nextContact) {
-    const alreadyNotified = state.messages.some((message) => message.subject === "Contatti terminati");
-    return alreadyNotified
-      ? state
-      : addMessage(
-          state,
-          now,
-          "Contatti terminati",
-          "La lista è vuota. Il Calendario sarà il prossimo strumento da attivare.",
-          "system",
-        );
-  }
+  if (!nextContact) return state;
 
   const email = createCampaign(nextContact, state.emails.length, now);
   return {
@@ -266,19 +256,6 @@ function finalizeEmail(state: GameState, emailId: string, now: number): GameStat
       now,
       "Configurazione campagna completata",
       "La prima email è partita. Miglioramenti di Scrittura e Velocità sono disponibili nella barra laterale.",
-      "system",
-    );
-  }
-  const remainingContacts = nextState.contacts.filter((contact) => contact.status === "available").length;
-  if (
-    remainingContacts <= 3 &&
-    !nextState.messages.some((message) => message.subject === "Stiamo finendo i contatti")
-  ) {
-    nextState = addMessage(
-      nextState,
-      now + 1,
-      "Stiamo finendo i contatti",
-      "Calendario ed Eventi permettono di incontrare persone, fare dimostrazioni e raccogliere nuovi indirizzi. Lo sparring al parco è sempre gratuito.",
       "system",
     );
   }

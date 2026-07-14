@@ -1,12 +1,18 @@
 import { GAME_CONFIG } from "./config";
 import { createInitialState } from "./engine";
 import { simulateOfflineProgress } from "./offline";
+import { createProspectEmail } from "../content/emailAddresses";
 import { createInitialUpgradeLevels, getUpgradeEffectTotal } from "../content/upgrades";
 import type { GameState, UpgradeLevels } from "./types";
 
 const SAVE_KEY = "oggetto-nuovi-iscritti.save";
 const BACKUP_KEY = `${SAVE_KEY}.backup`;
-const HIDDEN_MESSAGE_SUBJECTS = new Set(["Nuova lezione di prova prenotata"]);
+const HIDDEN_MESSAGE_SUBJECTS = new Set([
+  "Nuova lezione di prova prenotata",
+  "Stiamo finendo i contatti",
+  "Contatti terminati",
+]);
+const LEGACY_PROSPECT_EMAIL_DOMAIN = "@esempio.test";
 
 function isGameState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
@@ -236,6 +242,23 @@ function migrate(value: unknown): unknown {
         schools: [],
         prestigeOfferSent: false,
       },
+    };
+  }
+
+  if (migrated.contacts?.some((contact) => contact.email.endsWith(LEGACY_PROSPECT_EMAIL_DOMAIN))) {
+    migrated = {
+      ...migrated,
+      contacts: migrated.contacts.map((contact, index) =>
+        contact.email.endsWith(LEGACY_PROSPECT_EMAIL_DOMAIN)
+          ? {
+              ...contact,
+              email: createProspectEmail(
+                contact.email.slice(0, -LEGACY_PROSPECT_EMAIL_DOMAIN.length),
+                index,
+              ),
+            }
+          : contact,
+      ),
     };
   }
 

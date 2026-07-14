@@ -865,19 +865,16 @@ Il tutorial avviene tramite email ricevute.
 3. **Configurazione campagna**  
    È la prima comunicazione di sistema manuale e sblocca Scrittura e Velocità.
 
-4. **Stiamo finendo i contatti**  
-   Introduce Calendario, eventi, prove dimostrative, Carisma e sparring esterno.
-
-5. **Nuova lezione prenotata**  
+4. **Nuova lezione prenotata**
    Introduce il passaggio email → prova in palestra → possibile iscrizione.
 
-6. **Prima quota associativa**  
+5. **Prima quota associativa**
    Introduce gli Euro e il finanziamento dei potenziamenti.
 
-7. **Una mano in più**  
+6. **Una mano in più**
    Il primo Iscritto volenteroso può essere garantito dal tutorial e introduce l'automazione.
 
-8. **Le spade non si sistemano da sole**  
+7. **Le spade non si sistemano da sole**
    Introduce attrezzatura e manutenzione. Più avanti si scopre che, tecnicamente, con abbastanza collaboratori si sistemano quasi da sole.
 
 Il tutorial non deve usare frecce luminose o overlay da gioco. Può evidenziare gli elementi con i normali stati di focus di Windows.

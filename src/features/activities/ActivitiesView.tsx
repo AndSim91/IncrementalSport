@@ -51,7 +51,7 @@ export function ActivitiesView({
   const averageWritingSeconds = sentWithTiming.length === 0
     ? 0
     : Math.round(sentWithTiming.reduce((total, email) => total + ((email.sentAt ?? email.createdAt) - email.createdAt), 0) / sentWithTiming.length / 1_000);
-  const campaignHours = Math.max(1 / 60, (Date.now() - state.createdAt) / 3_600_000);
+  const campaignHours = Math.max(1 / 60, (state.automation.lastProcessedAt - state.createdAt) / 3_600_000);
   const sources: Array<[GameState["contacts"][number]["source"], string]> = [
     ["tutorial", "Lista iniziale"],
     ["sparring", "Sparring"],
