@@ -369,10 +369,11 @@ Questi numeri sono ipotesi di bilanciamento e andranno corretti dopo i primi tes
 
 Gli esiti positivi vengono comunicati come messaggi automatici interni, non come risposte dei destinatari:
 
-- “Nuova lezione di prova prenotata”;
 - “Nuovo iscritto registrato”;
 - “Quota associativa accreditata”;
 - “Nuovo collaboratore disponibile”.
+
+Le prenotazioni delle lezioni di prova non generano messaggi in Posta in arrivo: sono visibili nel Calendario e nello stato dell'email inviata.
 
 Gli esiti negativi dei singoli contatti non producono messaggi: sono visibili soltanto nelle statistiche aggregate del funnel.
 

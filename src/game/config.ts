@@ -1,0 +1,18 @@
+export const GAME_CONFIG = {
+  version: 2,
+  initialContacts: 10,
+  emailBookingChance: 0.2,
+  enrollmentChance: 0.5,
+  emailOutcomeMinMs: 20_000,
+  emailOutcomeMaxMs: 45_000,
+  trialWaitMinMs: 25_000,
+  trialWaitMaxMs: 55_000,
+  trialDurationMs: 30_000,
+  sendDelayMs: 350,
+  memberFee: 10,
+  firstEnrollmentFee: 20,
+  feePeriodMs: 60_000,
+  speedUpgradeCost: 20,
+  sparringCooldownMs: 30_000,
+  saveIntervalMs: 10_000,
+} as const;
