@@ -27,6 +27,8 @@ describe("PeopleView", () => {
     const onAssign = vi.fn();
     render(<PeopleView state={state} onAssign={onAssign} onStartTraining={() => undefined} />);
 
+    expect(screen.getByRole("heading", { name: "Iscritti" })).toBeVisible();
+    expect(screen.queryByRole("tab", { name: /Potenziali interessati/ })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
       "Email lasciata: 70%",
     );

@@ -1,7 +1,9 @@
 import { MAIL_SENDER_ADDRESS } from "../../content/emailAddresses";
 import { selectActiveContact, selectActiveEmail, selectEmailProgress } from "../../game/selectors";
 import type { GameState } from "../../game/types";
+import { EMAIL_PRESENTATION_LEVELS } from "../../content/emailPresentation";
 import { Icon } from "../common/Icon";
+import { CampaignEmailContent } from "./CampaignEmailContent";
 
 export function Composer({ state, onWrite }: { state: GameState; onWrite: () => void }) {
   const email = selectActiveEmail(state);
@@ -15,8 +17,6 @@ export function Composer({ state, onWrite }: { state: GameState; onWrite: () => 
       </main>
     );
   }
-  const visible = email.body.slice(0, email.revealedCharacters);
-  const hidden = email.body.slice(email.revealedCharacters);
   const progress = selectEmailProgress(email);
   return (
     <main className="composer">
@@ -30,12 +30,16 @@ export function Composer({ state, onWrite }: { state: GameState; onWrite: () => 
         aria-label="Corpo del messaggio. Premi un tasto o fai clic per continuare a scrivere."
         onClick={onWrite}
       >
-        <div className="typed-copy"><span>{visible}</span>{email.status === "writing" ? <i className="text-caret" /> : null}<span className="untyped-copy" aria-hidden="true">{hidden}</span></div>
+        <CampaignEmailContent
+          email={email}
+          revealedCharacters={email.revealedCharacters}
+          showCaret={email.status === "writing"}
+        />
         {email.status === "sending" ? <div className="sending-toast"><Icon name="send" /> Invio in corso…</div> : null}
       </div>
       <div className="composer-status">
         <div className="progress-dots" aria-label={`Completamento ${progress}%`}><i className={progress > 0 ? "on" : ""}/><i className={progress >= 34 ? "on" : ""}/><i className={progress >= 67 ? "on" : ""}/></div>
-        <span>Bozza salvata</span><em>{email.status === "sending" ? "Invio in corso…" : "Digitazione in corso…"}</em><b>{email.revealedCharacters} / {email.body.length} caratteri · {state.player.writingPower} per input</b>
+        <span>Bozza salvata</span><em>{email.status === "sending" ? "Invio in corso…" : "Digitazione in corso…"}</em><b>{email.revealedCharacters} / {email.body.length} caratteri · {state.player.writingPower} per input · {EMAIL_PRESENTATION_LEVELS[email.presentationLevel].label}</b>
       </div>
     </main>
   );

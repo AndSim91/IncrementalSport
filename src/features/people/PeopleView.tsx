@@ -17,7 +17,7 @@ import type {
   PersonRarity,
 } from "../../game/types";
 
-type PeopleTab = "prospects" | "members" | "collaborators";
+type PeopleTab = "members" | "collaborators";
 
 const assignmentLabels: Record<Exclude<CollaboratorAssignment, null>, string> = {
   writing: "Redazione",
@@ -50,10 +50,7 @@ export function PeopleView({
   onAssign: (collaboratorId: string, assignment: CollaboratorAssignment) => void;
   onStartTraining: (personId: string, formId: FormId) => void;
 }) {
-  const [tab, setTab] = useState<PeopleTab>("prospects");
-  const prospects = state.contacts.filter(
-    (contact) => contact.status !== "enrolled" && contact.status !== "lost",
-  );
+  const [tab, setTab] = useState<PeopleTab>("members");
   const members = state.contacts.filter((contact) => contact.status === "enrolled");
   const collaboratorContactIds = new Set(
     state.collaborators.map((collaborator) => collaborator.contactId),
@@ -61,9 +58,8 @@ export function PeopleView({
 
   return (
     <main className="overview-view people-view">
-      <header><Icon name="people" /><div><h1>Persone</h1><p>Contatti, iscritti e Collaboratori delle Onde</p></div></header>
-      <div className="people-tabs" role="tablist" aria-label="Categorie persone">
-        <TabButton active={tab === "prospects"} onClick={() => setTab("prospects")} label={`Potenziali interessati (${prospects.length})`} />
+      <header><Icon name="people" /><div><h1>Iscritti</h1><p>Iscritti e Collaboratori delle Onde</p></div></header>
+      <div className="people-tabs" role="tablist" aria-label="Categorie iscritti">
         <TabButton active={tab === "members"} onClick={() => setTab("members")} label={`Iscritti (${members.length})`} />
         <TabButton active={tab === "collaborators"} onClick={() => setTab("collaborators")} label={`Collaboratori (${state.collaborators.length})`} />
       </div>
@@ -91,7 +87,7 @@ export function PeopleView({
             );
           })}
         </section>
-      ) : tab === "members" ? (
+      ) : (
         <section className="people-table member-development-list" aria-label="Iscritti">
           <div className="people-row people-head member-row"><span>Nome</span><span>Indirizzo</span><span>Percorso</span><span>Stato</span><span>Prossima evoluzione</span></div>
           {members.map((contact) => {
@@ -110,13 +106,6 @@ export function PeopleView({
               </div>
             );
           })}
-        </section>
-      ) : (
-        <section className="people-table" aria-label="Potenziali interessati">
-          <div className="people-row people-head"><span>Nome</span><span>Indirizzo</span><span>Fonte</span><span>Stato</span></div>
-          {prospects.map((contact) => (
-            <div className="people-row" key={contact.id}><PersonName displayName={`${contact.firstName} ${contact.lastName}`} rarity={contact.rarity} /><span><span className={`rarity-address rarity-${contact.rarity}`}>{contact.email}</span></span><span>{contact.source}</span><span>{statusLabels[contact.status]}</span></div>
-          ))}
         </section>
       )}
     </main>

@@ -674,7 +674,7 @@ L'interfaccia non mostra tutti i sistemi dall'inizio. Una prima sequenza consigl
 | Primo esaurimento contatti | Calendario, eventi e sparring esterno |
 | Prima prova prenotata | report aggregato del funnel |
 | Primo iscritto | Euro e quote associative |
-| Primo Iscritto volenteroso | Persone, Collaboratori e assegnazioni |
+| Primo Iscritto volenteroso | Iscritti, Collaboratori e assegnazioni |
 | 10 iscritti | Social |
 | 20 iscritti | Attrezzatura e usura narrativa |
 | 50 iscritti | Forme dei collaboratori |
@@ -745,7 +745,7 @@ Il progetto imita l'esperienza visiva, ma deve evitare di presentarsi come prodo
 | Posta indesiderata | eventi comici, anomalie e messaggi narrativi |
 | Archivio | statistiche delle vecchie scuole |
 | Calendario | eventi e lezioni di prova |
-| Persone | contatti e collaboratori |
+| Iscritti | iscritti e collaboratori |
 | Attività / To Do | manutenzione, social e progetti |
 | Impostazioni | opzioni reali, export e reset salvataggio |
 | Ricerca | filtri e statistiche avanzate |
@@ -811,11 +811,10 @@ Mostra:
 
 Creare un evento usa un modulo simile a un vero appuntamento Outlook.
 
-### 12.3 Persone
+### 12.3 Iscritti
 
-Tre viste:
+Due viste:
 
-- Potenziali interessati;
 - Iscritti;
 - Collaboratori.
 
@@ -1480,7 +1479,7 @@ I traguardi possono dare piccoli bonus permanenti, ma non devono diventare il si
 ### Fase 4 — Camuffamento Outlook completo
 
 - layout fedele a Windows 11;
-- Posta, Calendario, Persone e Attività;
+- Posta, Calendario, Iscritti e Attività;
 - notifiche e finestre coerenti;
 - contenuti ludici interamente diegetici;
 - supporto 1366×768 e 1920×1080;
@@ -1607,7 +1606,7 @@ L'uso pubblico di un'interfaccia quasi identica a Outlook richiede attenzione a 
 - Le email sono completamente simulate.
 - L'interfaccia di riferimento è Outlook su Windows 11.
 - Il camuffamento richiesto è del 99%.
-- Posta, Calendario, Persone e altri elementi possono ospitare meccaniche di gioco.
+- Posta, Calendario, Iscritti e altri elementi possono ospitare meccaniche di gioco.
 - Ogni input parte da un carattere e viene migliorato con i potenziamenti.
 - Solo i click nel corpo della mail producono caratteri.
 - Ogni tasto conta una volta; tenere premuto non genera ripetizioni.

@@ -4,6 +4,7 @@ import { simulateOfflineProgress } from "./offline";
 import { createProspectEmail } from "../content/emailAddresses";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import { createInitialUpgradeLevels, getUpgradeEffectTotal } from "../content/upgrades";
+import { getEmailPresentationLevel } from "../content/emailPresentation";
 import type { GameState, UpgradeLevels } from "./types";
 
 const SAVE_KEY = "oggetto-nuovi-iscritti.save";
@@ -26,6 +27,11 @@ function isGameState(value: unknown): value is GameState {
       Array.isArray(contact.forms)
     ) &&
     Array.isArray(state.emails) &&
+    state.emails.every((email) =>
+      Number.isInteger(email.presentationLevel) &&
+      email.presentationLevel >= 0 &&
+      email.presentationLevel <= 4
+    ) &&
     Array.isArray(state.acquisitionEvents) &&
     typeof state.activities?.nextSparringAt === "number" &&
     typeof state.upgrades?.["comfortable-keyboard"] === "number" &&
@@ -341,7 +347,7 @@ function migrate(value: unknown): unknown {
     );
     migrated = {
       ...migrated,
-      version: GAME_CONFIG.version,
+      version: 16,
       school: migrated.school
         ? { ...migrated.school, nextFeeAt: migrated.school.nextFeeAt + 60_000 }
         : migrated.school,
@@ -374,6 +380,22 @@ function migrate(value: unknown): unknown {
             forms: migrated.unlocks.forms || (migrated.school?.activeMembers ?? 0) > 0,
           }
         : migrated.unlocks,
+    };
+  }
+
+  if (migrated.version === 16) {
+    const upgrades = {
+      ...createInitialUpgradeLevels(),
+      ...(migrated.upgrades ?? {}),
+    };
+    const presentationLevel = getEmailPresentationLevel(upgrades);
+    migrated = {
+      ...migrated,
+      version: GAME_CONFIG.version,
+      emails: (migrated.emails ?? []).map((email) => ({
+        ...email,
+        presentationLevel,
+      })),
     };
   }
 

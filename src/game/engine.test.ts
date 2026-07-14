@@ -26,14 +26,7 @@ describe("game engine", () => {
     ]);
     expect(selectActiveEmail(state)?.status).toBe("writing");
     expect(state.school.euros).toBe(0);
-    expect(state.contacts.slice(0, 4).every((contact) => contact.rarity === "common")).toBe(true);
-    expect(state.contacts[4]).toMatchObject({
-      firstName: "Andrea",
-      lastName: "Simonazzi",
-      rarity: "legendary",
-      specialProfileId: "andrea-simonazzi",
-    });
-    expect(state.contacts.filter((contact) => contact.rarity === "legendary")).toHaveLength(1);
+    expect(state.contacts.every((contact) => contact.rarity !== "legendary")).toBe(true);
     expect(PERSON_RARITIES.common.emailShareChance).toBe(0.7);
     expect(PERSON_RARITIES.legendary.queueAppearanceChance).toBe(0.05);
     expect(getEnrollmentChance(state, "common")).toBe(0.4);
@@ -49,6 +42,41 @@ describe("game engine", () => {
     expect(selectActiveEmail(next)?.revealedCharacters).toBe(2);
     expect(selectActiveEmail(next)?.body.slice(0, 2)).toBe(email.body.slice(0, 2));
     expect(next.statistics.inputs).toBe(1);
+  });
+
+  it("starts random Legendary rolls at the tenth queued email", () => {
+    const initial = createInitialState(1_000, "", false);
+    const padding = initial.contacts.slice(0, 4).map((contact, index) => ({
+      ...contact,
+      id: `padding-${index}`,
+      status: "available" as const,
+    }));
+    const event = {
+      id: "tenth-contact-event",
+      definitionId: "public-demo" as const,
+      title: "Dimostrazione pubblica",
+      location: "Genova",
+      startedAt: 1_000,
+      resolvesAt: 2_000,
+      cost: 0,
+      peopleMet: 1,
+      demonstrationsGiven: 1,
+      contactReward: 1,
+      equipmentUsed: 0,
+      wearAdded: 0,
+      status: "running" as const,
+    };
+    const state = gameReducer({
+      ...initial,
+      randomSeed: 1_216,
+      contacts: [...initial.contacts, ...padding],
+      acquisitionEvents: [event],
+      automation: { ...initial.automation, lastProcessedAt: 2_000 },
+    }, { type: "TICK", now: 2_000 });
+
+    expect(state.contacts.slice(0, 9).every((contact) => contact.rarity !== "legendary")).toBe(true);
+    expect(state.contacts[9].rarity).toBe("legendary");
+    expect(state.contacts[9].specialProfileId).not.toBe("andrea-simonazzi");
   });
 
   it("stores the user name and applies it to the active email signature", () => {
@@ -187,13 +215,40 @@ describe("game engine", () => {
     expect(firstAttempt.legendaryCollaborators.enrollmentAttempts["eva-parodi"]).toBe(1);
     expect(firstAttempt.collaborators).toHaveLength(0);
     expect(protectedAttempt.contacts.find((contact) => contact.id === eva.id)?.status).toBe("enrolled");
-    expect(protectedAttempt.collaborators).toHaveLength(0);
+    expect(protectedAttempt.collaborators).toHaveLength(1);
+    expect(protectedAttempt.collaborators[0].rarity).toBe("legendary");
     expect(protectedAttempt.unlocks.forms).toBe(true);
   });
 
-  it("always enrolls Andrea Simonazzi when his fifth queued contact reaches a trial", () => {
+  it("always enrolls Andrea Simonazzi when his ninth queued contact reaches a trial", () => {
     const initial = createInitialState(1_000);
-    const andrea = initial.contacts[4];
+    const padding = initial.contacts.slice(0, 3).map((contact, index) => ({
+      ...contact,
+      id: `andrea-padding-${index}`,
+      status: "available" as const,
+    }));
+    const event = {
+      id: "andrea-contact-event",
+      definitionId: "public-demo" as const,
+      title: "Dimostrazione pubblica",
+      location: "Genova",
+      startedAt: 1_000,
+      resolvesAt: 2_000,
+      cost: 0,
+      peopleMet: 1,
+      demonstrationsGiven: 1,
+      contactReward: 1,
+      equipmentUsed: 0,
+      wearAdded: 0,
+      status: "running" as const,
+    };
+    const acquired = gameReducer({
+      ...initial,
+      contacts: [...initial.contacts, ...padding],
+      acquisitionEvents: [event],
+      automation: { ...initial.automation, lastProcessedAt: 2_000 },
+    }, { type: "TICK", now: 2_000 });
+    const andrea = acquired.contacts[8];
     const trial = {
       id: "trial-andrea",
       contactId: andrea.id,
@@ -203,18 +258,23 @@ describe("game engine", () => {
       status: "scheduled" as const,
     };
     const resolved = gameReducer({
-      ...initial,
-      school: { ...initial.school, historicMembers: 1 },
-      contacts: initial.contacts.map((contact) =>
+      ...acquired,
+      school: { ...acquired.school, historicMembers: 1 },
+      contacts: acquired.contacts.map((contact) =>
         contact.id === andrea.id ? { ...contact, status: "trialScheduled" as const } : contact,
       ),
       scheduledTrials: [trial],
-      automation: { ...initial.automation, lastProcessedAt: 2_000 },
-    }, { type: "TICK", now: 2_000 });
+      automation: { ...acquired.automation, lastProcessedAt: 3_000 },
+    }, { type: "TICK", now: 3_000 });
 
-    expect(resolved.contacts[4].status).toBe("enrolled");
-    expect(resolved.collaborators).toHaveLength(0);
-    expect(resolved.contacts[4].forms).toEqual([]);
+    expect(andrea.specialProfileId).toBe("andrea-simonazzi");
+    expect(resolved.contacts[8].status).toBe("enrolled");
+    expect(resolved.collaborators).toHaveLength(1);
+    expect(resolved.collaborators[0]).toMatchObject({
+      displayName: "Andrea Simonazzi",
+      rarity: "legendary",
+    });
+    expect(resolved.contacts[8].forms).toEqual([]);
   });
 
   it("schedules booked trials without adding an inbox message", () => {
@@ -302,7 +362,7 @@ describe("game engine", () => {
     ]);
     expect(completed.contacts.slice(-2).map((contact) => contact.email.split("@")[0])).toEqual([
       "federica.massa",
-      "simone.piccardo",
+      "andrea.simonazzi",
     ]);
     expect(completed.statistics.contactsAcquired).toBe(4);
     expect(completed.statistics.peopleMet).toBe(event.peopleMet);
@@ -386,6 +446,11 @@ describe("game engine", () => {
 
   it("can discover a Legendary with the configured roll in a later school", () => {
     const initial = createInitialState(1_000, "", false);
+    const padding = initial.contacts.slice(0, 4).map((contact, index) => ({
+      ...contact,
+      id: `later-school-padding-${index}`,
+      status: "available" as const,
+    }));
     const archivedSchool = {
       id: "school-archive",
       name: "Sede precedente",
@@ -415,6 +480,7 @@ describe("game engine", () => {
     const resolved = gameReducer({
       ...initial,
       randomSeed: 1_216,
+      contacts: [...initial.contacts, ...padding],
       network: { ...initial.network, schools: [archivedSchool] },
       acquisitionEvents: [event],
       automation: { ...initial.automation, lastProcessedAt: 2_000 },
@@ -438,6 +504,11 @@ describe("game engine", () => {
       status: "lost" as const,
       specialProfileId: evaProfile.id,
     };
+    const padding = initial.contacts.slice(0, 3).map((contact, index) => ({
+      ...contact,
+      id: `reencounter-padding-${index}`,
+      status: "available" as const,
+    }));
     const event = {
       id: "legendary-reencounter",
       definitionId: "public-demo" as const,
@@ -456,7 +527,7 @@ describe("game engine", () => {
     const baseState = {
       ...initial,
       randomSeed: 1_216,
-      contacts: [...initial.contacts, previousEncounter],
+      contacts: [...initial.contacts, previousEncounter, ...padding],
       acquisitionEvents: [event],
       automation: { ...initial.automation, lastProcessedAt: 2_000 },
       legendaryCollaborators: {
@@ -847,7 +918,8 @@ describe("game engine", () => {
     expect(founded.school.activeMembers).toBe(0);
     expect(founded.school.historicMembers).toBe(100);
     expect(founded.collaborators).toEqual([]);
-    expect(founded.contacts[4].specialProfileId).toBe("andrea-simonazzi");
+    expect(founded.contacts).toHaveLength(5);
+    expect(founded.contacts.every((contact) => contact.specialProfileId !== "andrea-simonazzi")).toBe(true);
     expect(founded.legendaryCollaborators.enrolledProfileIds).toEqual(
       initial.legendaryCollaborators.enrolledProfileIds,
     );
@@ -969,5 +1041,34 @@ describe("game engine", () => {
     const selected = NARRATIVE_EVENTS.find((event) => event.id === resolved.narrative.history.at(-1)?.definitionId);
 
     expect(selected?.kind).not.toBe("negative");
+  });
+
+  it("updates only the active draft when a visual email upgrade is bought", () => {
+    const initial = createInitialState(1_000, "Andrea Ungaro");
+    const sentEmail = {
+      ...initial.emails[0],
+      status: "sent" as const,
+      presentationLevel: 0 as const,
+    };
+    const activeEmail = {
+      ...initial.emails[0],
+      id: "email-active",
+      status: "writing" as const,
+      presentationLevel: 0 as const,
+    };
+    const funded = {
+      ...initial,
+      school: { ...initial.school, euros: 10_000, historicMembers: 15 },
+      emails: [sentEmail, activeEmail],
+    };
+
+    const withLayout = gameReducer(funded, {
+      type: "BUY_UPGRADE",
+      upgradeId: "outlook-templates",
+      now: 2_000,
+    });
+
+    expect(withLayout.emails[0].presentationLevel).toBe(0);
+    expect(withLayout.emails[1].presentationLevel).toBe(1);
   });
 });

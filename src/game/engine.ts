@@ -1,4 +1,5 @@
 import { EMAIL_TEMPLATES } from "../content/emailTemplates";
+import { getEmailPresentationLevel } from "../content/emailPresentation";
 import { createProspectEmail } from "../content/emailAddresses";
 import { getNewAchievements } from "../content/achievements";
 import { getAcquisitionEventDefinition } from "../content/events";
@@ -100,7 +101,7 @@ function createContacts(
   let progress = existingProgress;
   const andrea = SPECIAL_COLLABORATORS.find((profile) => profile.id === ANDREA_SIMONAZZI_ID)!;
   const contacts = Array.from({ length: GAME_CONFIG.initialContacts }, (_, index) => {
-    let legendaryProfile = includeAndrea && index === GAME_CONFIG.initialContacts - 1 &&
+    let legendaryProfile = includeAndrea && index === 8 &&
       !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
       ? andrea
       : undefined;
@@ -140,6 +141,7 @@ function createCampaign(
   campaignIndex: number,
   now: number,
   senderName: string,
+  presentationLevel: CampaignEmail["presentationLevel"] = 0,
 ): CampaignEmail {
   const template = EMAIL_TEMPLATES[campaignIndex % EMAIL_TEMPLATES.length];
   return {
@@ -150,6 +152,7 @@ function createCampaign(
     body: template.body(contact.firstName, senderName),
     revealedCharacters: 0,
     createdAt: now,
+    presentationLevel,
     status: "writing",
   };
 }
@@ -263,12 +266,16 @@ function createAcquiredContacts(
 ): { contacts: Contact[]; nextSeed: number } {
   let nextSeed = state.randomSeed;
   let progress = state.legendaryCollaborators;
+  const andrea = SPECIAL_COLLABORATORS.find((profile) => profile.id === ANDREA_SIMONAZZI_ID)!;
   const contacts = Array.from({ length: count }, (_, index) => {
     const sequence = state.statistics.contactsAcquired + index;
     const queuePosition = state.contacts.length + index + 1;
-    const selected = queuePosition >= 10
-      ? chooseLegendaryProfile(nextSeed, progress)
-      : { profile: undefined, nextSeed };
+    const selected = queuePosition === 9 &&
+      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
+      ? { profile: andrea, nextSeed }
+      : queuePosition >= 10
+        ? chooseLegendaryProfile(nextSeed, progress)
+        : { profile: undefined, nextSeed };
     const specialProfile = selected.profile;
     nextSeed = selected.nextSeed;
     if (specialProfile) progress = addLegendaryEncounter(progress, specialProfile.id);
@@ -386,7 +393,13 @@ function startNextCampaign(state: GameState, now: number): GameState {
   const nextContact = state.contacts.find((contact) => contact.status === "available");
   if (!nextContact) return state;
 
-  const email = createCampaign(nextContact, state.emails.length, now, state.profile.displayName);
+  const email = createCampaign(
+    nextContact,
+    state.emails.length,
+    now,
+    state.profile.displayName,
+    getEmailPresentationLevel(state.upgrades),
+  );
   return {
     ...state,
     contacts: state.contacts.map((contact) =>
@@ -598,7 +611,10 @@ function resolveTrial(state: GameState, trial: ScheduledTrial, now: number): Gam
     state.school.historicMembers === 0 ? "Primo iscritto registrato" : "Nuovo iscritto registrato",
     `Bonus di iscrizione di € ${GAME_CONFIG.enrollmentBonus.toFixed(2).replace(".", ",")} accreditato. La quota mensile di € ${GAME_CONFIG.monthlyMemberFee.toFixed(2).replace(".", ",")} arriverà al prossimo cambio mese.`,
   );
-  return nextState;
+  const enrolledContact = nextState.contacts.find((contact) => contact.id === trial.contactId);
+  return enrolledContact?.rarity === "legendary"
+    ? recruitCollaborator(nextState, enrolledContact, now)
+    : nextState;
 }
 
 function collectFees(state: GameState, now: number): GameState {
@@ -875,7 +891,7 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
     !member ||
     collaborator ||
     completedFormId !== "course-y" ||
-    member.rarity === "common"
+    member.rarity !== "rare"
   ) return nextState;
   const qualifiedMember = nextState.contacts.find((contact) => contact.id === member.id);
   return qualifiedMember ? recruitCollaborator(nextState, qualifiedMember, now) : nextState;
@@ -1292,6 +1308,11 @@ function buyUpgrade(state: GameState, upgradeId: UpgradeId): GameState {
     ...state,
     school: { ...state.school, euros: state.school.euros - cost },
     upgrades,
+    emails: state.emails.map((email) =>
+      email.status === "writing"
+        ? { ...email, presentationLevel: getEmailPresentationLevel(upgrades) }
+        : email,
+    ),
     equipment: {
       ...state.equipment,
       totalSwords,

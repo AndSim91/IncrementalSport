@@ -49,8 +49,11 @@ export interface CampaignEmail {
   createdAt: number;
   sentAt?: number;
   sendCompletesAt?: number;
+  presentationLevel: EmailPresentationLevel;
   status: "writing" | "sending" | "sent" | "trialBooked" | "lost";
 }
+
+export type EmailPresentationLevel = 0 | 1 | 2 | 3 | 4;
 
 export interface PendingEmailOutcome {
   id: string;

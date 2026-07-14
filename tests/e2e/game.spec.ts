@@ -19,8 +19,9 @@ test("scrive con tastiera e click senza intercettare la navigazione", async ({ p
   await composer.click();
   await expect(page.getByText(/3 \/ \d+ caratteri/)).toBeVisible();
 
-  await page.getByRole("button", { name: /Persone/ }).click();
-  await expect(page.getByRole("heading", { name: "Persone" })).toBeVisible();
+  await page.getByRole("button", { name: /Iscritti/ }).click();
+  await expect(page.getByRole("heading", { name: "Iscritti" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Potenziali interessati/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Posta/ }).click();
   await expect(composer).toBeVisible();
 });

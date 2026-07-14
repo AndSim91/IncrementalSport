@@ -14,7 +14,7 @@ const items: { id: AppView; label: string; icon: IconName }[] = [
   { id: "upgrades", label: "Miglioramenti", icon: "spark" },
   { id: "events", label: "Eventi", icon: "flag" },
   { id: "calendar", label: "Calendario", icon: "calendar" },
-  { id: "contacts", label: "Persone", icon: "people" },
+  { id: "contacts", label: "Iscritti", icon: "people" },
   { id: "statistics", label: "Attività", icon: "tasks" },
   { id: "settings", label: "Impostazioni", icon: "settings" },
 ];
