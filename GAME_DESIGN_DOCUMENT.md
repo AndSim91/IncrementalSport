@@ -858,7 +858,7 @@ Il tutorial avviene tramite email ricevute.
 ### Sequenza iniziale
 
 1. **Benvenuto nell'Ordine delle Onde**  
-   Introduce il contesto e assegna i primi 10 contatti fittizi.
+   Introduce il contesto e assegna i primi 5 contatti fittizi.
 
 2. **Prima campagna inviti**  
    Chiede di scrivere premendo qualunque tasto. L'invio e l'apertura della mail successiva sono automatici.
@@ -1163,7 +1163,7 @@ Il riepilogo mostra:
 
 ### 19.2 Avvio consigliato
 
-- 10 contatti disponibili;
+- 5 contatti disponibili;
 - 1 carattere per input;
 - 0 collaboratori;
 - 6 spade disponibili;

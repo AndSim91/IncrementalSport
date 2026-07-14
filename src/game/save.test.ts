@@ -16,7 +16,7 @@ describe("local save", () => {
 
     const state = loadGame(5_000);
     expect(state.createdAt).toBe(5_000);
-    expect(state.contacts).toHaveLength(10);
+    expect(state.contacts).toHaveLength(5);
   });
 
   it("updates legacy prospect providers without resetting the save", () => {
@@ -281,10 +281,10 @@ describe("local save", () => {
   it("restores special profile identifiers in version 12 saves", () => {
     const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
     legacy.version = 12;
-    delete legacy.contacts[8].specialProfileId;
+    delete legacy.contacts[4].specialProfileId;
     legacy.collaborators = [{
       id: "legacy-special",
-      contactId: legacy.contacts[8].id,
+      contactId: legacy.contacts[4].id,
       displayName: "Andrea Simonazzi",
       joinedAt: 1_000,
       forms: [],
@@ -295,7 +295,7 @@ describe("local save", () => {
     const migrated = loadGame(1_000);
 
     expect(migrated.version).toBe(16);
-    expect(migrated.contacts[8].specialProfileId).toBe("andrea-simonazzi");
+    expect(migrated.contacts[4].specialProfileId).toBe("andrea-simonazzi");
     expect(migrated.collaborators[0].specialProfileId).toBe("andrea-simonazzi");
     expect(migrated.legendaryCollaborators.enrolledProfileIds).toContain("andrea-simonazzi");
   });
@@ -329,7 +329,7 @@ describe("local save", () => {
     for (const contact of legacy.contacts) delete contact.rarity;
     legacy.collaborators = [{
       id: "legacy-rarity",
-      contactId: legacy.contacts[8].id,
+      contactId: legacy.contacts[4].id,
       displayName: "Andrea Simonazzi",
       joinedAt: 1_000,
       forms: [],
@@ -342,7 +342,7 @@ describe("local save", () => {
 
     expect(migrated.version).toBe(16);
     expect(migrated.contacts[0].rarity).toBe("common");
-    expect(migrated.contacts[8].rarity).toBe("legendary");
+    expect(migrated.contacts[4].rarity).toBe("legendary");
     expect(migrated.collaborators[0].rarity).toBe("legendary");
   });
 

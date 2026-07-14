@@ -14,6 +14,6 @@ export const SPECIAL_COLLABORATORS: readonly SpecialCollaboratorProfile[] = [
   { id: "matteo-scarzello", firstName: "Matteo", lastName: "Scarzello" },
   { id: "chris-usai", firstName: "Chris", lastName: "Usai" },
   { id: "guglielmo-oliveri", firstName: "Guglielmo", lastName: "Oliveri" },
-  { id: "niccolo-effrati", firstName: "Niccolò", lastName: "Effrati" },
+  { id: "niccolo-efrati", firstName: "Niccolò", lastName: "Efrati" },
 ] as const;
 

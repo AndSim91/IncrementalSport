@@ -100,7 +100,7 @@ function createContacts(
   let progress = existingProgress;
   const andrea = SPECIAL_COLLABORATORS.find((profile) => profile.id === ANDREA_SIMONAZZI_ID)!;
   const contacts = Array.from({ length: GAME_CONFIG.initialContacts }, (_, index) => {
-    let legendaryProfile = includeAndrea && index === 8 &&
+    let legendaryProfile = includeAndrea && index === GAME_CONFIG.initialContacts - 1 &&
       !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
       ? andrea
       : undefined;

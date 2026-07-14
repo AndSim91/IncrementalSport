@@ -18,24 +18,22 @@ describe("game engine", () => {
   it("creates a playable tutorial state", () => {
     const state = createInitialState(1_000);
 
-    expect(state.contacts).toHaveLength(10);
-    expect(state.contacts.filter((contact) => contact.status === "available")).toHaveLength(9);
+    expect(state.contacts).toHaveLength(5);
+    expect(state.contacts.filter((contact) => contact.status === "available")).toHaveLength(4);
     expect(state.contacts.map((contact) => contact.email.split("@")[1])).toEqual([
       ...PROSPECT_EMAIL_PROVIDERS,
-      ...PROSPECT_EMAIL_PROVIDERS,
       "cmail.com",
-      "hotlook.it",
     ]);
     expect(selectActiveEmail(state)?.status).toBe("writing");
     expect(state.school.euros).toBe(0);
-    expect(state.contacts.slice(0, 8).every((contact) => contact.rarity === "common")).toBe(true);
-    expect(state.contacts[8]).toMatchObject({
+    expect(state.contacts.slice(0, 4).every((contact) => contact.rarity === "common")).toBe(true);
+    expect(state.contacts[4]).toMatchObject({
       firstName: "Andrea",
       lastName: "Simonazzi",
       rarity: "legendary",
       specialProfileId: "andrea-simonazzi",
     });
-    expect(state.contacts.slice(0, 9).filter((contact) => contact.rarity === "legendary")).toHaveLength(1);
+    expect(state.contacts.filter((contact) => contact.rarity === "legendary")).toHaveLength(1);
     expect(PERSON_RARITIES.common.emailShareChance).toBe(0.7);
     expect(PERSON_RARITIES.legendary.queueAppearanceChance).toBe(0.05);
     expect(getEnrollmentChance(state, "common")).toBe(0.4);
@@ -51,16 +49,6 @@ describe("game engine", () => {
     expect(selectActiveEmail(next)?.revealedCharacters).toBe(2);
     expect(selectActiveEmail(next)?.body.slice(0, 2)).toBe(email.body.slice(0, 2));
     expect(next.statistics.inputs).toBe(1);
-  });
-
-  it("starts random Legendary rolls at the tenth queued email", () => {
-    const state = Array.from({ length: 2_000 }, (_, index) => createInitialState(index + 1))
-      .find((candidate) => candidate.contacts[9].rarity === "legendary")!;
-
-    expect(state.contacts.slice(0, 8).every((contact) => contact.rarity !== "legendary")).toBe(true);
-    expect(state.contacts[8].specialProfileId).toBe("andrea-simonazzi");
-    expect(state.contacts[9].rarity).toBe("legendary");
-    expect(state.contacts[9].specialProfileId).not.toBe("andrea-simonazzi");
   });
 
   it("stores the user name and applies it to the active email signature", () => {
@@ -203,9 +191,9 @@ describe("game engine", () => {
     expect(protectedAttempt.unlocks.forms).toBe(true);
   });
 
-  it("always enrolls Andrea Simonazzi when his ninth queued contact reaches a trial", () => {
+  it("always enrolls Andrea Simonazzi when his fifth queued contact reaches a trial", () => {
     const initial = createInitialState(1_000);
-    const andrea = initial.contacts[8];
+    const andrea = initial.contacts[4];
     const trial = {
       id: "trial-andrea",
       contactId: andrea.id,
@@ -224,9 +212,9 @@ describe("game engine", () => {
       automation: { ...initial.automation, lastProcessedAt: 2_000 },
     }, { type: "TICK", now: 2_000 });
 
-    expect(resolved.contacts[8].status).toBe("enrolled");
+    expect(resolved.contacts[4].status).toBe("enrolled");
     expect(resolved.collaborators).toHaveLength(0);
-    expect(resolved.contacts[8].forms).toEqual([]);
+    expect(resolved.contacts[4].forms).toEqual([]);
   });
 
   it("schedules booked trials without adding an inbox message", () => {
@@ -859,7 +847,7 @@ describe("game engine", () => {
     expect(founded.school.activeMembers).toBe(0);
     expect(founded.school.historicMembers).toBe(100);
     expect(founded.collaborators).toEqual([]);
-    expect(founded.contacts[8].specialProfileId).toBe("andrea-simonazzi");
+    expect(founded.contacts[4].specialProfileId).toBe("andrea-simonazzi");
     expect(founded.legendaryCollaborators.enrolledProfileIds).toEqual(
       initial.legendaryCollaborators.enrolledProfileIds,
     );

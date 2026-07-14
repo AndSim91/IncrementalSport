@@ -14,7 +14,7 @@ export type SpecialCollaboratorId =
   | "matteo-scarzello"
   | "chris-usai"
   | "guglielmo-oliveri"
-  | "niccolo-effrati";
+  | "niccolo-efrati";
 
 export type PersonRarity = "common" | "rare" | "legendary";
 
