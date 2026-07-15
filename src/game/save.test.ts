@@ -504,6 +504,39 @@ describe("local save", () => {
     });
   });
 
+  it("migrates version 25 collaborators into Novizio mastery", () => {
+    const initial = createInitialState(1_000);
+    const legacy = JSON.parse(JSON.stringify({
+      ...initial,
+      version: 25,
+      collaborators: [{
+        id: "legacy-mastery",
+        contactId: initial.contacts[0].id,
+        displayName: "Collaboratore storico",
+        joinedAt: 1_000,
+        forms: [],
+        instructorForms: [],
+        formBranchPreferences: [],
+        autoTeachingEnabled: true,
+        assignment: "writing",
+        rarity: "rare",
+      }],
+    }));
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.collaborators[0].mastery).toEqual({
+      writing: 0,
+      events: 0,
+      lessons: 0,
+      social: 0,
+      equipment: 0,
+      instructor: 0,
+    });
+  });
+
   it("resets both primary and backup saves", () => {
     const state = createInitialState(1_000);
     saveGame(state, 2_000);

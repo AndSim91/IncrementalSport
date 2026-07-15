@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:balance": "vitest run src/game/long-term-balance.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint ."

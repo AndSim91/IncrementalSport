@@ -9,7 +9,11 @@ import { createShortGoalFromStatistics } from "../content/shortGoals";
 import { normalizeStackedMessages } from "./messages";
 import { getAcquisitionEventDefinition } from "../content/events";
 import { FORM_BRANCHES, getFormDefinition } from "../content/forms";
-import type { GameState, UpgradeLevels } from "./types";
+import {
+  COLLABORATOR_MASTERY_ROLES,
+  createInitialCollaboratorMastery,
+} from "../content/mastery";
+import type { CollaboratorMastery, GameState, UpgradeLevels } from "./types";
 
 const SAVE_KEY = "oggetto-nuovi-iscritti.save";
 const BACKUP_KEY = `${SAVE_KEY}.backup`;
@@ -57,7 +61,13 @@ function isGameState(value: unknown): value is GameState {
       Array.isArray(collaborator.forms) &&
       Array.isArray(collaborator.instructorForms) &&
       Array.isArray(collaborator.formBranchPreferences) &&
-      typeof collaborator.autoTeachingEnabled === "boolean"
+      typeof collaborator.autoTeachingEnabled === "boolean" &&
+      typeof collaborator.mastery === "object" &&
+      collaborator.mastery !== null &&
+      COLLABORATOR_MASTERY_ROLES.every((role) =>
+        Number.isFinite(collaborator.mastery?.[role]) &&
+        (collaborator.mastery?.[role] ?? 0) >= 0
+      )
     ) &&
     typeof state.upgrades?.["instructor-versatility"] === "number" &&
     typeof state.upgrades?.["tiamat-instructor"] === "number" &&
@@ -560,7 +570,7 @@ function migrate(value: unknown): unknown {
     );
     migrated = {
       ...migrated,
-      version: GAME_CONFIG.version,
+      version: 25,
       contacts: (migrated.contacts ?? []).map((contact, index) => ({
         ...contact,
         formBranchPreferences: contact.formBranchPreferences ??
@@ -576,6 +586,28 @@ function migrate(value: unknown): unknown {
         ? { ...migrated.legendaryCollaborators, retainedProgress }
         : migrated.legendaryCollaborators,
       upgrades: { ...createInitialUpgradeLevels(), ...(migrated.upgrades ?? {}) },
+    };
+  }
+
+  if (migrated.version === 25) {
+    const normalizeMastery = (
+      mastery: Partial<CollaboratorMastery> | undefined,
+    ): CollaboratorMastery => {
+      const defaults = createInitialCollaboratorMastery();
+      return Object.fromEntries(
+        COLLABORATOR_MASTERY_ROLES.map((role) => [
+          role,
+          Math.max(0, Number.isFinite(mastery?.[role]) ? mastery?.[role] ?? 0 : defaults[role]),
+        ]),
+      ) as CollaboratorMastery;
+    };
+    migrated = {
+      ...migrated,
+      version: GAME_CONFIG.version,
+      collaborators: (migrated.collaborators ?? []).map((collaborator) => ({
+        ...collaborator,
+        mastery: normalizeMastery(collaborator.mastery),
+      })),
     };
   }
 

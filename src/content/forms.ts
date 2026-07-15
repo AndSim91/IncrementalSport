@@ -7,6 +7,7 @@ import type {
   PersonRarity,
 } from "../game/types";
 import { PERSON_RARITIES } from "./rarities";
+import { getCollaboratorMasteryMultiplier } from "./mastery";
 
 export type { FormBranch } from "../game/types";
 
@@ -193,9 +194,13 @@ export function getCollaboratorProductivity(
 ) {
   const bonuses = getCollaboratorFormBonuses(collaborator);
   const roleBonus = assignment ? bonuses[assignment] : 0;
+  const masteryMultiplier = assignment
+    ? getCollaboratorMasteryMultiplier(collaborator.mastery?.[assignment] ?? 0)
+    : 1;
   return (
     (1 + bonuses.all + roleBonus) *
-    PERSON_RARITIES[collaborator.rarity].collaboratorProductivityMultiplier
+    PERSON_RARITIES[collaborator.rarity].collaboratorProductivityMultiplier *
+    masteryMultiplier
   );
 }
 

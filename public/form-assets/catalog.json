@@ -1,0 +1,22 @@
+{
+  "description": "Loghi delle forme mostrati nella schermata Iscritti.",
+  "officialSourcePages": [
+    "https://www.ludosport.net/Learning-Path.html",
+    "https://slm.ludosport.net/en/people/"
+  ],
+  "assets": [
+    { "id": "form-1", "label": "Forma 1", "file": "logos/form-1.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "course-x", "label": "Corso X", "file": "logos/course-x.png", "source": "generated", "sourceUrl": "https://www.ludosport.net/images/bg/long/infografica-ludosport2mod.jpg" },
+    { "id": "form-2", "label": "Forma 2", "file": "logos/form-2.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "course-y", "label": "Corso Y", "file": "logos/course-y.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/long/infografica-ludosport2mod.jpg" },
+    { "id": "form-3", "label": "Forma 3", "file": "logos/form-3.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "form-4", "label": "Forma 4", "file": "logos/form-4.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "form-5", "label": "Forma 5", "file": "logos/form-5.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "form-6", "label": "Forma 6", "file": "logos/form-6.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" },
+    { "id": "form-7", "label": "Forma 7", "file": "logos/form-7.png", "source": "official", "sourceUrl": "https://www.ludosport.net/images/bg/7forme2.jpg" }
+  ],
+  "notes": {
+    "branchForms": "Le forme 3, 4 e 5 riusano il rispettivo emblema ufficiale; il ramo viene indicato nell'etichetta dell'allievo.",
+    "courseX": "Logo originale generato per il gioco, ispirato alla grammatica visiva ufficiale ma non ufficiale LudoSport."
+  }
+}

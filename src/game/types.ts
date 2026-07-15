@@ -261,6 +261,9 @@ export type CollaboratorAssignment =
   | "instructor"
   | null;
 
+export type CollaboratorMasteryRole = Exclude<CollaboratorAssignment, null>;
+export type CollaboratorMastery = Record<CollaboratorMasteryRole, number>;
+
 export type FormId =
   | "form-1"
   | "course-x"
@@ -288,6 +291,7 @@ export interface Collaborator {
   formBranchPreferences?: FormBranch[];
   autoTeachingEnabled?: boolean;
   assignment: CollaboratorAssignment;
+  mastery?: CollaboratorMastery;
   rarity: PersonRarity;
   specialProfileId?: SpecialCollaboratorId;
   training?: FormTraining;

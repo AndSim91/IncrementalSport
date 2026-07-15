@@ -9,7 +9,14 @@ import {
   isInstructorForm,
   type FormStudent,
 } from "../../content/forms";
+import {
+  COLLABORATOR_MASTERY_ROLES,
+  COLLABORATOR_MASTERY_ROLE_LABELS,
+  createInitialCollaboratorMastery,
+  getCollaboratorMasteryProgress,
+} from "../../content/mastery";
 import { PERSON_RARITIES } from "../../content/rarities";
+import { getFormLogo } from "../../content/formLogos";
 import { getSchoolYear, isSummerBreak } from "../../game/calendar";
 import { getEnrollmentChance, getMemberAnnualDepartureChance } from "../../game/formulas";
 import {
@@ -98,7 +105,9 @@ export function PeopleView({
                   <PersonName displayName={collaborator.displayName} rarity={collaborator.rarity} />
                   <span className={`rarity-address rarity-${collaborator.rarity}`}>{contact?.email}</span>
                   <small>{collaborator.rarity === "legendary" ? "Livello Leggendario · Potere VIP ×2" : "Livello Raro · Forma 7 completata"}</small>
+                  <FormLogoStrip forms={collaborator.forms} />
                   <small className="form-bonus-summary">{bonusSummary || "Nessun bonus d'arma attivo"}</small>
+                  <CollaboratorMasterySummary collaborator={collaborator} />
                   {collaborator.assignment === "instructor" || collaborator.instructorForms.length > 0
                     ? <small>Attestati da istruttore: {collaborator.instructorForms.length}</small>
                     : null}
@@ -126,7 +135,10 @@ export function PeopleView({
               <div className="people-row member-row" key={contact.id}>
                 <PersonName displayName={`${contact.firstName} ${contact.lastName}`} rarity={contact.rarity} />
                 <span><span className={`rarity-address rarity-${contact.rarity}`}>{contact.email}</span></span>
-                <span>{formatFormPath(contact.forms)}</span>
+                <div className="member-path">
+                  <strong>{formatFormPath(contact.forms)}</strong>
+                  <FormLogoStrip forms={contact.forms} />
+                </div>
                 <span className="member-status">
                   <span>{isCollaborator ? "Collaboratore" : statusLabels[contact.status]}</span>
                   <small>{isCollaborator || contact.rarity === "legendary"
@@ -153,6 +165,60 @@ function formatFormPath(forms: FormId[]): string {
   if (forms.length === 0) return "Da iniziare · Forma 1";
   const latest = getFormDefinition(forms.at(-1)!);
   return `${latest?.title ?? forms.at(-1)}${latest?.branch ? ` · ${latest.branch}` : ""}`;
+}
+
+function FormLogoStrip({ forms }: { forms: FormId[] }) {
+  const entries = forms.map((formId) => {
+    const definition = getFormDefinition(formId);
+    const logo = getFormLogo(formId);
+    const label = [definition?.title ?? formId, definition?.branch].filter(Boolean).join(" / ");
+    return { formId, label, logo };
+  });
+
+  return (
+    <div
+      className="form-logo-strip"
+      aria-label={entries.length > 0 ? `Forme conosciute: ${entries.map(({ label }) => label).join(", ")}` : "Forme conosciute: nessuna"}
+    >
+      {entries.length === 0 ? (
+        <span className="form-logo-empty">Nessuna forma completata</span>
+      ) : entries.map(({ formId, label, logo }) => (
+        <span className={`form-logo-item ${logo.source === "generated" ? "generated" : ""}`} key={formId} title={label}>
+          <img src={logo.assetPath} alt={`${label} — emblema ${logo.source === "official" ? "ufficiale" : "generato"}`} />
+          <span>{label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function CollaboratorMasterySummary({ collaborator }: { collaborator: Collaborator }) {
+  const mastery = collaborator.mastery ?? createInitialCollaboratorMastery();
+  return (
+    <div className="collaborator-mastery" aria-label={`Maestrie di ${collaborator.displayName}`}>
+      <span>Maestrie operative</span>
+      <div className="mastery-grid">
+        {COLLABORATOR_MASTERY_ROLES.map((role) => {
+          const progress = getCollaboratorMasteryProgress(mastery[role]);
+          const active = collaborator.assignment === role;
+          const xpLabel = progress.nextXp === undefined
+            ? `${progress.currentXp} XP`
+            : `${progress.currentXp}/${progress.nextXp} XP`;
+          return (
+            <div
+              className={active ? "mastery-entry active" : "mastery-entry"}
+              key={role}
+              title={`${COLLABORATOR_MASTERY_ROLE_LABELS[role]}: ${progress.definition.name}, ${xpLabel}`}
+            >
+              <strong>{progress.definition.name}</strong>
+              <small>{COLLABORATOR_MASTERY_ROLE_LABELS[role]} · +{Math.round(progress.definition.multiplier * 100)}% · {xpLabel}</small>
+              <div className="mastery-track" aria-hidden="true"><span style={{ width: `${progress.progress}%` }} /></div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function RarityOverview({ state }: { state: GameState }) {

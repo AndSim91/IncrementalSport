@@ -14,6 +14,13 @@ import {
   isInstructorForm,
 } from "../content/forms";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
+import {
+  COLLABORATOR_MASTERY_ROLE_LABELS,
+  COLLABORATOR_MASTERY_XP,
+  createInitialCollaboratorMastery,
+  getCollaboratorMasteryDefinition,
+  getCollaboratorMasteryLevel,
+} from "../content/mastery";
 import { createRandomProspect } from "../content/prospectDirectory";
 import { PERSON_RARITIES } from "../content/rarities";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
@@ -406,6 +413,51 @@ function addMessage(
   return { ...state, messages: addInboxMessage(state.messages, message) };
 }
 
+function addCollaboratorMasteryExperience(
+  state: GameState,
+  role: CollaboratorAssignment,
+  amount: number,
+  now: number,
+): GameState {
+  if (!role || !Number.isFinite(amount) || amount <= 0) return state;
+
+  const leveledUp: Array<{ displayName: string; levelName: string; multiplier: number }> = [];
+  const nextState: GameState = {
+    ...state,
+    collaborators: state.collaborators.map((collaborator) => {
+      if (collaborator.assignment !== role) return collaborator;
+      const mastery = collaborator.mastery ?? createInitialCollaboratorMastery();
+      const currentXp = Math.max(0, mastery[role] ?? 0);
+      const nextXp = currentXp + amount;
+      if (getCollaboratorMasteryLevel(nextXp) > getCollaboratorMasteryLevel(currentXp)) {
+        const definition = getCollaboratorMasteryDefinition(nextXp);
+        leveledUp.push({
+          displayName: collaborator.displayName,
+          levelName: definition.name,
+          multiplier: definition.multiplier,
+        });
+      }
+      return {
+        ...collaborator,
+        mastery: { ...mastery, [role]: nextXp },
+      };
+    }),
+  };
+
+  return leveledUp.reduce(
+    (currentState, collaborator) => addMessage(
+      currentState,
+      now,
+      `Maestria raggiunta: ${collaborator.displayName}`,
+      `${collaborator.displayName} è ora ${collaborator.levelName} in ${COLLABORATOR_MASTERY_ROLE_LABELS[role]}. Bonus del settore: +${Math.round(collaborator.multiplier * 100)}%.`,
+      "positive",
+      "other",
+      "collaborators",
+    ),
+    nextState,
+  );
+}
+
 function recruitCollaborator(state: GameState, contact: Contact, now: number): GameState {
   if (
     contact.rarity === "common" ||
@@ -427,6 +479,7 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
     ],
     autoTeachingEnabled: true,
     assignment: null,
+    mastery: createInitialCollaboratorMastery(),
     rarity: contact.rarity,
     specialProfileId: contact.specialProfileId,
     lastFormTrainingYear: retained?.lastFormTrainingYear ?? contact.lastFormTrainingYear,
@@ -670,6 +723,13 @@ function resolveTrial(
       eurosEarned: state.statistics.eurosEarned + (enrolled ? enrollmentBonus : 0),
     },
   };
+
+  nextState = addCollaboratorMasteryExperience(
+    nextState,
+    "lessons",
+    COLLABORATOR_MASTERY_XP.lessonCompleted,
+    now,
+  );
 
   if (!enrolled) return nextState;
 
@@ -961,6 +1021,12 @@ function resolveAcquisitionEvent(
       eventsCompleted: rewardState.statistics.eventsCompleted + 1,
     },
   };
+  nextState = addCollaboratorMasteryExperience(
+    nextState,
+    "events",
+    COLLABORATOR_MASTERY_XP.eventCompleted,
+    now,
+  );
   if (contacts.length > 0) {
     nextState = addMessage(
       nextState,
@@ -986,7 +1052,7 @@ function resolveAcquisitionEvent(
   return contacts.length > 0 ? startNextCampaign(nextState, now) : nextState;
 }
 
-function maintainEquipment(state: GameState): GameState {
+function maintainEquipment(state: GameState, now: number): GameState {
   if (
     state.equipment.wear <= 0 ||
     state.school.euros < GAME_CONFIG.equipmentMaintenanceCost ||
@@ -994,7 +1060,7 @@ function maintainEquipment(state: GameState): GameState {
   ) {
     return state;
   }
-  return {
+  const maintained = {
     ...state,
     school: {
       ...state.school,
@@ -1006,6 +1072,12 @@ function maintainEquipment(state: GameState): GameState {
       maintenanceCompleted: state.statistics.maintenanceCompleted + 1,
     },
   };
+  return addCollaboratorMasteryExperience(
+    maintained,
+    "equipment",
+    COLLABORATOR_MASTERY_XP.equipmentMaintenance,
+    now,
+  );
 }
 
 function buyOfficialSword(state: GameState): GameState {
@@ -1127,6 +1199,7 @@ function startFormTraining(
   const instructor = !instructorSelf
     ? selectAvailableInstructor(state, formId, personId)
     : undefined;
+  const trainingInstructor = instructor ?? (instructorSelf ? collaborator : undefined);
   const trainingCost = instructorTrack
     ? getInstructorFormCost(definition?.cost ?? 0)
     : collaborator?.assignment === "instructor"
@@ -1160,10 +1233,13 @@ function startFormTraining(
     (!instructorSelf && !instructor) ||
     state.school.euros < trainingCost
   ) return state;
+  const trainingSpeed = trainingInstructor
+    ? getCollaboratorProductivity(trainingInstructor, "instructor")
+    : 1;
   const training = {
     formId,
     startedAt: now,
-    completesAt: now + definition.durationMs,
+    completesAt: now + Math.max(1_000, Math.round(definition.durationMs / trainingSpeed)),
     instructorId: instructor?.id,
     includesInstructorCertification: instructorTrack || undefined,
   };
@@ -1250,6 +1326,14 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
       formsCompleted: state.statistics.formsCompleted + 1,
     },
   };
+  if (student.training.instructorId) {
+    nextState = addCollaboratorMasteryExperience(
+      nextState,
+      "instructor",
+      COLLABORATOR_MASTERY_XP.instructorTraining,
+      now,
+    );
+  }
   nextState = addMessage(
     nextState,
     now,
@@ -1318,6 +1402,7 @@ function processAutomation(state: GameState, now: number, gainMultiplier: number
   const writingProductivity = productivityFor("writing");
   const socialProductivity = state.unlocks.social ? productivityFor("social") : 0;
   const equipmentProductivity = productivityFor("equipment");
+  const wasWriting = selectActiveEmail(state)?.status === "writing";
   const automationMultiplier =
     1 + getUpgradeEffectTotal(state.upgrades, "automationMultiplier");
   const socialMultiplier = 1 + getUpgradeEffectTotal(state.upgrades, "socialMultiplier");
@@ -1360,8 +1445,25 @@ function processAutomation(state: GameState, now: number, gainMultiplier: number
     },
   };
 
+  if (repairedWear > 0) {
+    nextState = addCollaboratorMasteryExperience(
+      nextState,
+      "equipment",
+      repairedWear * COLLABORATOR_MASTERY_XP.equipmentRepairPoint,
+      now,
+    );
+  }
+
   if (automatedCharacters > 0) {
     nextState = writeCharacters(nextState, automatedCharacters, now, "automation");
+    if (wasWriting) {
+      nextState = addCollaboratorMasteryExperience(
+        nextState,
+        "writing",
+        (elapsedMs / 1_000) * COLLABORATOR_MASTERY_XP.writingPerSecond,
+        now,
+      );
+    }
   }
 
   if (socialContacts > 0) {
@@ -1389,6 +1491,12 @@ function processAutomation(state: GameState, now: number, gainMultiplier: number
       "positive",
       "other",
       "contacts",
+    );
+    nextState = addCollaboratorMasteryExperience(
+      nextState,
+      "social",
+      contacts.length * COLLABORATOR_MASTERY_XP.socialContact,
+      now,
     );
     nextState = startNextCampaign(nextState, now);
   }
@@ -1433,6 +1541,12 @@ function runSocialCampaign(state: GameState, now: number): GameState {
       socialCampaigns: state.statistics.socialCampaigns + 1,
     },
   };
+  nextState = addCollaboratorMasteryExperience(
+    nextState,
+    "social",
+    contacts.length * COLLABORATOR_MASTERY_XP.socialContact,
+    now,
+  );
   nextState = addMessage(
     nextState,
     now,
@@ -1981,7 +2095,12 @@ function processOfflinePassiveProgress(
       socialContacts: nextState.statistics.socialContacts + socialContacts,
     },
   };
-  return nextState;
+  return addCollaboratorMasteryExperience(
+    nextState,
+    "social",
+    socialContacts * COLLABORATOR_MASTERY_XP.socialContact,
+    now,
+  );
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -2020,7 +2139,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       nextState = markAllMessagesRead(state);
       break;
     case "MAINTAIN_EQUIPMENT":
-      nextState = maintainEquipment(state);
+      nextState = maintainEquipment(state, action.now);
       break;
     case "BUY_OFFICIAL_SWORD":
       nextState = buyOfficialSword(state);

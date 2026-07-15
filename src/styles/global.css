@@ -1607,6 +1607,68 @@ svg {
   white-space: normal;
 }
 
+.member-path {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.member-path > strong {
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.form-logo-strip {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 5px 6px;
+  overflow: visible;
+}
+
+.form-logo-item {
+  display: inline-flex;
+  min-width: 28px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-muted);
+  font-size: 9px;
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+}
+
+.form-logo-item img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.form-logo-item.generated img {
+  border-color: #d99721;
+  box-shadow: 0 0 0 2px #fff4d5;
+}
+
+.form-logo-item > span {
+  max-width: 58px;
+}
+
+.form-logo-empty {
+  color: var(--ink-muted);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
 .member-training-cell > small {
   color: var(--ink-muted);
   font-size: 11px;
@@ -1763,6 +1825,76 @@ svg {
 .collaborator-copy .form-bonus-summary {
   color: var(--blue-700);
   font-weight: 600;
+}
+
+.collaborator-copy .form-logo-strip {
+  align-self: flex-start;
+  margin: 1px 0;
+}
+
+.collaborator-mastery {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.collaborator-mastery > span {
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.mastery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.mastery-entry {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.mastery-entry.active {
+  border-color: #9fc5e6;
+  background: var(--blue-050);
+}
+
+.mastery-entry > strong {
+  overflow: hidden;
+  color: var(--blue-700);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mastery-entry > small {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mastery-track {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #d9e7f4;
+}
+
+.mastery-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue-600);
 }
 
 .collaborator-row select {

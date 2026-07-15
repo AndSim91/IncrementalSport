@@ -18,6 +18,14 @@ npm run build
 npm run test:e2e
 ```
 
+Per la verifica rapida del bilanciamento a lungo termine:
+
+```bash
+npm run test:balance
+```
+
+La suite usa il tempo virtuale e lancia quattro partite indipendenti per ciascun profilo (intenso/tranquillo); il batch è riutilizzabile con un numero arbitrario di seed senza attendere ore reali.
+
 Il gioco non invia email e non accede a servizi esterni: destinatari, messaggi e progressi sono simulati e salvati esclusivamente in `localStorage`.
 
 ## Funzioni disponibili
@@ -29,6 +37,7 @@ Il gioco non invia email e non accede a servizi esterni: destinatari, messaggi e
 - Eventi con sparring gratuito e dimostrazione programmata;
 - conversione contatto → prova → iscritto → quote;
 - collaboratori, assegnazioni automatiche, Social e percorso delle Forme;
+- maestria dei collaboratori per ruolo, con cinque gradi e notifiche di avanzamento;
 - attrezzatura, manutenzione, 47 potenziamenti e 100 modelli email;
 - traguardi, eventi narrativi e protezione dalle serie sfortunate;
 - progresso offline con riepilogo e limite di 8 ore;

@@ -51,6 +51,9 @@ describe("PeopleView", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Collaboratori/ }));
     expect(screen.getByText("Andrea Simonazzi")).toHaveClass("rarity-legendary");
     expect(screen.getByText("VIP")).toBeVisible();
+    expect(screen.getByRole("img", { name: /Forma 1 — emblema ufficiale/ })).toBeVisible();
+    expect(screen.getByRole("img", { name: /Corso X — emblema generato/ })).toBeVisible();
+    expect(screen.getByRole("img", { name: /Corso Y — emblema ufficiale/ })).toBeVisible();
     expect(screen.queryByText("Tutorial")).not.toBeInTheDocument();
     expect(screen.getByText(/Livello Leggendario/)).toBeVisible();
     expect(screen.getByText(/Potere VIP ×2/)).toBeVisible();

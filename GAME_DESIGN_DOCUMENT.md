@@ -489,6 +489,12 @@ Ogni collaboratore possiede:
 - Forme sbloccate;
 - stato e assegnazione attuale.
 
+Ogni collaboratore accumula inoltre una **Maestria** separata per ciascun ruolo operativo:
+Redazione, Eventi, Lezioni in palestra, Social, Attrezzatura e Istruttore. La Maestria
+parte dal grado **Novizio** e attraversa cinque livelli: Novizio, Iniziato, Accademico,
+Cavaliere e Maestro. Ogni grado concede un piccolo moltiplicatore alla produttività del
+relativo settore; il progresso viene comunicato tramite un messaggio automatico nella Posta.
+
 Regole:
 
 - alcuni personaggi reali potranno essere aggiunti in seguito;
