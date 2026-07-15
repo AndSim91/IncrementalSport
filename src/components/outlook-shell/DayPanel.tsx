@@ -49,7 +49,7 @@ function ShortGoalCard({ state }: { state: GameState }) {
   return (
     <section className="short-goal-card" aria-label="Obiettivo breve">
       <div className="short-goal-heading">
-        <span>Priorità della settimana</span>
+        <span>Missioni delle Onde</span>
         <b>Serie {state.shortGoal.completedCount + 1}</b>
       </div>
       <strong>{definition.title}</strong>

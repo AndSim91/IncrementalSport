@@ -95,7 +95,8 @@ export interface InboxMessage {
     | "collaborators"
     | "training"
     | "progress"
-    | "narrative";
+    | "narrative"
+    | "offline";
 }
 
 export type AcquisitionEventId =

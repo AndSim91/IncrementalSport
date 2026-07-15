@@ -1,5 +1,6 @@
 import { GAME_CONFIG } from "./config";
 import { gameReducer } from "./engine";
+import { addInboxMessage } from "./messages";
 import type { GameState, InboxMessage } from "./types";
 
 export interface OfflineSummary {
@@ -67,6 +68,11 @@ export function simulateOfflineProgress(
     receivedAt: now,
     tone: "system",
     unread: true,
+    category: "other",
+    threadKey: "offline",
   };
-  return { state: { ...processed, messages: [message, ...processed.messages] }, summary };
+  return {
+    state: { ...processed, messages: addInboxMessage(processed.messages, message) },
+    summary,
+  };
 }
