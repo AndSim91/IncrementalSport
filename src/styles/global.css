@@ -1595,6 +1595,24 @@ svg {
   font-size: 11px;
 }
 
+.member-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  white-space: normal;
+}
+
+.member-status > span {
+  font-weight: 600;
+}
+
+.member-status > small {
+  color: var(--ink-muted);
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: normal;
+}
+
 .people-row > * {
   min-width: 0;
   overflow: hidden;

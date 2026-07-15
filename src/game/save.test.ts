@@ -385,7 +385,7 @@ describe("local save", () => {
     const initial = createInitialState(1_000);
     const started = gameReducer({
       ...initial,
-      school: { ...initial.school, euros: 120, activeMembers: 5 },
+      school: { ...initial.school, euros: 120, activeMembers: 5, peakActiveMembers: 5 },
     }, {
       type: "START_ACQUISITION_EVENT",
       definitionId: "public-demo",
@@ -399,6 +399,76 @@ describe("local save", () => {
 
     expect(migrated.version).toBe(GAME_CONFIG.version);
     expect(migrated.acquisitionEvents[0].membersUsed).toBe(2);
+  });
+
+  it("migrates version 20 saves into annual member retention tracking", () => {
+    const initial = createInitialState(1_000);
+    const legacy = JSON.parse(JSON.stringify({
+      ...initial,
+      version: 20,
+      school: { ...initial.school, currentMonth: 7, activeMembers: 1 },
+      contacts: initial.contacts.map((contact, index) => ({
+        ...contact,
+        status: index === 0 ? "enrolled" : contact.status,
+      })),
+    }));
+    delete legacy.contacts[0].enrolledMonth;
+    delete legacy.statistics.membersDeparted;
+    delete legacy.school.peakActiveMembers;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.contacts[0].enrolledMonth).toBe(7);
+    expect(migrated.statistics.membersDeparted).toBe(0);
+    expect(migrated.school.peakActiveMembers).toBe(1);
+  });
+
+  it("migrates version 21 fame from the best available historical evidence", () => {
+    const initial = createInitialState(1_000);
+    const legacy = JSON.parse(JSON.stringify({
+      ...initial,
+      version: 21,
+      school: { ...initial.school, activeMembers: 70, historicMembers: 100 },
+      statistics: { ...initial.statistics, membersDeparted: 30 },
+      contacts: Array.from({ length: 30 }, (_, index) => ({
+        ...initial.contacts[index % initial.contacts.length],
+        id: `departed-${index}`,
+        status: "departed",
+      })),
+    }));
+    delete legacy.school.peakActiveMembers;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.school.activeMembers).toBe(70);
+    expect(migrated.school.peakActiveMembers).toBe(100);
+  });
+
+  it("migrates version 22 collaborators into explicit Instructor certificates", () => {
+    const initial = createInitialState(1_000);
+    const legacy = JSON.parse(JSON.stringify({
+      ...initial,
+      version: 22,
+      collaborators: [{
+        id: "legacy-instructor",
+        contactId: initial.contacts[0].id,
+        displayName: "Giulia Ferrando",
+        joinedAt: 1_000,
+        forms: ["form-1"],
+        assignment: null,
+        rarity: "legendary",
+      }],
+    }));
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.collaborators[0].instructorForms).toEqual([]);
   });
 
   it("resets both primary and backup saves", () => {

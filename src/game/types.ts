@@ -4,6 +4,7 @@ export type ContactStatus =
   | "invited"
   | "trialScheduled"
   | "enrolled"
+  | "departed"
   | "lost";
 
 export type SpecialCollaboratorId =
@@ -22,6 +23,8 @@ export interface FormTraining {
   formId: FormId;
   startedAt: number;
   completesAt: number;
+  instructorId?: string;
+  includesInstructorCertification?: boolean;
 }
 
 export interface Contact {
@@ -37,6 +40,7 @@ export interface Contact {
   forms: FormId[];
   training?: FormTraining;
   lastFormTrainingYear?: number;
+  enrolledMonth?: number;
 }
 
 export interface CampaignEmail {
@@ -240,6 +244,7 @@ export type CollaboratorAssignment =
   | "lessons"
   | "social"
   | "equipment"
+  | "instructor"
   | null;
 
 export type FormId =
@@ -265,6 +270,7 @@ export interface Collaborator {
   displayName: string;
   joinedAt: number;
   forms: FormId[];
+  instructorForms: FormId[];
   assignment: CollaboratorAssignment;
   rarity: PersonRarity;
   specialProfileId?: SpecialCollaboratorId;
@@ -285,6 +291,7 @@ export interface Statistics {
   trialsCompleted: number;
   contactsLost: number;
   membersEnrolled: number;
+  membersDeparted: number;
   eurosEarned: number;
   contactsAcquired: number;
   peopleMet: number;
@@ -314,6 +321,7 @@ export interface GameState {
     motto: string;
     specialization: SchoolSpecialization;
     activeMembers: number;
+    peakActiveMembers: number;
     historicMembers: number;
     euros: number;
     currentMonth: number;

@@ -3,7 +3,7 @@ import { PROSPECT_EMAIL_PROVIDERS } from "../content/prospectDirectory";
 import { getAcquisitionEventDefinition } from "../content/events";
 import { GAME_CONFIG } from "./config";
 import { canFoundSchool, createInitialState, gameReducer, getLegendaryEnrollmentChance, getPrestigeRequirements } from "./engine";
-import { getEmailBookingChance, getEnrollmentChance, getEventFunnelOutcome } from "./formulas";
+import { getEmailBookingChance, getEnrollmentChance, getEventFunnelOutcome, getMemberAnnualDepartureChance } from "./formulas";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import { PERSON_RARITIES } from "../content/rarities";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
@@ -162,6 +162,7 @@ describe("game engine", () => {
     state = gameReducer(state, { type: "TICK", now: trial.resolvesAt });
 
     expect(state.school.activeMembers).toBe(1);
+    expect(state.school.peakActiveMembers).toBe(1);
     expect(state.school.euros).toBe(GAME_CONFIG.enrollmentBonus + 15);
     expect(state.unlocks.upgrades).toBe(true);
     expect(state.statistics.trialsBooked).toBe(1);
@@ -328,6 +329,49 @@ describe("game engine", () => {
     expect(advanced.school.euros).toBe(0);
   });
 
+  it("lets ignored ordinary members leave when a new school year starts in September", () => {
+    const initial = createInitialState(1_000);
+    const [ignored, trained, legendary, collaboratorMember, recent] = initial.contacts;
+    const contacts = [
+      { ...ignored, status: "enrolled" as const, rarity: "common" as const, enrolledMonth: 1 },
+      { ...trained, status: "enrolled" as const, rarity: "common" as const, enrolledMonth: 1, lastFormTrainingYear: 1 },
+      { ...legendary, status: "enrolled" as const, rarity: "legendary" as const, enrolledMonth: 1 },
+      { ...collaboratorMember, status: "enrolled" as const, rarity: "rare" as const, enrolledMonth: 1 },
+      { ...recent, status: "enrolled" as const, rarity: "common" as const, enrolledMonth: 2 },
+    ];
+    const state = {
+      ...initial,
+      randomSeed: 7,
+      contacts,
+      school: { ...initial.school, activeMembers: 5, currentMonth: 8, nextFeeAt: 2_000 },
+      collaborators: [{
+        id: "collaborator-protected",
+        contactId: collaboratorMember.id,
+        displayName: `${collaboratorMember.firstName} ${collaboratorMember.lastName}`,
+        joinedAt: 1_000,
+        forms: [],
+        instructorForms: [],
+        assignment: null,
+        rarity: "rare" as const,
+      }],
+    };
+
+    const renewed = gameReducer(state, { type: "TICK", now: 2_000 });
+
+    expect(renewed.contacts.find((contact) => contact.id === ignored.id)?.status).toBe("departed");
+    expect(renewed.contacts.filter((contact) => contact.status === "enrolled")).toHaveLength(4);
+    expect(renewed.school.activeMembers).toBe(4);
+    expect(renewed.statistics.membersDeparted).toBe(1);
+    expect(renewed.messages.some((message) => message.subject === "Un iscritto ha lasciato la scuola")).toBe(true);
+  });
+
+  it("reduces annual departure risk after each numbered Form down to five percent", () => {
+    expect(getMemberAnnualDepartureChance([])).toBe(0.8);
+    expect(getMemberAnnualDepartureChance(["form-1", "course-x"])).toBe(0.65);
+    expect(getMemberAnnualDepartureChance(["form-1", "course-x", "form-2", "course-y"])).toBe(0.5);
+    expect(getMemberAnnualDepartureChance(["form-1", "course-x", "form-2", "course-y", "form-3-staff", "form-4-staff", "form-5-staff", "form-6", "form-7"])).toBe(0.05);
+  });
+
   it("marks an inbox message as read exactly once", () => {
     const state = createInitialState(1_000);
     const messageId = state.messages[0].id;
@@ -410,7 +454,7 @@ describe("game engine", () => {
     const state = createInitialState(1_000);
     const notFamousEnough = {
       ...state,
-      school: { ...state.school, euros: 1_000, activeMembers: 4 },
+      school: { ...state.school, euros: 1_000, activeMembers: 4, peakActiveMembers: 4 },
     };
     const blocked = gameReducer(notFamousEnough, {
       type: "START_ACQUISITION_EVENT",
@@ -419,7 +463,7 @@ describe("game engine", () => {
     });
     const funded = {
       ...state,
-      school: { ...state.school, euros: 120, activeMembers: 5 },
+      school: { ...state.school, euros: 120, activeMembers: 5, peakActiveMembers: 5 },
     };
     const started = gameReducer(funded, {
       type: "START_ACQUISITION_EVENT",
@@ -430,6 +474,29 @@ describe("game engine", () => {
     expect(blocked).toBe(notFamousEnough);
     expect(started.school.euros).toBe(0);
     expect(started.acquisitionEvents).toHaveLength(1);
+  });
+
+  it("uses the all-time member peak for fame after the school shrinks", () => {
+    const initial = createInitialState(1_000);
+    const famousSchool = {
+      ...initial,
+      school: {
+        ...initial.school,
+        activeMembers: 70,
+        peakActiveMembers: 100,
+        euros: 2_000,
+      },
+      equipment: { ...initial.equipment, totalSwords: 16, availableSwords: 16 },
+    };
+
+    const started = gameReducer(famousSchool, {
+      type: "START_ACQUISITION_EVENT",
+      definitionId: "burtomics",
+      now: 2_000,
+    });
+
+    expect(started.acquisitionEvents).toHaveLength(1);
+    expect(started.school.peakActiveMembers).toBe(100);
   });
 
   it("repairs worn equipment by spending euros outside events", () => {
@@ -721,6 +788,7 @@ describe("game engine", () => {
       displayName: "Giulia Ferrando",
       joinedAt: 1_000,
       forms: [],
+      instructorForms: [],
       assignment: null,
       rarity: "rare" as const,
     };
@@ -752,6 +820,7 @@ describe("game engine", () => {
       displayName: "Giulia Ferrando",
       joinedAt: 1_000,
       forms: [],
+      instructorForms: [],
       assignment: "social" as const,
       rarity: "rare" as const,
     };
@@ -796,20 +865,36 @@ describe("game engine", () => {
     expect(campaigned.statistics.socialContacts).toBeGreaterThanOrEqual(4);
   });
 
-  it("trains members once per year and promotes them only after Course Y", () => {
+  it("trains members once per school year, pauses in summer, and restarts in September", () => {
     const initial = createInitialState(1_000);
     const member = { ...initial.contacts[0], status: "enrolled" as const };
+    const instructor = {
+      id: "instructor-form-1",
+      contactId: initial.contacts[1].id,
+      displayName: "Istruttore Forma 1",
+      joinedAt: 1_000,
+      forms: ["form-1" as const],
+      instructorForms: ["form-1" as const],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+    };
     const ready = {
       ...initial,
       school: { ...initial.school, activeMembers: 1, euros: 200 },
       contacts: initial.contacts.map((contact) => contact.id === member.id ? member : contact),
+      collaborators: [instructor],
       unlocks: { ...initial.unlocks, forms: true },
     };
 
     const blocked = gameReducer(ready, { type: "START_FORM_TRAINING", personId: member.id, formId: "form-2", now: 2_000 });
     const training = gameReducer(ready, { type: "START_FORM_TRAINING", personId: member.id, formId: "form-1", now: 2_000 });
     const completed = gameReducer(training, { type: "TICK", now: 22_000 });
-    const annualBlock = gameReducer(completed, { type: "START_FORM_TRAINING", personId: member.id, formId: "course-x", now: 23_000 });
+    const juneState = { ...completed, school: { ...completed.school, currentMonth: 6 } };
+    const annualBlock = gameReducer(juneState, { type: "START_FORM_TRAINING", personId: member.id, formId: "course-x", now: 23_000 });
+    const julyState = { ...completed, school: { ...completed.school, currentMonth: 7 } };
+    const summerBlock = gameReducer(julyState, { type: "START_FORM_TRAINING", personId: member.id, formId: "course-x", now: 23_000 });
+    const septemberState = { ...completed, school: { ...completed.school, currentMonth: 9 } };
+    const nextSchoolYear = gameReducer(septemberState, { type: "START_FORM_TRAINING", personId: member.id, formId: "course-x", now: 23_000 });
 
     expect(blocked).toBe(ready);
     expect(training.school.euros).toBe(185);
@@ -817,45 +902,169 @@ describe("game engine", () => {
     expect(completed.contacts[0].forms).toContain("form-1");
     expect(completed.contacts[0].training).toBeUndefined();
     expect(completed.statistics.formsCompleted).toBe(1);
-    expect(annualBlock).toBe(completed);
-    expect(completed.collaborators).toHaveLength(0);
+    expect(annualBlock).toBe(juneState);
+    expect(summerBlock).toBe(julyState);
+    expect(nextSchoolYear.contacts[0].training?.formId).toBe("course-x");
+    expect(nextSchoolYear.contacts[0].lastFormTrainingYear).toBe(2);
+    expect(completed.collaborators).toHaveLength(1);
   });
 
-  it("creates a collaborator at Course Y and applies weapon and Legendary bonuses", () => {
+  it("charges the retroactive fifty-percent Form tax when assigning an Instructor", () => {
+    const initial = createInitialState(1_000);
+    const collaborator = {
+      id: "instructor-conversion",
+      contactId: initial.contacts[0].id,
+      displayName: "Giulia Ferrando",
+      joinedAt: 1_000,
+      forms: ["form-1" as const, "course-x" as const, "form-2" as const],
+      instructorForms: [] as Array<"form-1" | "form-2">,
+      assignment: null,
+      rarity: "legendary" as const,
+    };
+    const ready = {
+      ...initial,
+      school: { ...initial.school, euros: 30 },
+      collaborators: [collaborator],
+    };
+
+    const assigned = gameReducer(ready, {
+      type: "ASSIGN_COLLABORATOR",
+      collaboratorId: collaborator.id,
+      assignment: "instructor",
+      now: 2_000,
+    });
+    const insufficient = gameReducer({ ...ready, school: { ...ready.school, euros: 19 } }, {
+      type: "ASSIGN_COLLABORATOR",
+      collaboratorId: collaborator.id,
+      assignment: "instructor",
+      now: 2_000,
+    });
+
+    expect(assigned.school.euros).toBe(10);
+    expect(assigned.collaborators[0].assignment).toBe("instructor");
+    expect(assigned.collaborators[0].instructorForms).toEqual(["form-1", "form-2"]);
+    expect(assigned.messages.some((message) => message.subject === "Attestati da istruttore conseguiti")).toBe(true);
+    expect(insufficient.collaborators[0].assignment).toBeNull();
+    expect(insufficient.school.euros).toBe(19);
+  });
+
+  it("charges an Instructor 150% for a new Form and includes its certificate", () => {
+    const initial = createInitialState(1_000);
+    const instructor = {
+      id: "instructor-training",
+      contactId: initial.contacts[0].id,
+      displayName: "Giulia Ferrando",
+      joinedAt: 1_000,
+      forms: ["form-1" as const, "course-x" as const],
+      instructorForms: ["form-1" as const],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+      lastFormTrainingYear: 1,
+    };
+    const ready = {
+      ...initial,
+      school: { ...initial.school, currentMonth: 9, euros: 100 },
+      collaborators: [instructor],
+      unlocks: { ...initial.unlocks, forms: true },
+    };
+
+    const training = gameReducer(ready, {
+      type: "START_FORM_TRAINING",
+      personId: instructor.id,
+      formId: "form-2",
+      now: 2_000,
+    });
+    const completed = gameReducer(training, { type: "TICK", now: 32_000 });
+
+    expect(training.school.euros).toBe(62.5);
+    expect(training.collaborators[0].training?.includesInstructorCertification).toBe(true);
+    expect(completed.collaborators[0].forms).toContain("form-2");
+    expect(completed.collaborators[0].instructorForms).toContain("form-2");
+  });
+
+  it("lets each qualified Instructor teach only one enrolled person at a time", () => {
+    const initial = createInitialState(1_000);
+    const [firstContact, secondContact, instructorContact] = initial.contacts;
+    const first = { ...firstContact, status: "enrolled" as const };
+    const second = { ...secondContact, status: "enrolled" as const };
+    const instructor = {
+      id: "single-capacity-instructor",
+      contactId: instructorContact.id,
+      displayName: "Giulia Ferrando",
+      joinedAt: 1_000,
+      forms: ["form-1" as const],
+      instructorForms: ["form-1" as const],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+    };
+    const ready = {
+      ...initial,
+      school: { ...initial.school, activeMembers: 2, euros: 100 },
+      contacts: initial.contacts.map((contact) =>
+        contact.id === first.id ? first : contact.id === second.id ? second : contact
+      ),
+      collaborators: [instructor],
+      unlocks: { ...initial.unlocks, forms: true },
+    };
+
+    const firstTraining = gameReducer(ready, {
+      type: "START_FORM_TRAINING",
+      personId: first.id,
+      formId: "form-1",
+      now: 2_000,
+    });
+    const secondBlocked = gameReducer(firstTraining, {
+      type: "START_FORM_TRAINING",
+      personId: second.id,
+      formId: "form-1",
+      now: 3_000,
+    });
+
+    expect(firstTraining.contacts.find((contact) => contact.id === first.id)?.training?.instructorId).toBe(instructor.id);
+    expect(secondBlocked.contacts.find((contact) => contact.id === second.id)?.training).toBeUndefined();
+    expect(secondBlocked.school.euros).toBe(85);
+  });
+
+  it("creates a Rare collaborator at Form 7 and applies weapon and Legendary bonuses", () => {
     const initial = createInitialState(1_000);
     const member = {
       ...initial.contacts[0],
       status: "enrolled" as const,
       rarity: "rare" as const,
-      forms: ["form-1", "course-x", "form-2"] as const,
-      lastFormTrainingYear: 3,
+      forms: ["form-1", "course-x", "form-2", "course-y", "form-3-long", "form-4-long", "form-5-long", "form-6"] as const,
+      lastFormTrainingYear: 8,
+    };
+    const instructor = {
+      id: "instructor-form-7",
+      contactId: initial.contacts[1].id,
+      displayName: "Istruttore Forma 7",
+      joinedAt: 1_000,
+      forms: ["form-7" as const],
+      instructorForms: ["form-7" as const],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
     };
     const ready = {
       ...initial,
-      school: { ...initial.school, activeMembers: 1, currentMonth: 37, euros: 200 },
+      school: { ...initial.school, activeMembers: 1, currentMonth: 97, euros: 200 },
       contacts: initial.contacts.map((contact) => contact.id === member.id
         ? { ...member, forms: [...member.forms] }
         : contact),
+      collaborators: [instructor],
       unlocks: { ...initial.unlocks, forms: true },
     };
-    const training = gameReducer(ready, { type: "START_FORM_TRAINING", personId: member.id, formId: "course-y", now: 2_000 });
-    const completed = gameReducer(training, { type: "TICK", now: 37_000 });
-    const collaborator = completed.collaborators[0];
+    const training = gameReducer(ready, { type: "START_FORM_TRAINING", personId: member.id, formId: "form-7", now: 2_000 });
+    const completed = gameReducer(training, { type: "TICK", now: 77_000 });
+    const collaborator = completed.collaborators.find((candidate) => candidate.contactId === member.id)!;
 
-    expect(collaborator.forms).toEqual(["form-1", "course-x", "form-2", "course-y"]);
+    expect(collaborator.forms.at(-1)).toBe("form-7");
     expect(completed.unlocks.collaborators).toBe(true);
     expect(completed.statistics.collaboratorsRecruited).toBe(1);
-    expect(getAvailableForms(collaborator, 5).map((form) => form.id)).toEqual([
-      "form-3-long",
-      "form-3-staff",
-      "form-3-double",
-    ]);
-
-    const longFormFive = { ...collaborator, forms: [...collaborator.forms, "form-3-long", "form-4-long", "form-5-long"] as const, assignment: "events" as const };
+    const longFormFive = { ...collaborator, forms: ["form-1", "course-x", "form-2", "course-y", "form-3-long", "form-4-long", "form-5-long"] as const, assignment: "events" as const };
     expect(getCollaboratorProductivity({ ...longFormFive, forms: [...longFormFive.forms] })).toBe(1.5);
-    expect(getAvailableForms({ ...longFormFive, forms: [...longFormFive.forms] }, 8)).toEqual([]);
+    expect(getAvailableForms({ ...longFormFive, forms: [...longFormFive.forms] }, 8).map((form) => form.id)).toEqual(["form-6"]);
 
-    const legendary = { ...longFormFive, rarity: "legendary" as const, forms: [...longFormFive.forms, "form-6"] as const };
+    const legendary = { ...longFormFive, rarity: "legendary" as const, forms: [...longFormFive.forms, "form-6"] as const, lastFormTrainingYear: 8 };
     expect(getCollaboratorProductivity({ ...legendary, forms: [...legendary.forms] })).toBe(3.2);
     expect(getAvailableForms({ ...legendary, forms: [...legendary.forms] }, 9).map((form) => form.id)).toEqual(["form-7"]);
   });
@@ -946,6 +1155,7 @@ describe("game engine", () => {
       displayName: `Collaboratore ${index}`,
       joinedAt: 1_000,
       forms: [],
+      instructorForms: [],
       assignment: null,
       rarity: "common" as const,
     }));
@@ -1000,7 +1210,7 @@ describe("game engine", () => {
     const initial = createInitialState(1_000);
     const resourced = {
       ...initial,
-      school: { ...initial.school, euros: 200, activeMembers: 5 },
+      school: { ...initial.school, euros: 200, activeMembers: 5, peakActiveMembers: 5 },
     };
 
     const first = gameReducer(resourced, { type: "START_ACQUISITION_EVENT", definitionId: "public-demo", now: 2_000 });

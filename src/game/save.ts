@@ -42,6 +42,7 @@ function isGameState(value: unknown): value is GameState {
     typeof state.statistics?.peopleMet === "number" &&
     typeof state.statistics?.demonstrationsGiven === "number" &&
     typeof state.statistics?.maintenanceCompleted === "number" &&
+    typeof state.school?.peakActiveMembers === "number" &&
     typeof state.equipment?.totalSwords === "number" &&
     typeof state.equipment?.availableSwords === "number" &&
     typeof state.equipment?.wear === "number" &&
@@ -51,13 +52,15 @@ function isGameState(value: unknown): value is GameState {
     Array.isArray(state.collaborators) &&
     state.collaborators.every((collaborator) =>
       (collaborator.rarity === "rare" || collaborator.rarity === "legendary") &&
-      Array.isArray(collaborator.forms)
+      Array.isArray(collaborator.forms) &&
+      Array.isArray(collaborator.instructorForms)
     ) &&
     typeof state.automation?.lastProcessedAt === "number" &&
     typeof state.automation?.offlineContactBuffer === "number" &&
     typeof state.statistics?.automatedCharacters === "number" &&
     typeof state.statistics?.socialCampaigns === "number" &&
     typeof state.statistics?.formsCompleted === "number" &&
+    typeof state.statistics?.membersDeparted === "number" &&
     typeof state.statistics?.narrativeEvents === "number" &&
     typeof state.unlocks?.collaborators === "boolean" &&
     typeof state.unlocks?.forms === "boolean" &&
@@ -437,12 +440,70 @@ function migrate(value: unknown): unknown {
   if (migrated.version === 19) {
     migrated = {
       ...migrated,
-      version: GAME_CONFIG.version,
+      version: 20,
       acquisitionEvents: (migrated.acquisitionEvents ?? []).map((event) => ({
         ...event,
         membersUsed: event.membersUsed ??
           getAcquisitionEventDefinition(event.definitionId)?.requiredMembers ??
           0,
+      })),
+    };
+  }
+
+  if (migrated.version === 20 && migrated.statistics) {
+    migrated = {
+      ...migrated,
+      version: 21,
+      contacts: (migrated.contacts ?? []).map((contact) => ({
+        ...contact,
+        enrolledMonth: contact.status === "enrolled"
+          ? contact.enrolledMonth ?? migrated.school?.currentMonth ?? 1
+          : contact.enrolledMonth,
+      })),
+      statistics: {
+        ...migrated.statistics,
+        membersDeparted: migrated.statistics.membersDeparted ?? 0,
+      } as GameState["statistics"],
+    };
+  }
+
+  if (migrated.version === 21) {
+    const recordedDepartures = (migrated.contacts ?? []).filter(
+      (contact) => contact.status === "departed",
+    ).length;
+    const missedRenewals = (migrated.narrative?.history ?? []).filter(
+      (event) => event.definitionId === "missed-renewal",
+    ).length;
+    const highestUnlockedEvent = (migrated.acquisitionEvents ?? []).reduce(
+      (highest, event) => Math.max(
+        highest,
+        getAcquisitionEventDefinition(event.definitionId)?.unlockMembers ?? 0,
+      ),
+      0,
+    );
+    migrated = {
+      ...migrated,
+      version: 22,
+      school: migrated.school
+        ? {
+            ...migrated.school,
+            peakActiveMembers: Math.max(
+              migrated.school.activeMembers ?? 0,
+              (migrated.school.activeMembers ?? 0) + recordedDepartures + missedRenewals,
+              highestUnlockedEvent,
+            ),
+          }
+        : migrated.school,
+    };
+  }
+
+  if (migrated.version === 22) {
+    migrated = {
+      ...migrated,
+      version: GAME_CONFIG.version,
+      collaborators: (migrated.collaborators ?? []).map((collaborator) => ({
+        ...collaborator,
+        instructorForms: collaborator.instructorForms ?? [],
       })),
     };
   }

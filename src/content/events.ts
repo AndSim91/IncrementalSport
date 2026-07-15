@@ -251,8 +251,8 @@ export const ACQUISITION_EVENTS: AcquisitionEventDefinition[] = [
   },
 ];
 
-export function getUnlockedAcquisitionEvents(activeMembers: number) {
-  return ACQUISITION_EVENTS.filter((event) => event.unlockMembers <= activeMembers);
+export function getUnlockedAcquisitionEvents(fameMembers: number) {
+  return ACQUISITION_EVENTS.filter((event) => event.unlockMembers <= fameMembers);
 }
 
 export function getAcquisitionEventDefinition(id: AcquisitionEventId) {

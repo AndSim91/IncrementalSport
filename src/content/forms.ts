@@ -24,7 +24,6 @@ export interface FormDefinition {
   durationMs: number;
   prerequisite?: FormId;
   anyPrerequisite?: FormId[];
-  legendaryOnly?: boolean;
   bonusLabel?: string;
 }
 
@@ -34,6 +33,7 @@ export interface CollaboratorFormBonuses {
   lessons: number;
   social: number;
   equipment: number;
+  instructor: number;
   all: number;
 }
 
@@ -51,8 +51,8 @@ export const FORM_DEFINITIONS: FormDefinition[] = [
   { id: "form-3-double", title: "Forma 3", branch: "Doppia spada corta", cost: 40, durationMs: 40_000, prerequisite: "course-y", bonusLabel: "+10% Redazione e Social" },
   { id: "form-4-double", title: "Forma 4", branch: "Doppia spada corta", cost: 50, durationMs: 45_000, prerequisite: "form-3-double", bonusLabel: "+20% Redazione e Social" },
   { id: "form-5-double", title: "Forma 5", branch: "Doppia spada corta", cost: 60, durationMs: 50_000, prerequisite: "form-4-double", bonusLabel: "+35% Redazione e Social" },
-  { id: "form-6", title: "Forma 6", cost: 75, durationMs: 60_000, anyPrerequisite: ["form-5-long", "form-5-staff", "form-5-double"], legendaryOnly: true, bonusLabel: "+10% su ogni incarico" },
-  { id: "form-7", title: "Forma 7", cost: 100, durationMs: 75_000, prerequisite: "form-6", legendaryOnly: true, bonusLabel: "+20% su ogni incarico" },
+  { id: "form-6", title: "Forma 6", cost: 75, durationMs: 60_000, anyPrerequisite: ["form-5-long", "form-5-staff", "form-5-double"], bonusLabel: "+10% su ogni incarico" },
+  { id: "form-7", title: "Forma 7", cost: 100, durationMs: 75_000, prerequisite: "form-6", bonusLabel: "+20% su ogni incarico" },
 ];
 
 const BRANCH_FORM_IDS: Record<FormBranch, FormId[]> = {
@@ -63,6 +63,30 @@ const BRANCH_FORM_IDS: Record<FormBranch, FormId[]> = {
 
 export function getFormDefinition(id: FormId) {
   return FORM_DEFINITIONS.find((definition) => definition.id === id);
+}
+
+export function isInstructorForm(formId: FormId): boolean {
+  return formId.startsWith("form-");
+}
+
+export function getInstructorFormCost(cost: number): number {
+  return Math.round(cost * 1.5 * 100) / 100;
+}
+
+export function getInstructorConversionCost(collaborator: Collaborator): number {
+  const certified = new Set(collaborator.instructorForms);
+  let cost = collaborator.forms.reduce((total, formId) => {
+    if (!isInstructorForm(formId) || certified.has(formId)) return total;
+    return total + (getFormDefinition(formId)?.cost ?? 0) * 0.5;
+  }, 0);
+  if (
+    collaborator.training &&
+    isInstructorForm(collaborator.training.formId) &&
+    !collaborator.training.includesInstructorCertification
+  ) {
+    cost += (getFormDefinition(collaborator.training.formId)?.cost ?? 0) * 0.5;
+  }
+  return Math.round(cost * 100) / 100;
 }
 
 export function getChosenFormBranch(forms: FormId[]): FormBranch | undefined {
@@ -81,7 +105,6 @@ export function canTrainForm(
     typeof currentYear === "number" &&
     student.lastFormTrainingYear === currentYear
   ) return false;
-  if (definition.legendaryOnly && student.rarity !== "legendary") return false;
   if (definition.prerequisite && !student.forms.includes(definition.prerequisite)) return false;
   if (
     definition.anyPrerequisite &&
@@ -112,6 +135,7 @@ export function getCollaboratorFormBonuses(collaborator: Collaborator): Collabor
     lessons: 0,
     social: 0,
     equipment: 0,
+    instructor: 0,
     all: collaborator.forms.includes("form-7")
       ? 0.2
       : collaborator.forms.includes("form-6")

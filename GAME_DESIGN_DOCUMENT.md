@@ -159,7 +159,7 @@ Gli **Iscritti** sono il punteggio principale, la dimensione della scuola e una 
 - **Iscritti storici:** totale lordo ottenuto nella partita e nei cicli di prestigio.
 - **Iscritti volenterosi:** variante rara degli iscritti, assegnabile ai progetti come Collaboratore delle Onde.
 
-Ogni nuovo iscritto accredita immediatamente un bonus di iscrizione di **€20**. In seguito, ogni iscritto attivo genera una quota di **€40 per mese di gioco**. Un mese dura **60 secondi reali** e segue il normale ciclo da Gennaio a Dicembre; dopo Dicembre torna Gennaio. Il gioco non mostra né tiene traccia degli anni. Un evento positivo di passaparola può produrre più potenziali iscritti; un litigio o un mancato rinnovo può ridurre il totale.
+Ogni nuovo iscritto accredita immediatamente un bonus di iscrizione di **€20**. In seguito, ogni iscritto attivo genera una quota di **€40 per mese di gioco**. Un mese dura **60 secondi reali** e segue il normale ciclo da Gennaio a Dicembre; dopo Dicembre torna Gennaio. L'anno scolastico va da Settembre a Giugno, con pausa estiva a Luglio e Agosto, e riparte ogni Settembre. Un evento positivo di passaparola può produrre più potenziali iscritti; un litigio o un mancato rinnovo può ridurre il totale.
 
 ### 5.2 Euro
 
@@ -329,7 +329,7 @@ Per il primo prototipo:
 | Bonus di iscrizione | immediato (€20) |
 | Accredito della quota mensile | al cambio mese (€40 per iscritto) |
 
-Il mese di gioco dura 60 secondi e il calendario scorre da Gennaio a Dicembre, ricominciando poi da Gennaio senza un contatore degli anni. Gli altri tempi devono essere configurabili dai dati e non scritti direttamente nella logica.
+Il mese di gioco dura 60 secondi e il calendario scorre da Gennaio a Dicembre. La formazione segue invece l'anno scolastico Settembre–Giugno: Luglio e Agosto sono pausa estiva e a Settembre inizia un nuovo anno scolastico. Gli altri tempi devono essere configurabili dai dati e non scritti direttamente nella logica.
 
 ### 7.3 Formule di conversione
 
@@ -399,7 +399,7 @@ Non esiste un limite numerico separato agli eventi contemporanei. Il giocatore p
 
 Le nuove spade possono essere acquistate dall'area Attività tramite **LamaDiLuce (Abridge S.r.l.)**, partner tecnico e fornitore ufficiale LudoSport. Il riferimento di gioco è la **Polaris EVO Basic combat-ready** a €330: costruzione modulare, lama autorizzata per pratica ed eventi ufficiali e marcatura dell'anno di produzione. L'acquisto è immediato per non introdurre microgestione logistica; la presentazione conserva un tono goliardico senza alterare i riferimenti reali del produttore.
 
-La fama della scuola, misurata attraverso gli iscritti attivi, sblocca progressivamente cinque tier di potenzialità: **Molto bassa**, **Bassa**, **Media**, **Alta** e **Altissima**. All'inizio sono visibili soltanto Sparring e Volantinaggio; l'interfaccia anticipa esclusivamente il prossimo sblocco e non mostra previsioni numeriche sui contatti.
+La fama della scuola è misurata attraverso il **record massimo di iscritti attivi mai raggiunto** e sblocca progressivamente cinque tier di potenzialità: **Molto bassa**, **Bassa**, **Media**, **Alta** e **Altissima**. Il record non diminuisce quando alcuni iscritti lasciano la scuola: se la scuola raggiunge 100 iscritti e torna a 70, la fama resta 100 fino al superamento di quel picco. All'inizio sono visibili soltanto Sparring e Volantinaggio; l'interfaccia anticipa esclusivamente il prossimo sblocco e non mostra previsioni numeriche sui contatti.
 
 | Evento | Sblocco | Costo | Impiegati | Spade | Potenzialità |
 |---|---:|---:|---:|---:|---:|
@@ -470,7 +470,7 @@ Questa situazione è intenzionale e rappresenta il principale collo di bottiglia
 
 ### 9.1 Reclutamento
 
-Ogni nuovo iscritto ha una probabilità rara e casuale di essere un **Iscritto volenteroso**. Questi iscritti possono essere assegnati come Collaboratori delle Onde. La probabilità iniziale consigliata per il prototipo è **2%**, da validare con i test.
+Ogni nuovo iscritto ha una probabilità rara e casuale di essere un **Iscritto volenteroso**. Gli iscritti volenterosi diventano Collaboratori delle Onde soltanto dopo aver completato la **Forma 7**. Gli iscritti comuni possono completare lo stesso percorso, ma non diventano collaboratori. I Leggendari sono collaboratori protetti fin dall'iscrizione.
 
 La probabilità può aumentare con:
 
@@ -507,6 +507,7 @@ Regole:
 | Lezioni in palestra | aumenta la probabilità di iscrizione finale |
 | Social | genera interesse e contatti nel tempo |
 | Attrezzatura | controlla e ripristina le spade |
+| Istruttore | insegna le Forme già attestate agli iscritti, una persona alla volta |
 | Coordinamento | funzione futura, non inclusa nell'MVP |
 
 ### 9.4 Scrittura automatica
@@ -555,10 +556,51 @@ Nomi e numeri sono sufficienti nella prima versione; gli effetti ludici non devo
 
 Regole:
 
-- un collaboratore può conoscere più Forme;
+- ogni iscritto può conoscere più Forme;
+- ogni iscritto o collaboratore può iniziare al massimo una Forma per anno scolastico;
+- le Forme possono essere insegnate da Settembre a Giugno; Luglio e Agosto sono pausa estiva;
+- a Settembre inizia un nuovo anno scolastico e torna disponibile una nuova formazione;
 - l'eventuale accesso a più rami 3/4/5 resta configurabile;
 - la formazione richiede Euro e/o tempo, ma non livelli personali;
 - le descrizioni definitive dovranno usare terminologia LudoSport approvata.
+
+### 9.7 Istruttori e attestati
+
+Un Collaboratore delle Onde può essere assegnato al ruolo di **Istruttore**. Non esiste un corso separato per ottenere il ruolo: l'abilitazione è legata alle singole Forme numerate e consiste esclusivamente nel pagamento del relativo attestato.
+
+Regole:
+
+- un Istruttore può insegnare soltanto le Forme che ha già completato e per le quali possiede l'attestato;
+- ogni Istruttore segue una sola persona alla volta;
+- un iscritto o un collaboratore non istruttore può iniziare una Forma soltanto se è disponibile un Istruttore attestato per quella Forma;
+- quando un collaboratore viene assegnato per la prima volta al ruolo, tutte le Forme già concluse e non ancora attestate vengono convertite insieme;
+- il conguaglio di conversione è pari al **50% del costo base** di ciascuna Forma da attestare e viene pagato al momento dell'assegnazione;
+- se gli Euro disponibili non coprono l'intero conguaglio, l'assegnazione non avviene;
+- finché resta assegnato come Istruttore, ogni nuova Forma gli costa il **150% del costo base**; il prezzo maggiorato comprende automaticamente il nuovo attestato;
+- lasciare il ruolo non annulla gli attestati già pagati; una futura riassegnazione addebita soltanto le Forme apprese nel frattempo e non ancora convertite;
+- i Corsi X e Y non sono Forme numerate, non richiedono attestato e mantengono il loro costo base.
+
+### 9.8 Abbandono degli iscritti ignorati
+
+All'inizio di ogni nuovo anno scolastico, a Settembre, un iscritto ordinario che ha trascorso l'intero anno scolastico nella scuola senza iniziare alcuna formazione può lasciare la scuola. Sono sempre esclusi dal controllo:
+
+- i Leggendari;
+- i Collaboratori delle Onde;
+- gli iscritti entrati a anno già iniziato;
+- chi ha iniziato una formazione durante l'anno, anche se non l'ha ancora completata.
+
+La probabilità annuale dipende dalla Forma numerata più alta completata. I Corsi X e Y non riducono da soli il rischio.
+
+| Forma più alta | Probabilità annuale di abbandono |
+|---|---:|
+| Nessuna Forma | 80% |
+| Forma 1 | 65% |
+| Forma 2 | 50% |
+| Forma 3 | 35% |
+| Forma 4 | 25% |
+| Forma 5 | 15% |
+| Forma 6 | 10% |
+| Forma 7 | 5% |
 
 ---
 
@@ -1179,7 +1221,7 @@ Il riepilogo mostra:
 - iscrizione dopo prova in palestra: 50% provvisorio;
 - bonus immediato per ogni nuova iscrizione: €20;
 - quota ricorrente: €40 per iscritto attivo a ogni mese di gioco;
-- durata di un mese di gioco: 60 secondi, ciclo Gennaio–Dicembre senza conteggio degli anni;
+- durata di un mese di gioco: 60 secondi, ciclo Gennaio–Dicembre e anno scolastico Settembre–Giugno;
 - il primo iscritto può essere assistito dal tutorial per evitare sfortuna estrema;
 - il primo Iscritto volenteroso può essere garantito entro i primi iscritti;
 - il primo evento e il primo sparring sono gratuiti e guidati.

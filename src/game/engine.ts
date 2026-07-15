@@ -2,7 +2,14 @@ import { EMAIL_TEMPLATES } from "../content/emailTemplates";
 import { getEmailPresentationLevel } from "../content/emailPresentation";
 import { getNewAchievements } from "../content/achievements";
 import { getAcquisitionEventDefinition } from "../content/events";
-import { canTrainForm, getCollaboratorProductivity, getFormDefinition } from "../content/forms";
+import {
+  canTrainForm,
+  getCollaboratorProductivity,
+  getFormDefinition,
+  getInstructorConversionCost,
+  getInstructorFormCost,
+  isInstructorForm,
+} from "../content/forms";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import { createRandomProspect } from "../content/prospectDirectory";
 import { PERSON_RARITIES } from "../content/rarities";
@@ -20,17 +27,23 @@ import {
   getUpgradeDefinition,
   getUpgradeEffectTotal,
 } from "../content/upgrades";
-import { getGameYear } from "./calendar";
+import { getSchoolYear, getSchoolYearStartMonth, isSummerBreak } from "./calendar";
 import { GAME_CONFIG } from "./config";
 import { addInboxMessage } from "./messages";
 import {
   getEmailBookingChance,
   getEnrollmentChance,
   getEventFunnelOutcome,
+  getMemberAnnualDepartureChance,
   getWritingPower,
 } from "./formulas";
 import { nextRandom, randomBetween } from "./random";
-import { selectActiveEmail, selectAvailableEventMembers } from "./selectors";
+import {
+  selectActiveEmail,
+  selectAvailableEventMembers,
+  selectAvailableInstructor,
+  selectBusyInstructorIds,
+} from "./selectors";
 import type {
   CampaignEmail,
   Contact,
@@ -224,6 +237,7 @@ export function createInitialState(
       motto: "Ogni onda comincia da un movimento",
       specialization: "generale",
       activeMembers: 0,
+      peakActiveMembers: 0,
       historicMembers: 0,
       euros: 0,
       currentMonth: 1,
@@ -265,6 +279,7 @@ export function createInitialState(
       trialsCompleted: 0,
       contactsLost: 0,
       membersEnrolled: 0,
+      membersDeparted: 0,
       eurosEarned: 0,
       contactsAcquired: 0,
       peopleMet: 0,
@@ -385,6 +400,7 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
     displayName: `${contact.firstName} ${contact.lastName}`,
     joinedAt: now,
     forms: contact.forms,
+    instructorForms: [],
     assignment: null,
     rarity: contact.rarity,
     specialProfileId: contact.specialProfileId,
@@ -406,7 +422,7 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
     nextState,
     now + 1,
     "Nuovo collaboratore disponibile",
-    `${collaborator.displayName} è disponibile per Redazione, Eventi, Lezioni, Social o Attrezzatura.${power}`,
+    `${collaborator.displayName} è disponibile per Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.${power}`,
   );
 }
 
@@ -604,6 +620,7 @@ function resolveTrial(
         ? {
             ...contact,
             status: enrolled ? "enrolled" : "lost",
+            enrolledMonth: enrolled ? state.school.currentMonth : undefined,
           }
         : contact,
     ),
@@ -623,6 +640,10 @@ function resolveTrial(
     school: {
       ...nextState.school,
       activeMembers: nextState.school.activeMembers + 1,
+      peakActiveMembers: Math.max(
+        nextState.school.peakActiveMembers,
+        nextState.school.activeMembers + 1,
+      ),
       historicMembers: nextState.school.historicMembers + 1,
       euros: nextState.school.euros + enrollmentBonus,
     },
@@ -645,30 +666,98 @@ function resolveTrial(
     : nextState;
 }
 
+function processMemberDepartures(
+  state: GameState,
+  completedSchoolYear: number,
+  now: number,
+): GameState {
+  const collaboratorContactIds = new Set(
+    state.collaborators.map((collaborator) => collaborator.contactId),
+  );
+  const firstMonthOfCompletedYear = getSchoolYearStartMonth(completedSchoolYear);
+  const eligibleMembers = state.contacts.filter((contact) =>
+    contact.status === "enrolled" &&
+    contact.rarity !== "legendary" &&
+    !collaboratorContactIds.has(contact.id) &&
+    (contact.enrolledMonth ?? state.school.currentMonth) <= firstMonthOfCompletedYear &&
+    contact.lastFormTrainingYear !== completedSchoolYear
+  );
+  if (eligibleMembers.length === 0) return state;
+
+  let nextSeed = state.randomSeed;
+  const departedIds = new Set<string>();
+  for (const member of eligibleMembers) {
+    const [roll, seedAfterRoll] = nextRandom(nextSeed);
+    nextSeed = seedAfterRoll;
+    if (roll < getMemberAnnualDepartureChance(member.forms)) departedIds.add(member.id);
+  }
+  if (departedIds.size === 0) return { ...state, randomSeed: nextSeed };
+
+  const departed = eligibleMembers.filter((member) => departedIds.has(member.id));
+  const names = departed
+    .slice(0, 3)
+    .map((member) => `${member.firstName} ${member.lastName}`)
+    .join(", ");
+  const others = departed.length > 3 ? ` e altri ${departed.length - 3}` : "";
+  const updated: GameState = {
+    ...state,
+    randomSeed: nextSeed,
+    contacts: state.contacts.map((contact) =>
+      departedIds.has(contact.id)
+        ? { ...contact, status: "departed", training: undefined }
+        : contact,
+    ),
+    school: {
+      ...state.school,
+      activeMembers: Math.max(0, state.school.activeMembers - departed.length),
+    },
+    statistics: {
+      ...state.statistics,
+      membersDeparted: state.statistics.membersDeparted + departed.length,
+    },
+  };
+  return addMessage(
+    updated,
+    now,
+    departed.length === 1
+      ? "Un iscritto ha lasciato la scuola"
+      : `${departed.length} iscritti hanno lasciato la scuola`,
+    `${names}${others} ${departed.length === 1 ? "ha" : "hanno"} lasciato la scuola dopo un anno senza formazione. Ogni Forma completata riduce questo rischio.`,
+    "neutral",
+  );
+}
+
 function collectFees(state: GameState, now: number, gainMultiplier: number): GameState {
   if (now < state.school.nextFeeAt) return state;
   const periods = Math.floor((now - state.school.nextFeeAt) / GAME_CONFIG.gameMonthMs) + 1;
   const networkMultiplier = 1 + state.network.schools.length * GAME_CONFIG.prestigeBonusPerSchool;
-  const earned = scaleCurrencyGain((
-    periods *
-    (state.school.activeMembers * GAME_CONFIG.monthlyMemberFee +
-      state.network.schools.length * GAME_CONFIG.networkIncomePerSchool) *
-    (1 + getUpgradeEffectTotal(state.upgrades, "incomeMultiplier")) *
-    networkMultiplier
-  ), gainMultiplier);
-  return {
-    ...state,
-    school: {
-      ...state.school,
-      euros: Math.round((state.school.euros + earned) * 100) / 100,
-      currentMonth: state.school.currentMonth + periods,
-      nextFeeAt: state.school.nextFeeAt + periods * GAME_CONFIG.gameMonthMs,
-    },
-    statistics: {
-      ...state.statistics,
-      eurosEarned: Math.round((state.statistics.eurosEarned + earned) * 100) / 100,
-    },
-  };
+  let nextState = state;
+  for (let period = 0; period < periods; period += 1) {
+    const completedSchoolYear = getSchoolYear(nextState.school.currentMonth);
+    const earned = scaleCurrencyGain((
+      (nextState.school.activeMembers * GAME_CONFIG.monthlyMemberFee +
+        nextState.network.schools.length * GAME_CONFIG.networkIncomePerSchool) *
+      (1 + getUpgradeEffectTotal(nextState.upgrades, "incomeMultiplier")) *
+      networkMultiplier
+    ), gainMultiplier);
+    nextState = {
+      ...nextState,
+      school: {
+        ...nextState.school,
+        euros: Math.round((nextState.school.euros + earned) * 100) / 100,
+        currentMonth: nextState.school.currentMonth + 1,
+        nextFeeAt: nextState.school.nextFeeAt + GAME_CONFIG.gameMonthMs,
+      },
+      statistics: {
+        ...nextState.statistics,
+        eurosEarned: Math.round((nextState.statistics.eurosEarned + earned) * 100) / 100,
+      },
+    };
+    if (getSchoolYear(nextState.school.currentMonth) > completedSchoolYear) {
+      nextState = processMemberDepartures(nextState, completedSchoolYear, now + period);
+    }
+  }
+  return nextState;
 }
 
 function startAcquisitionEvent(
@@ -679,7 +768,7 @@ function startAcquisitionEvent(
   const definition = getAcquisitionEventDefinition(definitionId);
   if (!definition) return state;
   if (definitionId === "park-sparring" && now < state.activities.nextSparringAt) return state;
-  if (state.school.activeMembers < definition.unlockMembers) return state;
+  if (state.school.peakActiveMembers < definition.unlockMembers) return state;
   if (selectAvailableEventMembers(state) < definition.requiredMembers) return state;
   if (state.equipment.availableSwords < definition.requiredSwords) return state;
   if (state.school.euros < definition.cost) return state;
@@ -852,17 +941,51 @@ function assignCollaborator(
   state: GameState,
   collaboratorId: string,
   assignment: CollaboratorAssignment,
+  now: number,
 ): GameState {
   if (assignment === "social" && !state.unlocks.social) return state;
-  if (!state.collaborators.some((collaborator) => collaborator.id === collaboratorId)) {
-    return state;
+  const collaborator = state.collaborators.find((candidate) => candidate.id === collaboratorId);
+  if (!collaborator) return state;
+  if (assignment !== "instructor") {
+    return {
+      ...state,
+      collaborators: state.collaborators.map((candidate) =>
+        candidate.id === collaboratorId ? { ...candidate, assignment } : candidate,
+      ),
+    };
   }
-  return {
+
+  const conversionCost = getInstructorConversionCost(collaborator);
+  if (state.school.euros < conversionCost) return state;
+  const newlyCertifiedForms = collaborator.forms.filter((formId) =>
+    isInstructorForm(formId) && !collaborator.instructorForms.includes(formId)
+  );
+  const nextState: GameState = {
     ...state,
+    school: {
+      ...state.school,
+      euros: Math.round((state.school.euros - conversionCost) * 100) / 100,
+    },
     collaborators: state.collaborators.map((collaborator) =>
-      collaborator.id === collaboratorId ? { ...collaborator, assignment } : collaborator,
+      collaborator.id === collaboratorId
+        ? {
+            ...collaborator,
+            assignment,
+            instructorForms: [...collaborator.instructorForms, ...newlyCertifiedForms],
+            training: collaborator.training && isInstructorForm(collaborator.training.formId)
+              ? { ...collaborator.training, includesInstructorCertification: true }
+              : collaborator.training,
+          }
+        : collaborator,
     ),
   };
+  if (conversionCost === 0) return nextState;
+  return addMessage(
+    nextState,
+    now,
+    "Attestati da istruttore conseguiti",
+    `${collaborator.displayName} ha completato la conversione da Istruttore pagando il conguaglio di ${euroFormatter.format(conversionCost)} per le Forme concluse o già in corso.`,
+  );
 }
 
 function startFormTraining(
@@ -872,6 +995,7 @@ function startFormTraining(
   now: number,
 ): GameState {
   if (!state.unlocks.forms) return state;
+  if (isSummerBreak(state.school.currentMonth)) return state;
   const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
   const member = state.contacts.find((candidate) =>
     candidate.id === personId &&
@@ -880,21 +1004,37 @@ function startFormTraining(
   );
   const student = collaborator ?? member;
   const definition = getFormDefinition(formId);
-  const currentYear = getGameYear(state.school.currentMonth);
+  const currentYear = getSchoolYear(state.school.currentMonth);
+  const instructorTrack = Boolean(
+    collaborator?.assignment === "instructor" && isInstructorForm(formId),
+  );
+  const instructor = !instructorTrack && isInstructorForm(formId)
+    ? selectAvailableInstructor(state, formId, personId)
+    : undefined;
+  const trainingCost = instructorTrack
+    ? getInstructorFormCost(definition?.cost ?? 0)
+    : definition?.cost ?? 0;
   if (
     !student ||
     !definition ||
     !canTrainForm(student, definition, currentYear) ||
-    state.school.euros < definition.cost
+    (instructorTrack && selectBusyInstructorIds(state).has(personId)) ||
+    (!instructorTrack && isInstructorForm(formId) && !instructor) ||
+    state.school.euros < trainingCost
   ) return state;
   const training = {
     formId,
     startedAt: now,
     completesAt: now + definition.durationMs,
+    instructorId: instructor?.id,
+    includesInstructorCertification: instructorTrack || undefined,
   };
   return {
     ...state,
-    school: { ...state.school, euros: state.school.euros - definition.cost },
+    school: {
+      ...state.school,
+      euros: Math.round((state.school.euros - trainingCost) * 100) / 100,
+    },
     contacts: member
       ? state.contacts.map((candidate) => candidate.id === member.id
         ? { ...candidate, training, lastFormTrainingYear: currentYear }
@@ -926,7 +1066,14 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
       : state.contacts,
     collaborators: collaborator
       ? state.collaborators.map((candidate) => candidate.id === collaborator.id
-        ? { ...candidate, forms: completedForms, training: undefined }
+        ? {
+            ...candidate,
+            forms: completedForms,
+            instructorForms: student.training?.includesInstructorCertification
+              ? [...candidate.instructorForms, completedFormId]
+              : candidate.instructorForms,
+            training: undefined,
+          }
         : candidate)
       : state.collaborators,
     statistics: {
@@ -943,7 +1090,7 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
   if (
     !member ||
     collaborator ||
-    completedFormId !== "course-y" ||
+    completedFormId !== "form-7" ||
     member.rarity !== "rare"
   ) return nextState;
   const qualifiedMember = nextState.contacts.find((contact) => contact.id === member.id);
@@ -1480,7 +1627,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       nextState = buyOfficialSword(state);
       break;
     case "ASSIGN_COLLABORATOR":
-      nextState = assignCollaborator(state, action.collaboratorId, action.assignment);
+      nextState = assignCollaborator(state, action.collaboratorId, action.assignment, action.now);
       break;
     case "RUN_SOCIAL_CAMPAIGN":
       nextState = runSocialCampaign(state, action.now);

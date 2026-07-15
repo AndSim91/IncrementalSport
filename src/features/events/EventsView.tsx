@@ -31,11 +31,11 @@ export function EventsView({
   const runningEvents = state.acquisitionEvents.filter((event) => event.status === "running");
   const availableMembers = selectAvailableEventMembers(state);
   const visibleEvents = ACQUISITION_EVENTS.filter((definition) =>
-    definition.unlockMembers <= state.school.activeMembers ||
+    definition.unlockMembers <= state.school.peakActiveMembers ||
     runningEvents.some((event) => event.definitionId === definition.id)
   );
   const nextLockedEvent = ACQUISITION_EVENTS.find(
-    (definition) => definition.unlockMembers > state.school.activeMembers,
+    (definition) => definition.unlockMembers > state.school.peakActiveMembers,
   );
   const refreshIntervalMs = runningEvents.length > 0 ? 100 : 1_000;
   useEffect(() => {
@@ -51,7 +51,7 @@ export function EventsView({
         <div><Icon name="people" /><span><strong>{availableMembers}/{state.school.activeMembers} iscritti disponibili</strong><small>Gli iscritti impegnati tornano disponibili a fine evento.</small></span></div>
         <div><Icon name="settings" /><span><strong>{state.equipment.availableSwords}/{state.equipment.totalSwords} spade disponibili</strong><small>Usura attrezzatura {state.equipment.wear}%</small></span></div>
       </div>
-      <div className="event-fame-note"><Icon name="flag" /><span><strong>Fama della scuola: {memberRequirement(state.school.activeMembers)}</strong><small>{nextLockedEvent ? `Prossimo sblocco: ${nextLockedEvent.title} a ${nextLockedEvent.unlockMembers} iscritti.` : "Tutti gli eventi nazionali sono disponibili."}</small></span></div>
+      <div className="event-fame-note"><Icon name="flag" /><span><strong>Fama della scuola: {state.school.peakActiveMembers}</strong><small>Equivalente al numero massimo di iscritti storici della scuola</small><small>{nextLockedEvent ? `Prossimo sblocco: ${nextLockedEvent.title} a ${nextLockedEvent.unlockMembers} iscritti massimi.` : "Tutti gli eventi nazionali sono disponibili."}</small></span></div>
       <section className="event-list">
         {visibleEvents.map((definition) => {
           const matching = state.acquisitionEvents.find(

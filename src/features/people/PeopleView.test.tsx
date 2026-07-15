@@ -17,6 +17,7 @@ describe("PeopleView", () => {
           displayName: "Andrea Simonazzi",
           joinedAt: 1_000,
           forms: ["form-1" as const, "course-x" as const, "form-2" as const, "course-y" as const],
+          instructorForms: [],
           assignment: null,
           rarity: "legendary" as const,
           specialProfileId: "andrea-simonazzi" as const,
@@ -55,13 +56,43 @@ describe("PeopleView", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
     const displayName = `${enrolled.firstName} ${enrolled.lastName}`;
+    const instructor = {
+      id: "instructor-form-1",
+      contactId: initial.contacts[1].id,
+      displayName: "Istruttore Forma 1",
+      joinedAt: 1_000,
+      forms: ["form-1" as const],
+      instructorForms: ["form-1" as const],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+    };
     const onStartTraining = vi.fn();
-    render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, euros: 20 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={onStartTraining} />);
+    render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, euros: 20 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), collaborators: [instructor], unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={onStartTraining} />);
 
     fireEvent.click(screen.getByRole("tab", { name: /Iscritti/ }));
+    expect(screen.getByText("Rischio annuo se ignorato: 80%")).toBeVisible();
     fireEvent.change(screen.getByRole("combobox", { name: `Formazione per ${displayName}` }), { target: { value: "form-1" } });
     fireEvent.click(screen.getByRole("button", { name: "Avvia" }));
 
     expect(onStartTraining).toHaveBeenCalledWith(enrolled.id, "form-1");
+  });
+
+  it("shows the summer break instead of allowing Form training in July", () => {
+    const initial = createInitialState(1_000);
+    const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
+    render(<PeopleView
+      state={{
+        ...initial,
+        school: { ...initial.school, activeMembers: 1, currentMonth: 7 },
+        contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact),
+        unlocks: { ...initial.unlocks, forms: true },
+      }}
+      onAssign={() => undefined}
+      onStartTraining={() => undefined}
+    />);
+
+    expect(screen.getByText("Pausa estiva")).toBeVisible();
+    expect(screen.getByText("Le Forme riprendono a settembre")).toBeVisible();
+    expect(screen.queryByRole("combobox", { name: /Formazione per/ })).not.toBeInTheDocument();
   });
 });

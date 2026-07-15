@@ -9,6 +9,7 @@ export interface OfflineSummary {
   trialsBooked: number;
   trialsCompleted: number;
   membersEnrolled: number;
+  membersDeparted: number;
   collaboratorsRecruited: number;
   eurosEarned: number;
   contactsAcquired: number;
@@ -55,6 +56,7 @@ export function simulateOfflineProgress(
     trialsBooked: processed.statistics.trialsBooked - before.trialsBooked,
     trialsCompleted: processed.statistics.trialsCompleted - before.trialsCompleted,
     membersEnrolled: processed.statistics.membersEnrolled - before.membersEnrolled,
+    membersDeparted: processed.statistics.membersDeparted - before.membersDeparted,
     collaboratorsRecruited:
       processed.statistics.collaboratorsRecruited - before.collaboratorsRecruited,
     eurosEarned: processed.statistics.eurosEarned - before.eurosEarned,
@@ -73,7 +75,7 @@ export function simulateOfflineProgress(
     id: `offline-${now.toString(36)}`,
     sender: "Segreteria automatica",
     subject: "Riepilogo attività offline",
-    preview: `${hours} h ${minutes} min elaborati${summary.capped ? ` (limite di ${Math.round(offlineLimitMs / 3_600_000)} ore)` : ""}. Email ${summary.emailsCompleted}, prove ${summary.trialsCompleted}, iscritti ${summary.membersEnrolled}, collaboratori ${summary.collaboratorsRecruited}, entrate € ${Math.round(summary.eurosEarned)}, contatti ${summary.contactsAcquired}.${blocked}`,
+    preview: `${hours} h ${minutes} min elaborati${summary.capped ? ` (limite di ${Math.round(offlineLimitMs / 3_600_000)} ore)` : ""}. Email ${summary.emailsCompleted}, prove ${summary.trialsCompleted}, iscritti ${summary.membersEnrolled}, abbandoni ${summary.membersDeparted}, collaboratori ${summary.collaboratorsRecruited}, entrate € ${Math.round(summary.eurosEarned)}, contatti ${summary.contactsAcquired}.${blocked}`,
     receivedAt: now,
     tone: "system",
     unread: true,

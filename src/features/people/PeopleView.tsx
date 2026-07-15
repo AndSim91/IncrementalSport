@@ -4,11 +4,15 @@ import {
   getAvailableForms,
   getCollaboratorBonusSummary,
   getFormDefinition,
+  getInstructorConversionCost,
+  getInstructorFormCost,
+  isInstructorForm,
   type FormStudent,
 } from "../../content/forms";
 import { PERSON_RARITIES } from "../../content/rarities";
-import { getGameYear } from "../../game/calendar";
-import { getEnrollmentChance } from "../../game/formulas";
+import { getSchoolYear, isSummerBreak } from "../../game/calendar";
+import { getEnrollmentChance, getMemberAnnualDepartureChance } from "../../game/formulas";
+import { selectAvailableInstructor, selectBusyInstructorIds } from "../../game/selectors";
 import type {
   CollaboratorAssignment,
   Contact,
@@ -25,6 +29,7 @@ const assignmentLabels: Record<Exclude<CollaboratorAssignment, null>, string> = 
   lessons: "Lezioni in palestra",
   social: "Social",
   equipment: "Attrezzatura",
+  instructor: "Istruttore",
 };
 
 const statusLabels: Record<Contact["status"], string> = {
@@ -33,6 +38,7 @@ const statusLabels: Record<Contact["status"], string> = {
   invited: "Invitato",
   trialScheduled: "Prova prenotata",
   enrolled: "Iscritto",
+  departed: "Ha lasciato la scuola",
   lost: "Perso",
 };
 
@@ -40,6 +46,7 @@ const percent = new Intl.NumberFormat("it-IT", {
   style: "percent",
   maximumFractionDigits: 1,
 });
+const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 
 export function PeopleView({
   state,
@@ -68,20 +75,33 @@ export function PeopleView({
       {tab === "collaborators" ? (
         <section className="collaborator-list" aria-label="Collaboratori delle Onde">
           {state.collaborators.length === 0 ? (
-            <div className="people-empty"><Icon name="contact" /><strong>Nessun collaboratore disponibile</strong><span>Rari e Leggendari diventano collaboratori solo dopo il Corso Y.</span></div>
+            <div className="people-empty"><Icon name="contact" /><strong>Nessun collaboratore disponibile</strong><span>I Rari diventano collaboratori dopo la Forma 7; i Leggendari lo sono dall'iscrizione.</span></div>
           ) : state.collaborators.map((collaborator) => {
             const contact = state.contacts.find((candidate) => candidate.id === collaborator.contactId);
             const bonusSummary = getCollaboratorBonusSummary(collaborator);
+            const instructorConversionCost = getInstructorConversionCost(collaborator);
             return (
               <article className="collaborator-row" key={collaborator.id}>
                 <div className={`person-avatar rarity-${collaborator.rarity}`}>{collaborator.displayName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
                 <div className="collaborator-copy">
                   <PersonName displayName={collaborator.displayName} rarity={collaborator.rarity} />
                   <span className={`rarity-address rarity-${collaborator.rarity}`}>{contact?.email}</span>
-                  <small>{collaborator.rarity === "legendary" ? "Livello Leggendario · Qualificato al Corso Y · Potere VIP ×2" : "Livello Raro · Qualificato al Corso Y"}</small>
+                  <small>{collaborator.rarity === "legendary" ? "Livello Leggendario · Potere VIP ×2" : "Livello Raro · Forma 7 completata"}</small>
                   <small className="form-bonus-summary">{bonusSummary || "Nessun bonus d'arma attivo"}</small>
+                  {collaborator.assignment === "instructor" || collaborator.instructorForms.length > 0
+                    ? <small>Attestati da istruttore: {collaborator.instructorForms.length}</small>
+                    : null}
                 </div>
-                <label><span>Assegnazione</span><select aria-label="Assegnazione" value={collaborator.assignment ?? ""} onChange={(event) => onAssign(collaborator.id, (event.target.value || null) as CollaboratorAssignment)}><option value="">Non assegnato</option>{Object.entries(assignmentLabels).map(([value, label]) => <option value={value} key={value} disabled={value === "social" && !state.unlocks.social}>{label}{value === "social" && !state.unlocks.social ? " — si sblocca con 10 iscritti" : ""}</option>)}</select></label>
+                <label><span>Assegnazione</span><select aria-label="Assegnazione" value={collaborator.assignment ?? ""} onChange={(event) => onAssign(collaborator.id, (event.target.value || null) as CollaboratorAssignment)}><option value="">Non assegnato</option>{Object.entries(assignmentLabels).map(([value, label]) => {
+                  const lacksInstructorFunds = value === "instructor" && state.school.euros < instructorConversionCost;
+                  const disabled = (value === "social" && !state.unlocks.social) || lacksInstructorFunds;
+                  const suffix = value === "social" && !state.unlocks.social
+                    ? " — si sblocca con 10 iscritti"
+                    : value === "instructor" && instructorConversionCost > 0
+                      ? ` — attestati ${euro.format(instructorConversionCost)}`
+                      : "";
+                  return <option value={value} key={value} disabled={disabled}>{label}{suffix}</option>;
+                })}</select></label>
                 <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />
               </article>
             );
@@ -97,7 +117,14 @@ export function PeopleView({
                 <PersonName displayName={`${contact.firstName} ${contact.lastName}`} rarity={contact.rarity} />
                 <span><span className={`rarity-address rarity-${contact.rarity}`}>{contact.email}</span></span>
                 <span>{formatFormPath(contact.forms)}</span>
-                <span>{isCollaborator ? "Collaboratore" : statusLabels[contact.status]}</span>
+                <span className="member-status">
+                  <span>{isCollaborator ? "Collaboratore" : statusLabels[contact.status]}</span>
+                  <small>{isCollaborator || contact.rarity === "legendary"
+                    ? "Non soggetto ad abbandono"
+                    : contact.lastFormTrainingYear === getSchoolYear(state.school.currentMonth)
+                      ? "Seguito quest'anno · nessun rischio"
+                      : `Rischio annuo se ignorato: ${percent.format(getMemberAnnualDepartureChance(contact.forms))}`}</small>
+                </span>
                 <div className="member-training-cell">
                   {isCollaborator
                     ? <small>Gestisci dal pannello Collaboratori</small>
@@ -128,9 +155,9 @@ function RarityOverview({ state }: { state: GameState }) {
   return (
     <section className="rarity-overview" aria-label="Sistema di rarità">
       <div><strong>Probabilità e rarità</strong><span>Valori base ed efficacia attuale con i tuoi potenziamenti</span></div>
-      <article><strong>Comune</strong><span>Email lasciata: {percent.format(common.emailShareChance)}</span><span>Iscrizione: {percent.format(common.baseEnrollmentChance)} base · {percent.format(commonEnrollmentChance)} attuale</span><span>Non diventa mai collaboratore</span></article>
-      <article className="rare"><strong>Raro</strong><span>Comparsa: {percent.format(rare.queueAppearanceChance)} dei contatti non leggendari</span><span>Iscrizione: {percent.format(rare.baseEnrollmentChance)} base · {percent.format(rareEnrollmentChance)} attuale</span><span>Diventa collaboratore completando il Corso Y</span></article>
-      <article className="legendary"><strong>Leggendario</strong><span>Comparsa: {percent.format(legendary.queueAppearanceChance)} dalla 10ª email</span><span>Iscrizione: {percent.format(legendary.baseEnrollmentChance)} base · {percent.format(legendaryEnrollmentChance)} attuale · Andrea 100%</span><span>Collaboratore dopo il Corso Y · potere VIP ×2 · Forme 6 e 7</span></article>
+      <article><strong>Comune</strong><span>Email lasciata: {percent.format(common.emailShareChance)}</span><span>Iscrizione: {percent.format(common.baseEnrollmentChance)} base · {percent.format(commonEnrollmentChance)} attuale</span><span>Può arrivare alla Forma 7, ma non diventa collaboratore</span></article>
+      <article className="rare"><strong>Raro</strong><span>Comparsa: {percent.format(rare.queueAppearanceChance)} dei contatti non leggendari</span><span>Iscrizione: {percent.format(rare.baseEnrollmentChance)} base · {percent.format(rareEnrollmentChance)} attuale</span><span>Diventa collaboratore completando la Forma 7</span></article>
+      <article className="legendary"><strong>Leggendario</strong><span>Comparsa: {percent.format(legendary.queueAppearanceChance)} dalla 10ª email</span><span>Iscrizione: {percent.format(legendary.baseEnrollmentChance)} base · {percent.format(legendaryEnrollmentChance)} attuale · Andrea 100%</span><span>Collaboratore dall'iscrizione · potere VIP ×2 · non abbandona la scuola</span></article>
     </section>
   );
 }
@@ -159,7 +186,9 @@ function TrainingControl({
   const [now, setNow] = useState(() => Date.now());
   const [selectedFormId, setSelectedFormId] = useState<FormId | "">("");
   const hasTraining = Boolean(student.training);
-  const currentYear = getGameYear(state.school.currentMonth);
+  const currentYear = getSchoolYear(state.school.currentMonth);
+  const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
+  const busyInstructorIds = selectBusyInstructorIds(state);
   useEffect(() => {
     if (!hasTraining) return;
     const timer = window.setInterval(() => setNow(Date.now()), 100);
@@ -171,18 +200,42 @@ function TrainingControl({
   }
   if (student.training) {
     const definition = getFormDefinition(student.training.formId);
+    const instructor = student.training.instructorId
+      ? state.collaborators.find((candidate) => candidate.id === student.training?.instructorId)
+      : undefined;
     const duration = student.training.completesAt - student.training.startedAt;
     const progress = duration <= 0 ? 100 : Math.min(100, Math.max(0, Math.round(((now - student.training.startedAt) / duration) * 100)));
-    return <div className="training-progress"><span>{definition?.title}{definition?.branch ? ` — ${definition.branch}` : ""}</span><strong>{progress}%</strong><div role="progressbar" aria-label={`Formazione di ${displayName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div>;
+    return <div className="training-progress"><span>{definition?.title}{definition?.branch ? ` — ${definition.branch}` : ""}{instructor ? ` · con ${instructor.displayName}` : ""}{student.training.includesInstructorCertification ? " · attestato incluso" : ""}</span><strong>{progress}%</strong><div role="progressbar" aria-label={`Formazione di ${displayName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div>;
+  }
+  if (isSummerBreak(state.school.currentMonth)) {
+    return <div className="training-locked"><span>Pausa estiva</span><strong>Le Forme riprendono a settembre</strong></div>;
   }
   if (student.lastFormTrainingYear === currentYear) {
-    return <div className="training-locked"><span>Limite annuale raggiunto</span><strong>Prossima evoluzione nell'anno {currentYear + 1}</strong></div>;
+    return <div className="training-locked"><span>Limite annuale raggiunto</span><strong>Prossima evoluzione a settembre · anno scolastico {currentYear + 1}</strong></div>;
   }
 
-  const available = getAvailableForms(student, currentYear);
+  const academicallyAvailable = getAvailableForms(student, currentYear);
+  const available = academicallyAvailable.filter((definition) => {
+    if (!isInstructorForm(definition.id)) return true;
+    if (collaborator?.assignment === "instructor") {
+      return !busyInstructorIds.has(collaborator.id);
+    }
+    return Boolean(selectAvailableInstructor(state, definition.id, personId));
+  });
   const selected = selectedFormId ? getFormDefinition(selectedFormId) : undefined;
-  if (available.length === 0) {
-    return <div className="training-locked"><span>Formazione</span><strong>{student.rarity === "legendary" ? "Percorso completato" : "Percorso completato alla Forma 5"}</strong></div>;
+  if (academicallyAvailable.length === 0) {
+    return <div className="training-locked"><span>Formazione</span><strong>Percorso completato alla Forma 7</strong></div>;
   }
-  return <div className="training-control"><label><span>Prossima formazione · anno {currentYear}</span><select aria-label={`Formazione per ${displayName}`} value={selectedFormId} onChange={(event) => setSelectedFormId(event.target.value as FormId)}><option value="">Seleziona</option>{available.map((definition) => <option key={definition.id} value={definition.id}>{definition.title}{definition.branch ? ` — ${definition.branch}` : ""}{definition.bonusLabel ? ` · ${definition.bonusLabel}` : ""} · € {definition.cost}</option>)}</select></label><button type="button" disabled={!selected || state.school.euros < selected.cost} onClick={() => selected && onStartTraining(personId, selected.id)}>{selected && state.school.euros < selected.cost ? `Servono € ${selected.cost}` : "Avvia"}</button></div>;
+  if (available.length === 0) {
+    return <div className="training-locked"><span>Istruttore non disponibile</span><strong>Serve un Istruttore libero e attestato per questa Forma</strong></div>;
+  }
+  const selectedCost = selected && collaborator?.assignment === "instructor" && isInstructorForm(selected.id)
+    ? getInstructorFormCost(selected.cost)
+    : selected?.cost ?? 0;
+  return <div className="training-control"><label><span>Prossima formazione · anno scolastico {currentYear}</span><select aria-label={`Formazione per ${displayName}`} value={selectedFormId} onChange={(event) => setSelectedFormId(event.target.value as FormId)}><option value="">Seleziona</option>{available.map((definition) => {
+    const cost = collaborator?.assignment === "instructor" && isInstructorForm(definition.id)
+      ? getInstructorFormCost(definition.cost)
+      : definition.cost;
+    return <option key={definition.id} value={definition.id}>{definition.title}{definition.branch ? ` — ${definition.branch}` : ""}{definition.bonusLabel ? ` · ${definition.bonusLabel}` : ""} · {euro.format(cost)}{cost > definition.cost ? " · attestato incluso" : ""}</option>;
+  })}</select></label><button type="button" disabled={!selected || state.school.euros < selectedCost} onClick={() => selected && onStartTraining(personId, selected.id)}>{selected && state.school.euros < selectedCost ? `Servono ${euro.format(selectedCost)}` : "Avvia"}</button></div>;
 }

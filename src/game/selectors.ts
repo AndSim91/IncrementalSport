@@ -1,4 +1,4 @@
-import type { CampaignEmail, Contact, GameState, ScheduledTrial } from "./types";
+import type { CampaignEmail, Contact, FormId, GameState, ScheduledTrial } from "./types";
 import { GAME_CONFIG } from "./config";
 import { getUpgradeEffectTotal } from "../content/upgrades";
 
@@ -20,6 +20,32 @@ export function selectAvailableEventMembers(state: GameState): number {
     .filter((event) => event.status === "running")
     .reduce((total, event) => total + event.membersUsed, 0);
   return Math.max(0, state.school.activeMembers - assignedMembers);
+}
+
+export function selectBusyInstructorIds(state: GameState): Set<string> {
+  const busy = new Set<string>();
+  for (const contact of state.contacts) {
+    if (contact.training?.instructorId) busy.add(contact.training.instructorId);
+  }
+  for (const collaborator of state.collaborators) {
+    if (collaborator.training) busy.add(collaborator.id);
+    if (collaborator.training?.instructorId) busy.add(collaborator.training.instructorId);
+  }
+  return busy;
+}
+
+export function selectAvailableInstructor(
+  state: GameState,
+  formId: FormId,
+  studentId?: string,
+) {
+  const busyInstructorIds = selectBusyInstructorIds(state);
+  return state.collaborators.find((collaborator) =>
+    collaborator.id !== studentId &&
+    collaborator.assignment === "instructor" &&
+    collaborator.instructorForms.includes(formId) &&
+    !busyInstructorIds.has(collaborator.id)
+  );
 }
 
 export function selectUpcomingTrials(state: GameState): ScheduledTrial[] {

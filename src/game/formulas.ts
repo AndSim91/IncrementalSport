@@ -3,7 +3,7 @@ import type { AcquisitionEventDefinition } from "../content/events";
 import { getCollaboratorProductivity } from "../content/forms";
 import { PERSON_RARITIES } from "../content/rarities";
 import { GAME_CONFIG } from "./config";
-import type { GameState, PersonRarity } from "./types";
+import type { FormId, GameState, PersonRarity } from "./types";
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -82,4 +82,14 @@ export function getWritingPower(state: GameState) {
   const networkMultiplier = 1 + state.network.schools.length * GAME_CONFIG.prestigeBonusPerSchool;
   const specializationMultiplier = state.school.specialization === "redazione" ? 1.1 : 1;
   return localPower * networkMultiplier * specializationMultiplier;
+}
+
+const ANNUAL_DEPARTURE_CHANCE_BY_FORM = [0.8, 0.65, 0.5, 0.35, 0.25, 0.15, 0.1, 0.05] as const;
+
+export function getMemberAnnualDepartureChance(forms: FormId[]): number {
+  const highestForm = forms.reduce((highest, formId) => {
+    const match = /^form-(\d)/.exec(formId);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, 0);
+  return ANNUAL_DEPARTURE_CHANCE_BY_FORM[Math.min(7, highestForm)];
 }
