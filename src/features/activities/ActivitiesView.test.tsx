@@ -58,7 +58,7 @@ describe("ActivitiesView", () => {
     const onBuyOfficialSword = vi.fn();
     render(
       <ActivitiesView
-        state={{ ...initial, school: { ...initial.school, euros: 330 } }}
+        state={{ ...initial, school: { ...initial.school, euros: 330, peakActiveMembers: 15 } }}
         onMaintainEquipment={() => undefined}
         onBuyOfficialSword={onBuyOfficialSword}
         onRunSocialCampaign={() => undefined}
@@ -68,5 +68,16 @@ describe("ActivitiesView", () => {
     expect(screen.getByText("Fornitura ufficiale · LamaDiLuce")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Ordina 1 Polaris/ }));
     expect(onBuyOfficialSword).toHaveBeenCalledOnce();
+  });
+
+  it("keeps later operational panels hidden until they become relevant", () => {
+    const initial = createInitialState(1_000);
+    render(<ActivitiesView state={initial} onMaintainEquipment={() => undefined} onBuyOfficialSword={() => undefined} onRunSocialCampaign={() => undefined} />);
+
+    expect(screen.queryByText("Fornitura ufficiale · LamaDiLuce")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Assegnazioni collaboratori" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Campagne Social" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Traguardi" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Cronaca della scuola" })).not.toBeInTheDocument();
   });
 });

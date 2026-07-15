@@ -559,7 +559,8 @@ describe("game engine", () => {
     expect(completed.acquisitionEvents[0].status).toBe("completed");
     expect(completed.statistics.eventsCompleted).toBe(1);
     expect(completed.contacts).toHaveLength(state.contacts.length);
-    expect(completed.messages).toBe(messagesBeforeCompletion);
+    expect(completed.messages).toHaveLength(messagesBeforeCompletion.length + 1);
+    expect(completed.messages[0].subject).toBe("Attività operative disponibili");
   });
 
   it("requires enough school fame and euros for outdoor lessons", () => {

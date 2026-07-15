@@ -65,6 +65,13 @@ export function ActivitiesView({
     ["social", "Social"],
     ["collaborator", "Collaboratori"],
   ];
+  const showSupplier =
+    state.school.peakActiveMembers >= 15 ||
+    state.equipment.totalSwords > GAME_CONFIG.initialSwords;
+  const showCollaborators = state.unlocks.collaborators || state.collaborators.length > 0;
+  const earnedAchievements = ACHIEVEMENTS.filter((achievement) =>
+    state.achievements.includes(achievement.id),
+  );
 
   return (
     <main className="overview-view activities-view">
@@ -78,7 +85,7 @@ export function ActivitiesView({
         <div className="equipment-wear-label"><span>Usura complessiva</span><strong>{state.equipment.wear}%</strong></div>
         <div className="equipment-wear" role="progressbar" aria-label="Usura attrezzatura" aria-valuemin={0} aria-valuemax={100} aria-valuenow={state.equipment.wear}><span style={{ width: `${state.equipment.wear}%` }} /></div>
         <button className="maintenance-action" type="button" disabled={!canMaintain} onClick={onMaintainEquipment}>{maintenanceLabel}</button>
-        <div className="official-supplier">
+        {showSupplier ? <div className="official-supplier">
           <div>
             <strong>Fornitura ufficiale · LamaDiLuce</strong>
             <small>Polaris EVO Basic combat-ready · partner tecnico LudoSport</small>
@@ -86,10 +93,10 @@ export function ActivitiesView({
             <a href="https://lamadiluce.it/" target="_blank" rel="noreferrer">lamadiluce.it · Abridge S.r.l.</a>
           </div>
           <button type="button" disabled={!canBuyOfficialSword} onClick={onBuyOfficialSword}>{swordPurchaseLabel}</button>
-        </div>
+        </div> : null}
       </section>
 
-      <section className="automation-panel" aria-label="Assegnazioni collaboratori">
+      {showCollaborators ? <section className="automation-panel" aria-label="Assegnazioni collaboratori">
         <div className="automation-heading"><div><Icon name="people" /><span><strong>Collaboratori delle Onde</strong><small>{state.collaborators.length} disponibili · una assegnazione per persona</small></span></div><b>{state.statistics.automatedCharacters} caratteri automatici</b></div>
         <div className="assignment-grid">
           <Assignment label="Redazione" value={assigned("writing")} />
@@ -98,13 +105,13 @@ export function ActivitiesView({
           <Assignment label="Social" value={assigned("social")} />
           <Assignment label="Attrezzatura" value={assigned("equipment")} />
         </div>
-      </section>
+      </section> : null}
 
-      <section className={`social-panel${state.unlocks.social ? "" : " locked"}`} aria-label="Campagne Social">
-        <div><Icon name="contact" /><span><strong>Social</strong><small>{state.unlocks.social ? `${state.statistics.socialContacts} contatti raccolti online` : "La gestione Social diventa disponibile con 10 iscritti"}</small></span></div>
-        {state.unlocks.social ? <><div className="social-progress-label"><span>Prossimo contatto passivo</span><strong>{socialProgress}%</strong></div><div className="social-progress" role="progressbar" aria-label="Progresso contatto Social" aria-valuemin={0} aria-valuemax={100} aria-valuenow={socialProgress}><span style={{ width: `${socialProgress}%` }} /></div></> : null}
+      {state.unlocks.social ? <section className="social-panel" aria-label="Campagne Social">
+        <div><Icon name="contact" /><span><strong>Social</strong><small>{state.statistics.socialContacts} contatti raccolti online</small></span></div>
+        <><div className="social-progress-label"><span>Prossimo contatto passivo</span><strong>{socialProgress}%</strong></div><div className="social-progress" role="progressbar" aria-label="Progresso contatto Social" aria-valuemin={0} aria-valuemax={100} aria-valuenow={socialProgress}><span style={{ width: `${socialProgress}%` }} /></div></>
         <button type="button" disabled={!canRunSocial} onClick={onRunSocialCampaign}>{socialAction}</button>
-      </section>
+      </section> : null}
 
       <section className="operations-report" aria-label="Report operativo">
         <h2>Report della campagna</h2>
@@ -125,41 +132,36 @@ export function ActivitiesView({
         })}
       </section>
 
-      <section className="achievement-panel" aria-label="Traguardi">
+      {earnedAchievements.length > 0 ? <section className="achievement-panel" aria-label="Traguardi">
         <div className="section-heading">
           <div><Icon name="flag" /><span><strong>Traguardi</strong><small>{state.achievements.length}/{ACHIEVEMENTS.length} completati</small></span></div>
         </div>
         <div className="achievement-grid">
-          {ACHIEVEMENTS.map((achievement) => {
-            const earned = state.achievements.includes(achievement.id);
+          {earnedAchievements.map((achievement) => {
             return (
-              <article key={achievement.id} className={earned ? "earned" : "locked"}>
-                <span aria-hidden="true">{earned ? "✓" : "○"}</span>
+              <article key={achievement.id} className="earned">
+                <span aria-hidden="true">✓</span>
                 <div><strong>{achievement.title}</strong><small>{achievement.description}</small></div>
                 <b>{euro.format(achievement.euroReward)}</b>
               </article>
             );
           })}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="narrative-panel" aria-label="Cronaca della scuola">
+      {state.narrative.history.length > 0 ? <section className="narrative-panel" aria-label="Cronaca della scuola">
         <div className="section-heading">
           <div><Icon name="mail" /><span><strong>Cronaca della scuola</strong><small>{state.statistics.narrativeEvents} episodi registrati</small></span></div>
         </div>
-        {state.narrative.history.length === 0 ? (
-          <p>La cronaca inizierà a popolarsi mentre la scuola cresce.</p>
-        ) : (
-          <div className="narrative-list">
+        <div className="narrative-list">
             {state.narrative.history.slice().reverse().map((event) => (
               <article key={event.id}>
                 <div><strong>{event.title}</strong><small>{event.summary}</small></div>
                 <time>{new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(event.occurredAt)}</time>
               </article>
             ))}
-          </div>
-        )}
-      </section>
+        </div>
+      </section> : null}
     </main>
   );
 }

@@ -7,7 +7,8 @@ afterEach(cleanup);
 
 describe("UpgradesView", () => {
   it("renders every data-driven upgrade branch", () => {
-    render(<UpgradesView state={createInitialState(1_000)} onBuyUpgrade={() => undefined} />);
+    const initial = createInitialState(1_000);
+    render(<UpgradesView state={{ ...initial, school: { ...initial.school, historicMembers: 5 } }} onBuyUpgrade={() => undefined} />);
 
     expect(screen.getByRole("tab", { name: "Consigliati (4)" })).toHaveAttribute("aria-selected", "true");
     fireEvent.click(screen.getByRole("tab", { name: "Catalogo completo (49)" }));
@@ -25,12 +26,13 @@ describe("UpgradesView", () => {
     expect(screen.getByRole("region", { name: "Entrate dell'Ordine" }))
       .toHaveTextContent(/40,00.*quota mensile/);
     expect(screen.getByText(/al mese/)).toBeVisible();
-    expect(screen.getAllByRole("button", { name: /Fondi insufficienti/ })).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /Fondi insufficienti/ })).toHaveLength(8);
   });
 
   it("shows only actionable branches in the available filter", () => {
     render(<UpgradesView state={createInitialState(1_000)} onBuyUpgrade={() => undefined} />);
 
+    expect(screen.queryByRole("tab", { name: /Catalogo completo/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Disponibili (4)" }));
 
     expect(screen.getAllByText("Prezzo")).toHaveLength(4);

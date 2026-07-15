@@ -390,6 +390,7 @@ function addMessage(
   preview: string,
   tone: InboxMessage["tone"] = "positive",
   category: NonNullable<InboxMessage["category"]> = "focused",
+  threadKey?: InboxMessage["threadKey"],
 ): GameState {
   const message: InboxMessage = {
     id: makeId("message", now, state.messages.length),
@@ -400,6 +401,7 @@ function addMessage(
     tone,
     unread: true,
     category,
+    threadKey,
   };
   return { ...state, messages: addInboxMessage(state.messages, message) };
 }
@@ -446,6 +448,9 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
     now + 1,
     "Nuovo collaboratore disponibile",
     `${collaborator.displayName} è disponibile per Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.${power}`,
+    "positive",
+    "focused",
+    "collaborators",
   );
 }
 
@@ -521,7 +526,16 @@ function finalizeEmail(state: GameState, emailId: string, now: number): GameStat
       nextState,
       now,
       "Configurazione campagna completata",
-      "La prima email è partita. Miglioramenti di Scrittura e Velocità sono disponibili nella barra laterale.",
+      "La prima email è partita. La segreteria registrerà eventuali risposte e appuntamenti senza interrompere la stesura delle prossime bozze.",
+      "system",
+    );
+  }
+  if (state.statistics.emailsSent === 2) {
+    nextState = addMessage(
+      nextState,
+      now + 1,
+      "Ufficio Eventi disponibile",
+      "La prima tornata di inviti è sufficiente per aprire l'organizzazione delle attività esterne. La nuova area è comparsa nella barra laterale.",
       "system",
     );
   }
@@ -659,6 +673,8 @@ function resolveTrial(
 
   if (!enrolled) return nextState;
 
+  const firstEnrollment = state.school.historicMembers === 0;
+  const socialUnlockedNow = !state.unlocks.social && state.school.activeMembers + 1 >= 10;
   nextState = {
     ...nextState,
     school: {
@@ -681,9 +697,23 @@ function resolveTrial(
   nextState = addMessage(
     nextState,
     now,
-    state.school.historicMembers === 0 ? "Primo iscritto registrato" : "Nuovo iscritto registrato",
-    `Bonus di iscrizione di € ${enrollmentBonus.toFixed(2).replace(".", ",")} accreditato. La quota mensile di € ${GAME_CONFIG.monthlyMemberFee.toFixed(2).replace(".", ",")} arriverà al prossimo cambio mese.`,
+    firstEnrollment ? "Primo iscritto registrato" : "Nuovo iscritto registrato",
+    firstEnrollment
+      ? `Bonus di iscrizione di € ${enrollmentBonus.toFixed(2).replace(".", ",")} accreditato. I registri Iscritti e Miglioramenti sono ora disponibili nella barra laterale.`
+      : `Bonus di iscrizione di € ${enrollmentBonus.toFixed(2).replace(".", ",")} accreditato. La quota mensile di € ${GAME_CONFIG.monthlyMemberFee.toFixed(2).replace(".", ",")} arriverà al prossimo cambio mese.`,
+    "positive",
+    firstEnrollment ? "focused" : "other",
+    firstEnrollment ? undefined : "members",
   );
+  if (socialUnlockedNow) {
+    nextState = addMessage(
+      nextState,
+      now + 1,
+      "Canale Social disponibile",
+      "La scuola ha dimensioni sufficienti per sostenere campagne e raccolta passiva di contatti. Il nuovo pannello è disponibile in Attività.",
+      "system",
+    );
+  }
   const enrolledContact = nextState.contacts.find((contact) => contact.id === trial.contactId);
   return enrolledContact?.rarity === "legendary"
     ? recruitCollaborator(nextState, enrolledContact, now)
@@ -794,6 +824,8 @@ function processMemberDepartures(
       : `${departed.length} iscritti hanno lasciato la scuola`,
     `${names}${others} ${departed.length === 1 ? "ha" : "hanno"} lasciato la scuola dopo un anno senza formazione. Ogni Forma completata riduce questo rischio.`,
     "neutral",
+    "focused",
+    "departures",
   );
 }
 
@@ -929,26 +961,29 @@ function resolveAcquisitionEvent(
       eventsCompleted: rewardState.statistics.eventsCompleted + 1,
     },
   };
-  if (contacts.length === 0) return nextState;
-
-  nextState = addMessage(
-    nextState,
-    now,
-    event.definitionId === "park-sparring"
-      ? "Nuovi contatti dallo sparring"
-      : "Contatti acquisiti alla dimostrazione",
-    `${contacts.length} nuovi indirizzi sono disponibili per la campagna email.`,
-  );
+  if (contacts.length > 0) {
+    nextState = addMessage(
+      nextState,
+      now,
+      event.definitionId === "park-sparring"
+        ? "Nuovi contatti dallo sparring"
+        : "Contatti acquisiti alla dimostrazione",
+      `${contacts.length} nuovi indirizzi sono disponibili per la campagna email.`,
+      "positive",
+      "other",
+      "contacts",
+    );
+  }
   if (rewardState.statistics.eventsCompleted === 0) {
     nextState = addMessage(
       nextState,
       now + 1,
-      "Le spade non si sistemano da sole",
-      "Gli eventi consumano l'attrezzatura. Controlla l'usura e pianifica la manutenzione dalla sezione Attività.",
+      "Attività operative disponibili",
+      "Il primo evento ha attivato registro operativo, attrezzatura e traguardi. La nuova area è comparsa nella barra laterale.",
       "system",
     );
   }
-  return startNextCampaign(nextState, now);
+  return contacts.length > 0 ? startNextCampaign(nextState, now) : nextState;
 }
 
 function maintainEquipment(state: GameState): GameState {
@@ -1082,6 +1117,9 @@ function startFormTraining(
       now,
       "Qualifica da Istruttore ottenuta",
       `${collaborator.displayName} ora può insegnare ${definition.title}${definition.branch ? ` — ${definition.branch}` : ""}. Costo: ${euroFormatter.format(qualificationCost)}.`,
+      "positive",
+      "other",
+      "training",
     );
   }
   const instructorSelf = collaborator?.assignment === "instructor";
@@ -1219,6 +1257,9 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
       ? "Riepilogo formazione automatica"
       : "Formazione completata",
     `${collaborator?.displayName ?? `${member?.firstName} ${member?.lastName}`} ha completato ${definition.title}${definition.branch ? ` — ${definition.branch}` : ""}.`,
+    "positive",
+    "other",
+    "training",
   );
   if (
     !member ||
@@ -1345,6 +1386,9 @@ function processAutomation(state: GameState, now: number, gainMultiplier: number
       now,
       "Nuovi contatti dai Social",
       `${contacts.length} nuovi indirizzi sono stati raccolti dalle attività online.`,
+      "positive",
+      "other",
+      "contacts",
     );
     nextState = startNextCampaign(nextState, now);
   }
@@ -1394,6 +1438,9 @@ function runSocialCampaign(state: GameState, now: number): GameState {
     now,
     viral ? "Post inspiegabilmente virale" : "Campagna Social completata",
     `${contacts.length} nuovi indirizzi sono disponibili per la campagna email.`,
+    "positive",
+    "other",
+    "contacts",
   );
   return startNextCampaign(nextState, now);
 }
@@ -1473,7 +1520,15 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
         rewardState.state.statistics.eurosEarned + Math.max(0, euroDelta),
     },
   };
-  nextState = addMessage(nextState, now, definition.title, summary, definition.tone, "other");
+  nextState = addMessage(
+    nextState,
+    now,
+    definition.title,
+    summary,
+    definition.tone,
+    "other",
+    "narrative",
+  );
   return contacts.length > 0 ? startNextCampaign(nextState, now) : nextState;
 }
 
@@ -1621,6 +1676,7 @@ function grantAchievements(state: GameState, now: number, gainMultiplier: number
       `${definition.description} Premio amministrativo: ${euroFormatter.format(achievementReward)}.`,
       "system",
       "other",
+      "progress",
     );
   }
   return nextState;
@@ -1653,6 +1709,7 @@ function completeShortGoal(
     `${definition.completionNarrative} Premio operativo: ${euroFormatter.format(reward)}. Prossima priorità: ${nextDefinition.title}.`,
     "positive",
     "other",
+    "progress",
   );
 }
 

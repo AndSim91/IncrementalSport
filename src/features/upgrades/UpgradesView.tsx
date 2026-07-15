@@ -123,6 +123,8 @@ export function UpgradesView({
     Math.ceil((state.school.nextFeeAt - state.automation.lastProcessedAt) / 1_000),
   );
   const recommendedIds = getRecommendedUpgradeIds(state);
+  const showFullCatalog =
+    state.school.historicMembers >= 5 || state.network.schools.length > 0;
   const availableCount = UPGRADE_DEFINITIONS.filter((definition) =>
     definition.requiredHistoricMembers <= state.school.historicMembers &&
     state.upgrades[definition.id] < definition.maxLevel
@@ -157,7 +159,7 @@ export function UpgradesView({
         <div className="shop-filters" role="tablist" aria-label="Filtra miglioramenti">
           <FilterButton active={filter === "recommended"} onClick={() => setFilter("recommended")} label={`Consigliati (${recommendedIds.size})`} />
           <FilterButton active={filter === "available"} onClick={() => setFilter("available")} label={`Disponibili (${availableCount})`} />
-          <FilterButton active={filter === "all"} onClick={() => setFilter("all")} label={`Catalogo completo (${UPGRADE_DEFINITIONS.length})`} />
+          {showFullCatalog ? <FilterButton active={filter === "all"} onClick={() => setFilter("all")} label={`Catalogo completo (${UPGRADE_DEFINITIONS.length})`} /> : null}
         </div>
         {nextUnlockCount > 0 ? (
           <p><strong>Prossimo sblocco:</strong> {nextUnlockCount} miglioramenti a {nextUnlockThreshold} iscritti storici.</p>

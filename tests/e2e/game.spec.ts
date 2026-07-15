@@ -19,9 +19,9 @@ test("scrive con tastiera e click senza intercettare la navigazione", async ({ p
   await composer.click();
   await expect(page.getByText(/3 \/ \d+ caratteri/)).toBeVisible();
 
-  await page.getByRole("button", { name: "Iscritti", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Iscritti" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: /Potenziali interessati/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Iscritti", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Impostazioni", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Impostazioni" })).toBeVisible();
   await page.getByRole("button", { name: "Posta", exact: true }).click();
   await expect(composer).toBeVisible();
 });
@@ -44,20 +44,26 @@ test("invia automaticamente la mail completa e apre il contatto successivo", asy
   await expect(page.getByRole("article")).toContainText("Andrea Ungaro - Ordine delle Onde");
 });
 
-test("legge le notifiche e apre shop ed eventi", async ({ page }) => {
+test("legge le notifiche e sblocca progressivamente gli eventi", async ({ page }) => {
   const welcome = page.getByRole("button", { name: /Sistema Oggetto: Nuovi Iscritti/ });
   await welcome.click();
   await expect(welcome).toHaveClass(/read/);
   await expect(page.getByRole("button", { name: /Posta in arrivo 0/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Miglioramenti", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Miglioramenti" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Entrate dell'Ordine" })).toContainText("0,00 € al mese");
-  if (process.env.QA_SCREENSHOT_DIR) {
-    await page.screenshot({ path: `${process.env.QA_SCREENSHOT_DIR}/improvements-shop.png` });
-  }
+  await expect(page.getByRole("button", { name: "Eventi", exact: true })).toHaveCount(0);
 
-  await page.getByRole("button", { name: /^Eventi$/ }).click();
+  for (let sent = 1; sent <= 3; sent += 1) {
+    await page.evaluate(() => {
+      for (let index = 0; index < 500; index += 1) {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+      }
+    });
+    await expect(page.getByRole("button", { name: new RegExp(`Posta inviata ${sent}`) }))
+      .toBeVisible({ timeout: 2_000 });
+  }
+  await expect(page.getByRole("button", { name: "Eventi", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Eventi", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Eventi" })).toBeVisible();
   await page.getByRole("button", { name: "Partecipa gratis" }).click();
   await expect(page.getByRole("button", { name: "Attività in corso…" })).toBeDisabled();

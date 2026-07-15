@@ -69,15 +69,20 @@ export function PeopleView({
   const collaboratorContactIds = new Set(
     state.collaborators.map((collaborator) => collaborator.contactId),
   );
+  const showCollaborators = state.unlocks.collaborators || state.collaborators.length > 0;
+  const showRarityOverview =
+    state.statistics.emailsSent >= 10 ||
+    members.some((contact) => contact.rarity !== "common") ||
+    showCollaborators;
 
   return (
     <main className="overview-view people-view">
       <header><Icon name="people" /><div><h1>Iscritti</h1><p>Iscritti e Collaboratori delle Onde</p></div></header>
       <div className="people-tabs" role="tablist" aria-label="Categorie iscritti">
         <TabButton active={tab === "members"} onClick={() => setTab("members")} label={`Iscritti (${members.length})`} />
-        <TabButton active={tab === "collaborators"} onClick={() => setTab("collaborators")} label={`Collaboratori (${state.collaborators.length})`} />
+        {showCollaborators ? <TabButton active={tab === "collaborators"} onClick={() => setTab("collaborators")} label={`Collaboratori (${state.collaborators.length})`} /> : null}
       </div>
-      <RarityOverview state={state} />
+      {showRarityOverview ? <RarityOverview state={state} /> : null}
 
       {tab === "collaborators" ? (
         <section className="collaborator-list" aria-label="Collaboratori delle Onde">

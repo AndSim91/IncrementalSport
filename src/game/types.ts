@@ -88,6 +88,14 @@ export interface InboxMessage {
   unread: boolean;
   stackCount?: number;
   category?: "focused" | "other";
+  threadKey?:
+    | "contacts"
+    | "members"
+    | "departures"
+    | "collaborators"
+    | "training"
+    | "progress"
+    | "narrative";
 }
 
 export type AcquisitionEventId =

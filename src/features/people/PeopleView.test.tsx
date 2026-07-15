@@ -6,6 +6,15 @@ import { PeopleView } from "./PeopleView";
 afterEach(() => cleanup());
 
 describe("PeopleView", () => {
+  it("keeps advanced roster concepts hidden for the first member", () => {
+    const initial = createInitialState(1_000);
+    const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
+    render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, historicMembers: 1 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={() => undefined} />);
+
+    expect(screen.queryByRole("tab", { name: /Collaboratori/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Sistema di rarità" })).not.toBeInTheDocument();
+  });
+
   it("shows collaborators and changes their single assignment", () => {
     const initial = createInitialState(1_000);
     const state = {

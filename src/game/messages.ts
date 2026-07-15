@@ -1,15 +1,39 @@
+import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import type { InboxMessage } from "./types";
 
 export type InboxCategory = NonNullable<InboxMessage["category"]>;
 
-const STACKED_MESSAGE_SUBJECTS = new Set([
-  "Passaparola inatteso",
-  "Nuovi contatti dallo sparring",
-  "Contatti acquisiti alla dimostrazione",
-  "Nuovi contatti dai Social",
-  "Campagna Social completata",
-  "Riepilogo formazione automatica",
+type InboxThreadKey = NonNullable<InboxMessage["threadKey"]>;
+
+const SUBJECT_THREADS = new Map<string, InboxThreadKey>([
+  ["Nuovi contatti dallo sparring", "contacts"],
+  ["Contatti acquisiti alla dimostrazione", "contacts"],
+  ["Nuovi contatti dai Social", "contacts"],
+  ["Campagna Social completata", "contacts"],
+  ["Post inspiegabilmente virale", "contacts"],
+  ["Nuovo iscritto registrato", "members"],
+  ["Nuovo collaboratore disponibile", "collaborators"],
+  ["Riepilogo formazione automatica", "training"],
+  ["Formazione completata", "training"],
+  ["Qualifica da Istruttore ottenuta", "training"],
 ]);
+
+const NARRATIVE_SUBJECTS = new Set(
+  NARRATIVE_EVENTS.map((definition) => definition.title),
+);
+
+export function getMessageThreadKey(message: InboxMessage): InboxThreadKey | undefined {
+  if (message.threadKey) return message.threadKey;
+  if (
+    message.subject.startsWith("Traguardo:") ||
+    message.subject.startsWith("Obiettivo completato:")
+  ) return "progress";
+  if (NARRATIVE_SUBJECTS.has(message.subject)) return "narrative";
+  if (message.subject.includes("iscritt") && message.subject.includes("lasciato la scuola")) {
+    return "departures";
+  }
+  return SUBJECT_THREADS.get(message.subject);
+}
 
 export function getInboxCategory(message: InboxMessage): InboxCategory {
   if (message.category) return message.category;
@@ -24,34 +48,39 @@ export function addInboxMessage(
   messages: InboxMessage[],
   message: InboxMessage,
 ): InboxMessage[] {
-  if (!STACKED_MESSAGE_SUBJECTS.has(message.subject)) return [message, ...messages];
+  const threadKey = getMessageThreadKey(message);
+  if (!threadKey) return [message, ...messages];
 
-  const existing = messages.find((candidate) => candidate.subject === message.subject);
-  if (!existing) return [message, ...messages];
+  const existing = messages.find((candidate) => getMessageThreadKey(candidate) === threadKey);
+  if (!existing) return [{ ...message, threadKey }, ...messages];
 
   return [
     {
       ...message,
       id: existing.id,
+      threadKey,
       stackCount: (existing.stackCount ?? 1) + 1,
     },
-    ...messages.filter((candidate) => candidate.subject !== message.subject),
+    ...messages.filter((candidate) => getMessageThreadKey(candidate) !== threadKey),
   ];
 }
 
 export function normalizeStackedMessages(messages: InboxMessage[]): InboxMessage[] {
   const counts = new Map<string, number>();
   for (const message of messages) {
-    if (!STACKED_MESSAGE_SUBJECTS.has(message.subject)) continue;
-    counts.set(message.subject, (counts.get(message.subject) ?? 0) + (message.stackCount ?? 1));
+    const threadKey = getMessageThreadKey(message);
+    if (!threadKey) continue;
+    counts.set(threadKey, (counts.get(threadKey) ?? 0) + (message.stackCount ?? 1));
   }
 
   const emitted = new Set<string>();
   return messages.flatMap((message) => {
-    const count = counts.get(message.subject);
+    const threadKey = getMessageThreadKey(message);
+    if (!threadKey) return [message];
+    const count = counts.get(threadKey);
     if (!count) return [message];
-    if (emitted.has(message.subject)) return [];
-    emitted.add(message.subject);
-    return [{ ...message, stackCount: count }];
+    if (emitted.has(threadKey)) return [];
+    emitted.add(threadKey);
+    return [{ ...message, threadKey, stackCount: count }];
   });
 }

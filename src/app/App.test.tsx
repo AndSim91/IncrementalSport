@@ -23,12 +23,31 @@ describe("App profile and navigation", () => {
     expect(screen.getByText(/Andrea Ungaro - Ordine delle Onde/)).toBeVisible();
   });
 
-  it("shows the requested application order without Calendar", () => {
+  it("starts with only the applications useful during the first campaign", () => {
     saveGame(createInitialState(Date.now(), "Andrea Ungaro"));
     render(<App />);
 
     const navigation = screen.getByRole("navigation", { name: "Applicazioni" });
-    expect(navigation.querySelectorAll("button")).toHaveLength(6);
+    expect(navigation.querySelectorAll("button")).toHaveLength(2);
+    expect(Array.from(navigation.querySelectorAll("button"), (button) => button.textContent)).toEqual([
+      "Posta",
+      "Impostazioni",
+    ]);
+    expect(screen.queryByRole("button", { name: "Calendario" })).not.toBeInTheDocument();
+  });
+
+  it("reveals the complete application set as systems become useful", () => {
+    const initial = createInitialState(Date.now(), "Andrea Ungaro");
+    saveGame({
+      ...initial,
+      school: { ...initial.school, activeMembers: 1, historicMembers: 1 },
+      equipment: { ...initial.equipment, wear: 3 },
+      statistics: { ...initial.statistics, emailsSent: 3, eventsCompleted: 1 },
+      unlocks: { ...initial.unlocks, upgrades: true, forms: true },
+    });
+    render(<App />);
+
+    const navigation = screen.getByRole("navigation", { name: "Applicazioni" });
     expect(Array.from(navigation.querySelectorAll("button"), (button) => button.textContent)).toEqual([
       "Posta",
       "Eventi",
@@ -37,6 +56,5 @@ describe("App profile and navigation", () => {
       "Attività",
       "Impostazioni",
     ]);
-    expect(screen.queryByRole("button", { name: "Calendario" })).not.toBeInTheDocument();
   });
 });

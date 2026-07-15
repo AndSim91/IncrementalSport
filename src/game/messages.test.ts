@@ -31,8 +31,27 @@ describe("inbox message digests", () => {
       message("message-1", "Contributo straordinario"),
     ]);
 
-    expect(normalized).toHaveLength(2);
-    expect(normalized[0].stackCount).toBe(4);
-    expect(normalized[1].subject).toBe("Contributo straordinario");
+    expect(normalized).toHaveLength(1);
+    expect(normalized[0].stackCount).toBe(5);
+    expect(normalized[0].threadKey).toBe("narrative");
+  });
+
+  it("groups different operational subjects into one thematic conversation", () => {
+    const sparring = addInboxMessage([], message("message-1", "Nuovi contatti dallo sparring"));
+    const social = addInboxMessage(sparring, message("message-2", "Nuovi contatti dai Social"));
+
+    expect(social).toHaveLength(1);
+    expect(social[0].subject).toBe("Nuovi contatti dai Social");
+    expect(social[0].threadKey).toBe("contacts");
+    expect(social[0].stackCount).toBe(2);
+  });
+
+  it("condenses achievements and recurring goals into a single progress digest", () => {
+    const achievement = addInboxMessage([], message("message-1", "Traguardo: Prima email inviata"));
+    const goal = addInboxMessage(achievement, message("message-2", "Obiettivo completato: Tre inviti in partenza"));
+
+    expect(goal).toHaveLength(1);
+    expect(goal[0].threadKey).toBe("progress");
+    expect(goal[0].stackCount).toBe(2);
   });
 });

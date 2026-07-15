@@ -1,7 +1,10 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Icon } from "../components/common/Icon";
 import { ProfileNameDialog } from "../components/ProfileNameDialog";
-import { AppRail, type AppView } from "../components/outlook-shell/AppRail";
+import {
+  AppRail,
+  type AppView,
+} from "../components/outlook-shell/AppRail";
 import { CommandBar } from "../components/outlook-shell/CommandBar";
 import { Composer } from "../components/outlook-shell/Composer";
 import { DayPanel } from "../components/outlook-shell/DayPanel";
@@ -16,6 +19,7 @@ import { EventsView } from "../features/events/EventsView";
 import { PeopleView } from "../features/people/PeopleView";
 import { UpgradesView } from "../features/upgrades/UpgradesView";
 import { useGameEngine } from "../game/useGameEngine";
+import { isGameAreaUnlocked } from "../game/progression";
 import { exportGame, importGame, resetGame, saveGame } from "../game/save";
 
 function targetConsumesKeyboard(target: EventTarget | null): boolean {
@@ -34,6 +38,7 @@ export function App() {
   );
   const selectedMessage = state.messages.find((message) => message.id === selectedMessageId);
   const selectedSentEmail = state.emails.find((email) => email.id === selectedSentEmailId);
+  const activeView = isGameAreaUnlocked(view, state) ? view : "mail";
 
   useEffect(() => {
     localStorage.setItem("oggetto-nuovi-iscritti.reduce-motion", String(reduceMotion));
@@ -42,7 +47,7 @@ export function App() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
-        view !== "mail" ||
+        activeView !== "mail" ||
         mailFolder !== "inbox" ||
         selectedMessageId !== null ||
         !state.profile.displayName.trim() ||
@@ -53,7 +58,7 @@ export function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [dispatch, mailFolder, selectedMessageId, state.profile.displayName, view]);
+  }, [activeView, dispatch, mailFolder, selectedMessageId, state.profile.displayName]);
 
   const write = () => dispatch({ type: "WRITE", now: Date.now() });
   const selectMessage = (messageId: string | null) => {
@@ -88,6 +93,7 @@ export function App() {
   };
   const resetSave = () => {
     dispatch({ type: "REPLACE_STATE", state: resetGame() });
+    setView("mail");
   };
   const updateProfileName = (displayName: string) => {
     dispatch({ type: "UPDATE_PROFILE_NAME", displayName });
@@ -116,9 +122,9 @@ export function App() {
           state.messages.some((message) => message.unread)
         }
       />
-      <div className={view === "mail" ? "workspace" : "workspace overview-workspace"}>
-        <AppRail view={view} onChange={setView} />
-        {view === "mail" ? (
+      <div className={activeView === "mail" ? "workspace" : "workspace overview-workspace"}>
+        <AppRail view={activeView} state={state} onChange={setView} />
+        {activeView === "mail" ? (
           <>
             <FolderPane state={state} folder={mailFolder} onSelectFolder={selectFolder} />
             <MessageList
@@ -134,21 +140,21 @@ export function App() {
             ) : selectedMessage ? <MessageDetail message={selectedMessage} /> : <Composer state={state} onWrite={write} />}
             <DayPanel state={state} />
           </>
-        ) : view === "upgrades" ? (
+        ) : activeView === "upgrades" ? (
           <UpgradesView
             state={state}
             onBuyUpgrade={(upgradeId) =>
               dispatch({ type: "BUY_UPGRADE", upgradeId, now: Date.now() })
             }
           />
-        ) : view === "events" ? (
+        ) : activeView === "events" ? (
           <EventsView
             state={state}
             onStart={(definitionId) =>
               dispatch({ type: "START_ACQUISITION_EVENT", definitionId, now: Date.now() })
             }
           />
-        ) : view === "statistics" ? (
+        ) : activeView === "statistics" ? (
           <ActivitiesView
             state={state}
             onMaintainEquipment={() =>
@@ -161,7 +167,7 @@ export function App() {
               dispatch({ type: "RUN_SOCIAL_CAMPAIGN", now: Date.now() })
             }
           />
-        ) : view === "contacts" ? (
+        ) : activeView === "contacts" ? (
           <PeopleView
             state={state}
             onAssign={(collaboratorId, assignment) =>
@@ -191,7 +197,7 @@ export function App() {
           />
         ) : (
           <OverviewView
-            view={view}
+            view={activeView}
             state={state}
             onExport={exportSave}
             onImport={importSave}

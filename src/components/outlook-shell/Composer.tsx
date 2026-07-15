@@ -13,7 +13,7 @@ export function Composer({ state, onWrite }: { state: GameState; onWrite: () => 
       <main className="empty-composer">
         <Icon name="mail" />
         <h1>Nessuna bozza disponibile</h1>
-        <p>Hai utilizzato tutti i contatti del tutorial. Le prossime fonti si attiveranno dal Calendario.</p>
+        <p>Hai utilizzato tutti i contatti disponibili. Le prossime fonti arrivano dalle attività esterne.</p>
       </main>
     );
   }

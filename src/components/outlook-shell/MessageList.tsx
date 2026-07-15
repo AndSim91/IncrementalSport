@@ -36,7 +36,7 @@ function InboxRow({
         <strong>{message.sender}</strong>
         <span>
           {message.subject}
-          {(message.stackCount ?? 1) > 1 ? ` · ${message.stackCount} notifiche` : ""}
+          {(message.stackCount ?? 1) > 1 ? ` · ${message.stackCount} aggiornamenti` : ""}
         </span>
         <small>{message.preview}</small>
       </span>
@@ -153,7 +153,7 @@ export function MessageList({
               <span>
                 {inboxCategory === "focused"
                   ? "Bozze e aggiornamenti operativi compariranno qui."
-                  : "Traguardi, cronaca e riepiloghi compariranno qui."}
+                  : "Riepiloghi e cronaca vengono raccolti qui senza riempire la posta prioritaria."}
               </span>
             </div>
           ) : null}

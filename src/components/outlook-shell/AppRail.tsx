@@ -1,12 +1,8 @@
 import { Icon, type IconName } from "../common/Icon";
+import { isGameAreaUnlocked, type GameArea } from "../../game/progression";
+import type { GameState } from "../../game/types";
 
-export type AppView =
-  | "mail"
-  | "events"
-  | "contacts"
-  | "upgrades"
-  | "statistics"
-  | "settings";
+export type AppView = GameArea;
 
 const items: { id: AppView; label: string; icon: IconName }[] = [
   { id: "mail", label: "Posta", icon: "mail" },
@@ -17,10 +13,19 @@ const items: { id: AppView; label: string; icon: IconName }[] = [
   { id: "settings", label: "Impostazioni", icon: "settings" },
 ];
 
-export function AppRail({ view, onChange }: { view: AppView; onChange: (view: AppView) => void }) {
+export function AppRail({
+  view,
+  state,
+  onChange,
+}: {
+  view: AppView;
+  state: GameState;
+  onChange: (view: AppView) => void;
+}) {
+  const visibleItems = items.filter((item) => isGameAreaUnlocked(item.id, state));
   return (
     <nav className="app-rail" aria-label="Applicazioni">
-      {items.map((item) => (
+      {visibleItems.map((item) => (
         <button
           key={item.id}
           type="button"
