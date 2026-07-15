@@ -500,8 +500,10 @@ Regole:
 
 Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 
-- Andrea Simonazzi compare soltanto nel primo ciclo prima del prestigio e non può essere selezionato da alcuna procedura di abbandono;
-- gli altri Leggendari possono lasciare la scuola con una probabilità annuale pari al 10% del rischio ordinario associato alla loro Forma più alta;
+- Andrea Simonazzi segue esattamente le stesse regole di ogni altro Leggendario, senza garanzie di comparsa, prenotazione, iscrizione o permanenza;
+- tutti i Leggendari possono lasciare la scuola con una probabilità annuale pari al 10% del rischio ordinario associato alla loro Forma più alta fino alla Forma 6; a Forma 7 usano la curva specifica per rarità e prestigio;
+- la probabilità di comparsa del pool Leggendario è 5% nella scuola iniziale e 2,5% in tutte le scuole successive;
+- con il prestigio tutti i profili Leggendari tornano disponibili nel pool della nuova scuola;
 - dopo un abbandono tornano disponibili per incontri futuri;
 - una nuova iscrizione ripristina integralmente Forme, attestati da Istruttore, anzianità e storico formativo; l'incarico operativo torna invece non assegnato.
 
@@ -567,9 +569,13 @@ Regole:
 - ogni iscritto o collaboratore può iniziare al massimo una Forma per anno scolastico;
 - le Forme possono essere insegnate da Settembre a Giugno; Luglio e Agosto sono pausa estiva;
 - a Settembre inizia un nuovo anno scolastico e torna disponibile una nuova formazione;
-- l'eventuale accesso a più rami 3/4/5 resta configurabile;
+- completare un solo ramo fino alla Forma 5 è sufficiente per accedere alla Forma 6;
+- durante Corso Y ogni allievo sviluppa automaticamente da una a tre preferenze fra Spada Lunga, Staffa e Doppia spada corta;
+- gli altri rami preferiti restano percorsi facoltativi che l'automazione può completare dopo la Forma 7;
 - la formazione richiede Euro e/o tempo, ma non livelli personali;
 - le descrizioni definitive dovranno usare terminologia LudoSport approvata.
+
+Costi base: Forma 1 €25, Corso X €50, Forma 2 €100, Corso Y €250, Forma 3 €600, Forma 4 €1.000, Forma 5 €1.500, Forma 6 €2.200, Forma 7 €3.000. Lo scoglio economico principale inizia dopo Corso Y.
 
 ### 9.7 Istruttori e attestati
 
@@ -577,37 +583,40 @@ Un Collaboratore delle Onde può essere assegnato al ruolo di **Istruttore**. No
 
 Regole:
 
-- un Istruttore può insegnare soltanto le Forme che ha già completato e per le quali possiede l'attestato;
-- ogni Istruttore segue una sola persona alla volta;
-- un iscritto o un collaboratore non istruttore può iniziare una Forma soltanto se è disponibile un Istruttore attestato per quella Forma;
-- quando un collaboratore viene assegnato per la prima volta al ruolo, tutte le Forme già concluse e non ancora attestate vengono convertite insieme;
-- il conguaglio di conversione è pari al **50% del costo base** di ciascuna Forma da attestare e viene pagato al momento dell'assegnazione;
-- se gli Euro disponibili non coprono l'intero conguaglio, l'assegnazione non avviene;
-- finché resta assegnato come Istruttore, ogni nuova Forma gli costa il **150% del costo base**; il prezzo maggiorato comprende automaticamente il nuovo attestato;
-- lasciare il ruolo non annulla gli attestati già pagati; una futura riassegnazione addebita soltanto le Forme apprese nel frattempo e non ancora convertite;
-- i Corsi X e Y non sono Forme numerate, non richiedono attestato e mantengono il loro costo base.
+- l'assegnazione al ruolo è gratuita e non converte automaticamente le Forme pregresse;
+- un Istruttore può insegnare soltanto le Forme già completate e qualificate; **Corso X è l'unica eccezione** e non richiede qualifica;
+- Corso Y richiede una qualifica esattamente come le Forme;
+- una qualifica pregressa viene acquistata esplicitamente dal comando di formazione e costa il **200% del costo base**;
+- una nuova Forma appresa mentre si è Istruttore costa il **300% totale del costo base** e comprende la qualifica;
+- l'allievo paga automaticamente il **25% del costo base**; senza fondi non parte una nuova lezione;
+- l'automazione dà priorità agli allievi meno avanzati e li porta dalla Forma 1 verso l'alto, rispettando prerequisiti, anno scolastico e compatibilità d'arma;
+- disattivare l'automazione o riassegnare l'Istruttore lascia terminare le lezioni già iniziate, ma non ne avvia altre;
+- **Polivalenza didattica** ha due livelli e permette di apprendere fino a tutti e tre i rami d'arma;
+- ogni Istruttore parte da un allievo contemporaneo; **Istruttore stile Tiamat** ha cinque livelli molto costosi e porta la capacità massima a sei allievi;
+- i completamenti automatici confluiscono in una notifica riepilogativa impilata.
 
 ### 9.8 Abbandono degli iscritti ignorati
 
 All'inizio di ogni nuovo anno scolastico, a Settembre, un iscritto che ha trascorso l'intero anno scolastico nella scuola senza iniziare alcuna formazione può lasciare la scuola. Sono sempre esclusi dal controllo:
 
-- il personaggio fisso interno del primo ciclo;
 - i Collaboratori delle Onde non leggendari;
 - gli iscritti entrati a anno già iniziato;
 - chi ha iniziato una formazione durante l'anno, anche se non l'ha ancora completata.
 
-La probabilità annuale dipende dalla Forma numerata più alta completata. I Corsi X e Y non riducono da soli il rischio. Per i Leggendari non fissi si applica internamente un moltiplicatore 0,1 alla stessa curva.
+La probabilità annuale dipende dalla Forma numerata più alta completata. I Corsi X e Y non riducono da soli il rischio. Fino alla Forma 6, Rari e Comuni seguono la curva ordinaria mentre i Leggendari ne ricevono il 10%. A Forma 7 si applicano valori specifici per rarità.
 
-| Forma più alta | Probabilità annuale di abbandono |
-|---|---:|
-| Nessuna Forma | 80% |
-| Forma 1 | 65% |
-| Forma 2 | 50% |
-| Forma 3 | 35% |
-| Forma 4 | 25% |
-| Forma 5 | 15% |
-| Forma 6 | 10% |
-| Forma 7 | 5% |
+| Forma più alta | Comuni | Rari | Leggendari |
+|---|---:|---:|---:|
+| Nessuna Forma | 80% | 80% | 8% |
+| Forma 1 | 65% | 65% | 6,5% |
+| Forma 2 | 50% | 50% | 5% |
+| Forma 3 | 35% | 35% | 3,5% |
+| Forma 4 | 25% | 25% | 2,5% |
+| Forma 5 | 15% | 15% | 1,5% |
+| Forma 6 | 10% | 10% | 1% |
+| Forma 7, prima scuola | 2,5% | 0,5% | 0% |
+
+Per ogni nuova scuola già fondata, i tre valori di **Forma 7** aumentano di **0,5 punti percentuali**. Per esempio, nella seconda scuola diventano rispettivamente 3%, 1% e 0,5%. La regola si applica allo stesso modo ad Andrea Simonazzi e a tutti gli altri Leggendari.
 
 ---
 
@@ -1165,17 +1174,13 @@ La rete delle scuole precedenti produce un piccolo contributo passivo e appare n
 
 ### 18.1 Regole
 
-Quando il gioco viene riaperto:
+Quando il gioco viene riaperto, il calendario e tutte le attività temporizzate restano fermi. Il progresso offline produce esclusivamente:
 
-1. calcola il tempo trascorso;
-2. risolve esiti delle email e lezioni già programmati;
-3. applica la scrittura automatica;
-4. consuma contatti solo se erano disponibili;
-5. completa eventi terminati;
-6. genera contatti dalle attività automatiche;
-7. accredita le quote maturate in Euro;
-8. applica manutenzione, social ed eventi narrativi consentiti offline;
-9. mostra un riepilogo in forma di email “Riepilogo attività”.
+1. contatti passivi generati dai collaboratori assegnati ai Social;
+2. entrate monetarie passive proporzionali al tempo elaborato;
+3. una email “Riepilogo attività offline”.
+
+Email, prove, eventi, manutenzione, Forme e insegnamento automatico non avanzano durante l'assenza.
 
 ### 18.2 Limiti
 

@@ -52,7 +52,7 @@ describe("PeopleView", () => {
     expect(onAssign).toHaveBeenCalledWith("collaborator-1", "writing");
   });
 
-  it("starts the Form path from an enrolled member", () => {
+  it("shows enrolled members in the automatic teaching queue", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
     const displayName = `${enrolled.firstName} ${enrolled.lastName}`;
@@ -66,15 +66,13 @@ describe("PeopleView", () => {
       assignment: "instructor" as const,
       rarity: "legendary" as const,
     };
-    const onStartTraining = vi.fn();
-    render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, euros: 20 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), collaborators: [instructor], unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={onStartTraining} />);
+    render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, euros: 20 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), collaborators: [instructor], unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={() => undefined} />);
 
     fireEvent.click(screen.getByRole("tab", { name: /Iscritti/ }));
     expect(screen.getByText("Rischio annuo se ignorato: 80%")).toBeVisible();
-    fireEvent.change(screen.getByRole("combobox", { name: `Formazione per ${displayName}` }), { target: { value: "form-1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Avvia" }));
-
-    expect(onStartTraining).toHaveBeenCalledWith(enrolled.id, "form-1");
+    expect(screen.getByText("Coda didattica automatica")).toBeVisible();
+    expect(screen.getByText("In attesa di un Istruttore compatibile e dei fondi")).toBeVisible();
+    expect(screen.queryByRole("combobox", { name: `Formazione per ${displayName}` })).not.toBeInTheDocument();
   });
 
   it("shows the summer break instead of allowing Form training in July", () => {
@@ -91,8 +89,8 @@ describe("PeopleView", () => {
       onStartTraining={() => undefined}
     />);
 
-    expect(screen.getByText("Pausa estiva")).toBeVisible();
-    expect(screen.getByText("Le Forme riprendono a settembre")).toBeVisible();
+    expect(screen.getByText("Coda didattica automatica")).toBeVisible();
+    expect(screen.getByText("In pausa fino a settembre")).toBeVisible();
     expect(screen.queryByRole("combobox", { name: /Formazione per/ })).not.toBeInTheDocument();
   });
 });

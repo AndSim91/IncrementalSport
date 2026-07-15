@@ -37,7 +37,6 @@ import {
   getEmailBookingChance,
   getEnrollmentChance,
   getEventFunnelOutcome,
-  getLegendaryAnnualDepartureChance,
   getMemberAnnualDepartureChance,
   getWritingPower,
 } from "./formulas";
@@ -46,9 +45,7 @@ import {
   selectActiveEmail,
   selectAvailableEventMembers,
   selectAvailableInstructor,
-  selectBusyInstructorIds,
   selectIncomePerMonth,
-  selectInstructorCapacity,
   selectInstructorTeachingCount,
 } from "./selectors";
 import type {
@@ -103,8 +100,6 @@ function makeId(prefix: string, now: number, suffix: number | string): string {
   return `${prefix}-${now.toString(36)}-${suffix}`;
 }
 
-const ANDREA_SIMONAZZI_ID: SpecialCollaboratorId = "andrea-simonazzi";
-
 function chooseOrdinaryRarity(seed: number) {
   const [rarityRoll, nextSeed] = nextRandom(seed);
   return {
@@ -115,17 +110,24 @@ function chooseOrdinaryRarity(seed: number) {
   };
 }
 
+export function getLegendaryAppearanceChance(foundedSchools: number): number {
+  return PERSON_RARITIES.legendary.queueAppearanceChance *
+    (foundedSchools > 0
+      ? GAME_CONFIG.subsequentSchoolLegendaryAppearanceMultiplier
+      : 1);
+}
+
 function chooseLegendaryProfile(
   seed: number,
   progress: LegendaryCollaboratorProgress,
+  foundedSchools: number,
 ) {
   const [appearanceRoll, seedAfterAppearance] = nextRandom(seed);
-  if (appearanceRoll >= PERSON_RARITIES.legendary.queueAppearanceChance) {
+  if (appearanceRoll >= getLegendaryAppearanceChance(foundedSchools)) {
     return { profile: undefined, nextSeed: seedAfterAppearance };
   }
   const candidates = SPECIAL_COLLABORATORS.filter((profile) =>
-    !progress.enrolledProfileIds.includes(profile.id) &&
-    profile.id !== ANDREA_SIMONAZZI_ID,
+    !progress.enrolledProfileIds.includes(profile.id),
   );
   if (candidates.length === 0) return { profile: undefined, nextSeed: seedAfterAppearance };
   if (candidates.length === 1) return { profile: candidates[0], nextSeed: seedAfterAppearance };
@@ -138,20 +140,15 @@ function chooseLegendaryProfile(
 
 function createContacts(
   now: number,
-  includeAndrea: boolean,
   seed: number,
   existingProgress: LegendaryCollaboratorProgress,
 ): { contacts: Contact[]; nextSeed: number; progress: LegendaryCollaboratorProgress } {
   let nextSeed = seed;
   let progress = existingProgress;
-  const andrea = SPECIAL_COLLABORATORS.find((profile) => profile.id === ANDREA_SIMONAZZI_ID)!;
   const contacts = Array.from({ length: GAME_CONFIG.initialContacts }, (_, index) => {
-    let legendaryProfile = includeAndrea && index === 8 &&
-      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
-      ? andrea
-      : undefined;
-    if (!legendaryProfile && index >= 9) {
-      const selected = chooseLegendaryProfile(nextSeed, progress);
+    let legendaryProfile: (typeof SPECIAL_COLLABORATORS)[number] | undefined;
+    if (index >= 8) {
+      const selected = chooseLegendaryProfile(nextSeed, progress, 0);
       legendaryProfile = selected.profile;
       nextSeed = selected.nextSeed;
     }
@@ -224,9 +221,10 @@ function systemMessage(now: number): InboxMessage {
 export function createInitialState(
   now = Date.now(),
   displayName = "",
-  includeAndrea = true,
+  _legacyIncludeAndrea = true,
   existingLegendaryProgress?: LegendaryCollaboratorProgress,
 ): GameState {
+  void _legacyIncludeAndrea;
   const initialSeed = (now ^ 0x5f3759df) | 0;
   const legendaryProgress = existingLegendaryProgress ?? {
     encounteredProfileIds: [],
@@ -236,7 +234,6 @@ export function createInitialState(
   };
   const initialContacts = createContacts(
     now,
-    includeAndrea,
     initialSeed,
     legendaryProgress,
   );
@@ -323,16 +320,11 @@ function createAcquiredContacts(
 ): { contacts: Contact[]; nextSeed: number } {
   let nextSeed = state.randomSeed;
   let progress = state.legendaryCollaborators;
-  const andrea = SPECIAL_COLLABORATORS.find((profile) => profile.id === ANDREA_SIMONAZZI_ID)!;
   const contacts = Array.from({ length: count }, (_, index) => {
     const sequence = state.statistics.contactsAcquired + index;
     const queuePosition = state.contacts.length + index + 1;
-    const selected = queuePosition === 9 &&
-      state.network.schools.length === 0 &&
-      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
-      ? { profile: andrea, nextSeed }
-      : queuePosition >= 10
-        ? chooseLegendaryProfile(nextSeed, progress)
+    const selected = queuePosition >= 9
+        ? chooseLegendaryProfile(nextSeed, progress, state.network.schools.length)
         : { profile: undefined, nextSeed };
     const specialProfile = selected.profile;
     nextSeed = selected.nextSeed;
@@ -387,7 +379,6 @@ function addLegendaryEncounters(
 }
 
 export function getLegendaryEnrollmentChance(state: GameState, profileId: SpecialCollaboratorId) {
-  if (profileId === "andrea-simonazzi") return 1;
   const previousAttempts = state.legendaryCollaborators.enrollmentAttempts[profileId] ?? 0;
   return getEnrollmentChance(state, "legendary", previousAttempts);
 }
@@ -490,10 +481,6 @@ function finalizeEmail(state: GameState, emailId: string, now: number): GameStat
     GAME_CONFIG.emailOutcomeMaxMs,
   );
   const guaranteedTutorialBooking = state.statistics.emailsSent === 0;
-  const guaranteedAndreaBooking = state.contacts.some(
-    (contact) =>
-      contact.id === email.contactId && contact.specialProfileId === ANDREA_SIMONAZZI_ID,
-  );
   const recentEmailResults = state.emails
     .slice()
     .reverse()
@@ -502,7 +489,7 @@ function finalizeEmail(state: GameState, emailId: string, now: number): GameStat
   const protectedBooking =
     (emailLossStreak === -1 ? recentEmailResults.length : emailLossStreak) >= 4;
   const result =
-    guaranteedTutorialBooking || guaranteedAndreaBooking || protectedBooking ||
+    guaranteedTutorialBooking || protectedBooking ||
       bookingRoll < getEmailBookingChance(state)
       ? "trialBooked"
       : "lost";
@@ -714,7 +701,6 @@ function processMemberDepartures(
   const firstMonthOfCompletedYear = getSchoolYearStartMonth(completedSchoolYear);
   const eligibleMembers = state.contacts.filter((contact) =>
     contact.status === "enrolled" &&
-    contact.specialProfileId !== ANDREA_SIMONAZZI_ID &&
     (contact.rarity === "legendary" || !collaboratorsByContactId.has(contact.id)) &&
     (contact.enrolledMonth ?? state.school.currentMonth) <= firstMonthOfCompletedYear &&
     (collaboratorsByContactId.get(contact.id)?.lastFormTrainingYear ??
@@ -729,9 +715,11 @@ function processMemberDepartures(
     nextSeed = seedAfterRoll;
     const collaborator = collaboratorsByContactId.get(member.id);
     const forms = collaborator?.forms ?? member.forms;
-    const departureChance = member.rarity === "legendary"
-      ? getLegendaryAnnualDepartureChance(forms)
-      : getMemberAnnualDepartureChance(forms);
+    const departureChance = getMemberAnnualDepartureChance(
+      forms,
+      member.rarity,
+      state.network.schools.length,
+    );
     if (roll < departureChance) departedIds.add(member.id);
   }
   if (departedIds.size === 0) return { ...state, randomSeed: nextSeed };
@@ -1025,6 +1013,7 @@ function assignCollaborator(
   assignment: CollaboratorAssignment,
   now: number,
 ): GameState {
+  void now;
   if (assignment === "social" && !state.unlocks.social) return state;
   const collaborator = state.collaborators.find((candidate) => candidate.id === collaboratorId);
   if (!collaborator) return state;
@@ -1106,12 +1095,18 @@ function startFormTraining(
       ? definition?.cost ?? 0
       : getStudentFormCost(definition?.cost ?? 0);
   const branchCapacity = collaborator?.assignment === "instructor"
-    ? Math.min(
-        3,
-        Math.max(1, collaborator.formBranchPreferences?.length ?? 0) +
-          (state.upgrades["instructor-versatility"] ?? 0),
-      )
+    ? Math.min(3, 1 + (state.upgrades["instructor-versatility"] ?? 0))
     : undefined;
+  const instructorLearnedBranches = new Set(
+    collaborator?.forms.flatMap((learnedFormId) => {
+      const branch = getFormDefinition(learnedFormId)?.branch;
+      return branch ? [branch] : [];
+    }) ?? [],
+  );
+  const initialBranchCompatible = !definition?.branch ||
+    instructorLearnedBranches.size > 0 ||
+    !collaborator?.formBranchPreferences?.length ||
+    collaborator.formBranchPreferences.includes(definition.branch);
   if (
     !student ||
     !definition ||
@@ -1122,7 +1117,8 @@ function startFormTraining(
       branchCapacity,
       collaborator?.assignment !== "instructor",
     ) ||
-    (instructorTrack && selectInstructorTeachingCount(state, personId) > 0) ||
+    !initialBranchCompatible ||
+    (instructorSelf && selectInstructorTeachingCount(state, personId) > 0) ||
     (!instructorSelf && !instructor) ||
     state.school.euros < trainingCost
   ) return state;
@@ -1514,17 +1510,46 @@ function notifyPrestigeOffer(state: GameState, now: number): GameState {
   );
 }
 
+function prepareLegendaryProgressForNewSchool(
+  state: GameState,
+): LegendaryCollaboratorProgress {
+  const retainedProgress = { ...state.legendaryCollaborators.retainedProgress };
+  const collaboratorsByContactId = new Map(
+    state.collaborators.map((collaborator) => [collaborator.contactId, collaborator]),
+  );
+  for (const contact of state.contacts) {
+    if (contact.status !== "enrolled" || !contact.specialProfileId) continue;
+    const collaborator = collaboratorsByContactId.get(contact.id);
+    retainedProgress[contact.specialProfileId] = {
+      forms: [...(collaborator?.forms ?? contact.forms)],
+      instructorForms: [...(collaborator?.instructorForms ?? [])],
+      formBranchPreferences: [
+        ...(collaborator?.formBranchPreferences ?? contact.formBranchPreferences ?? []),
+      ],
+      joinedAt: collaborator?.joinedAt ?? contact.acquiredAt,
+      lastFormTrainingYear:
+        collaborator?.lastFormTrainingYear ?? contact.lastFormTrainingYear,
+    };
+  }
+  return {
+    ...state.legendaryCollaborators,
+    enrolledProfileIds: [],
+    retainedProgress,
+  };
+}
+
 function foundSchool(
   state: GameState,
   details: SchoolFoundationDetails,
   now: number,
 ): GameState {
   if (!canFoundSchool(state) || !details.name.trim() || !details.city.trim()) return state;
+  const legendaryProgress = prepareLegendaryProgressForNewSchool(state);
   const fresh = createInitialState(
     now,
     state.profile.displayName,
-    false,
-    state.legendaryCollaborators,
+    true,
+    legendaryProgress,
   );
   const archivedSchool = {
     id: makeId("school", now, state.network.schools.length),

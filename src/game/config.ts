@@ -18,6 +18,13 @@ export const GAME_CONFIG = {
   volunteerChance: 0.02,
   legendaryEnrollmentChancePerFailure: 0.18,
   legendaryDepartureMultiplier: 0.1,
+  subsequentSchoolLegendaryAppearanceMultiplier: 0.5,
+  formSevenDepartureChance: {
+    common: 0.025,
+    rare: 0.005,
+    legendary: 0,
+  },
+  departureChancePerFoundedSchool: 0.005,
   collaboratorWritingPerSecond: 2,
   socialContactIntervalMs: 45_000,
   socialCampaignCost: 25,

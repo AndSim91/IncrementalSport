@@ -10,7 +10,7 @@ describe("UpgradesView", () => {
     render(<UpgradesView state={createInitialState(1_000)} onBuyUpgrade={() => undefined} />);
 
     expect(screen.getByRole("tab", { name: "Consigliati (4)" })).toHaveAttribute("aria-selected", "true");
-    fireEvent.click(screen.getByRole("tab", { name: "Catalogo completo (47)" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Catalogo completo (49)" }));
 
     expect(screen.getByRole("heading", { name: "Velocità di scrittura" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Carisma" })).toBeVisible();
@@ -19,7 +19,8 @@ describe("UpgradesView", () => {
     expect(screen.getByRole("heading", { name: "Social" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Attrezzatura" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Organizzazione" })).toBeVisible();
-    expect(screen.getAllByText("Prezzo")).toHaveLength(47);
+    expect(screen.getByRole("heading", { name: "Istruttori" })).toBeVisible();
+    expect(screen.getAllByText("Prezzo")).toHaveLength(49);
     expect(screen.getByText(/^50,00/)).toBeVisible();
     expect(screen.getByRole("region", { name: "Entrate dell'Ordine" }))
       .toHaveTextContent(/40,00.*quota mensile/);

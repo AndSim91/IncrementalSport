@@ -180,6 +180,14 @@ export function App() {
                 now: Date.now(),
               })
             }
+            onToggleInstructorAutomation={(collaboratorId, enabled) =>
+              dispatch({
+                type: "TOGGLE_INSTRUCTOR_AUTOMATION",
+                collaboratorId,
+                enabled,
+                now: Date.now(),
+              })
+            }
           />
         ) : (
           <OverviewView

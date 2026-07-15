@@ -1,6 +1,6 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
   "commit_message": {
-    "prompt": ""
+    "prompt": "Write the commit message in italian language. It is severely forbidden to write \"Co-Authored-By\""
   }
 }

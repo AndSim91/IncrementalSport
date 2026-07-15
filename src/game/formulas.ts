@@ -86,14 +86,25 @@ export function getWritingPower(state: GameState) {
 
 const ANNUAL_DEPARTURE_CHANCE_BY_FORM = [0.8, 0.65, 0.5, 0.35, 0.25, 0.15, 0.1, 0.05] as const;
 
-export function getMemberAnnualDepartureChance(forms: FormId[]): number {
+export function getMemberAnnualDepartureChance(
+  forms: FormId[],
+  rarity: PersonRarity = "common",
+  foundedSchools = 0,
+): number {
   const highestForm = forms.reduce((highest, formId) => {
     const match = /^form-(\d)/.exec(formId);
     return match ? Math.max(highest, Number(match[1])) : highest;
   }, 0);
-  return ANNUAL_DEPARTURE_CHANCE_BY_FORM[Math.min(7, highestForm)];
-}
-
-export function getLegendaryAnnualDepartureChance(forms: FormId[]): number {
-  return getMemberAnnualDepartureChance(forms) * GAME_CONFIG.legendaryDepartureMultiplier;
+  if (highestForm >= 7) {
+    return Math.round(clamp(
+      GAME_CONFIG.formSevenDepartureChance[rarity] +
+        Math.max(0, foundedSchools) * GAME_CONFIG.departureChancePerFoundedSchool,
+      0,
+      1,
+    ) * 1_000) / 1_000;
+  }
+  const ordinaryChance = ANNUAL_DEPARTURE_CHANCE_BY_FORM[Math.min(7, highestForm)];
+  return rarity === "legendary"
+    ? ordinaryChance * GAME_CONFIG.legendaryDepartureMultiplier
+    : ordinaryChance;
 }

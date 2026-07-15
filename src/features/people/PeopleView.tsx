@@ -13,10 +13,12 @@ import { PERSON_RARITIES } from "../../content/rarities";
 import { getSchoolYear, isSummerBreak } from "../../game/calendar";
 import { getEnrollmentChance, getMemberAnnualDepartureChance } from "../../game/formulas";
 import {
+  selectAvailableInstructor,
   selectInstructorCapacity,
   selectInstructorTeachingCount,
 } from "../../game/selectors";
 import type {
+  Collaborator,
   CollaboratorAssignment,
   Contact,
   FormId,
@@ -173,6 +175,59 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
   return <button type="button" role="tab" aria-selected={active} className={active ? "active" : ""} onClick={onClick}>{label}</button>;
 }
 
+function InstructorPanel({
+  collaborator,
+  state,
+  onStartTraining,
+  onToggle,
+}: {
+  collaborator: Collaborator;
+  state: GameState;
+  onStartTraining: (personId: string, formId: FormId) => void;
+  onToggle?: (collaboratorId: string, enabled: boolean) => void;
+}) {
+  const teachingCount = selectInstructorTeachingCount(state, collaborator.id);
+  const capacity = selectInstructorCapacity(state);
+  const enabled = collaborator.autoTeachingEnabled !== false;
+  const preferences = collaborator.formBranchPreferences?.join(", ") || "non ancora sviluppate";
+  return <div className="instructor-panel">
+    <div className="instructor-panel-heading">
+      <span><strong>Istruttore stile Tiamat</strong><small>{teachingCount}/{capacity} allievi in contemporanea</small></span>
+      <label className="instructor-toggle"><input type="checkbox" checked={enabled} onChange={(event) => onToggle?.(collaborator.id, event.target.checked)} /> Insegnamento automatico</label>
+    </div>
+    <small>Preferenze d'arma: {preferences}</small>
+    <small>{enabled ? (teachingCount > 0 ? "Le lezioni in corso termineranno regolarmente." : "In attesa del prossimo allievo compatibile.") : "Pausa: non verranno avviate nuove lezioni."}</small>
+    <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />
+  </div>;
+}
+
+function AutomaticTrainingStatus({
+  displayName,
+  student,
+  state,
+}: {
+  displayName: string;
+  student: FormStudent;
+  state: GameState;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  const hasTraining = Boolean(student.training);
+  useEffect(() => {
+    if (!hasTraining) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [hasTraining]);
+  if (student.training) {
+    const definition = getFormDefinition(student.training.formId);
+    const duration = student.training.completesAt - student.training.startedAt;
+    const progress = duration <= 0 ? 100 : Math.min(100, Math.max(0, Math.round(((now - student.training.startedAt) / duration) * 100)));
+    const instructor = state.collaborators.find((candidate) => candidate.id === student.training?.instructorId);
+    return <div className="training-progress"><span>{definition?.title}{definition?.branch ? ` — ${definition.branch}` : ""}{instructor ? ` · con ${instructor.displayName}` : ""}</span><strong>{progress}%</strong><div role="progressbar" aria-label={`Formazione di ${displayName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div>;
+  }
+  const preferences = student.formBranchPreferences?.join(", ");
+  return <div className="training-locked"><span>Coda didattica automatica</span><strong>{isSummerBreak(state.school.currentMonth) ? "In pausa fino a settembre" : student.lastFormTrainingYear === getSchoolYear(state.school.currentMonth) ? "Formazione annuale completata" : "In attesa di un Istruttore compatibile e dei fondi"}</strong>{preferences ? <small>Preferenze: {preferences}</small> : null}</div>;
+}
+
 function TrainingControl({
   personId,
   displayName,
@@ -191,7 +246,6 @@ function TrainingControl({
   const hasTraining = Boolean(student.training);
   const currentYear = getSchoolYear(state.school.currentMonth);
   const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
-  const busyInstructorIds = selectBusyInstructorIds(state);
   useEffect(() => {
     if (!hasTraining) return;
     const timer = window.setInterval(() => setNow(Date.now()), 100);
@@ -213,32 +267,62 @@ function TrainingControl({
   if (isSummerBreak(state.school.currentMonth)) {
     return <div className="training-locked"><span>Pausa estiva</span><strong>Le Forme riprendono a settembre</strong></div>;
   }
-  if (student.lastFormTrainingYear === currentYear) {
-    return <div className="training-locked"><span>Limite annuale raggiunto</span><strong>Prossima evoluzione a settembre · anno scolastico {currentYear + 1}</strong></div>;
-  }
-
-  const academicallyAvailable = getAvailableForms(student, currentYear);
+  const qualificationDefinitions = collaborator?.assignment === "instructor"
+    ? collaborator.forms.flatMap((formId) => {
+        const definition = getFormDefinition(formId);
+        return definition && isInstructorForm(formId) &&
+            !collaborator.instructorForms.includes(formId)
+          ? [definition]
+          : [];
+      })
+    : [];
+  const branchCapacity = collaborator?.assignment === "instructor"
+    ? Math.min(3, 1 + state.upgrades["instructor-versatility"])
+    : undefined;
+  const learnedBranches = new Set(collaborator?.forms.flatMap((formId) => {
+    const branch = getFormDefinition(formId)?.branch;
+    return branch ? [branch] : [];
+  }) ?? []);
+  const newForms = student.lastFormTrainingYear === currentYear
+    ? []
+    : getAvailableForms(student, currentYear, branchCapacity, collaborator?.assignment !== "instructor")
+        .filter((definition) =>
+          !definition.branch ||
+          learnedBranches.size > 0 ||
+          !collaborator?.formBranchPreferences?.length ||
+          collaborator.formBranchPreferences.includes(definition.branch)
+        );
+  const academicallyAvailable = [...qualificationDefinitions, ...newForms];
   const available = academicallyAvailable.filter((definition) => {
-    if (!isInstructorForm(definition.id)) return true;
+    if (qualificationDefinitions.some((candidate) => candidate.id === definition.id)) return true;
     if (collaborator?.assignment === "instructor") {
-      return !busyInstructorIds.has(collaborator.id);
+      return selectInstructorTeachingCount(state, collaborator.id) === 0;
     }
+    if (!isInstructorForm(definition.id)) return true;
     return Boolean(selectAvailableInstructor(state, definition.id, personId));
   });
   const selected = selectedFormId ? getFormDefinition(selectedFormId) : undefined;
+  const selectedIsQualification = Boolean(
+    selected && qualificationDefinitions.some((definition) => definition.id === selected.id),
+  );
   if (academicallyAvailable.length === 0) {
     return <div className="training-locked"><span>Formazione</span><strong>Percorso completato alla Forma 7</strong></div>;
   }
   if (available.length === 0) {
     return <div className="training-locked"><span>Istruttore non disponibile</span><strong>Serve un Istruttore libero e attestato per questa Forma</strong></div>;
   }
-  const selectedCost = selected && collaborator?.assignment === "instructor" && isInstructorForm(selected.id)
-    ? getInstructorFormCost(selected.cost)
-    : selected?.cost ?? 0;
+  const selectedCost = selectedIsQualification && selected
+    ? getInstructorQualificationCost(selected.cost)
+    : selected && collaborator?.assignment === "instructor" && isInstructorForm(selected.id)
+      ? getInstructorFormCost(selected.cost)
+      : selected?.cost ?? 0;
   return <div className="training-control"><label><span>Prossima formazione · anno scolastico {currentYear}</span><select aria-label={`Formazione per ${displayName}`} value={selectedFormId} onChange={(event) => setSelectedFormId(event.target.value as FormId)}><option value="">Seleziona</option>{available.map((definition) => {
-    const cost = collaborator?.assignment === "instructor" && isInstructorForm(definition.id)
-      ? getInstructorFormCost(definition.cost)
-      : definition.cost;
-    return <option key={definition.id} value={definition.id}>{definition.title}{definition.branch ? ` — ${definition.branch}` : ""}{definition.bonusLabel ? ` · ${definition.bonusLabel}` : ""} · {euro.format(cost)}{cost > definition.cost ? " · attestato incluso" : ""}</option>;
-  })}</select></label><button type="button" disabled={!selected || state.school.euros < selectedCost} onClick={() => selected && onStartTraining(personId, selected.id)}>{selected && state.school.euros < selectedCost ? `Servono ${euro.format(selectedCost)}` : "Avvia"}</button></div>;
+    const qualification = qualificationDefinitions.some((candidate) => candidate.id === definition.id);
+    const cost = qualification
+      ? getInstructorQualificationCost(definition.cost)
+      : collaborator?.assignment === "instructor" && isInstructorForm(definition.id)
+        ? getInstructorFormCost(definition.cost)
+        : definition.cost;
+    return <option key={definition.id} value={definition.id}>{qualification ? "Qualifica · " : ""}{definition.title}{definition.branch ? ` — ${definition.branch}` : ""}{definition.bonusLabel ? ` · ${definition.bonusLabel}` : ""} · {euro.format(cost)}{!qualification && cost > definition.cost ? " · qualifica inclusa" : ""}</option>;
+  })}</select></label><button type="button" disabled={!selected || state.school.euros < selectedCost} onClick={() => selected && onStartTraining(personId, selected.id)}>{selected && state.school.euros < selectedCost ? `Servono ${euro.format(selectedCost)}` : selectedIsQualification ? "Ottieni qualifica" : "Avvia apprendimento"}</button></div>;
 }

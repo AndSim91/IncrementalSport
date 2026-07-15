@@ -498,6 +498,7 @@ describe("local save", () => {
     expect(migrated.legendaryCollaborators.retainedProgress["eva-parodi"]).toEqual({
       forms: ["form-1", "course-x", "form-2"],
       instructorForms: ["form-1", "form-2"],
+      formBranchPreferences: [],
       joinedAt: 500,
       lastFormTrainingYear: 2,
     });
