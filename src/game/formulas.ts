@@ -66,7 +66,7 @@ export function getEventFunnelOutcome(
     Math.round(peopleMet * definition.demonstrationRate * charismaMultiplier),
   );
   const emailShareChance = clamp(
-    PERSON_RARITIES.common.emailShareChance * charismaMultiplier * collaboratorMultiplier,
+    definition.contactRate * charismaMultiplier * collaboratorMultiplier,
     0,
     1,
   );

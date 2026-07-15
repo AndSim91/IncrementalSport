@@ -1,11 +1,10 @@
 import { EMAIL_TEMPLATES } from "../content/emailTemplates";
 import { getEmailPresentationLevel } from "../content/emailPresentation";
-import { createProspectEmail } from "../content/emailAddresses";
 import { getNewAchievements } from "../content/achievements";
 import { getAcquisitionEventDefinition } from "../content/events";
 import { canTrainForm, getCollaboratorProductivity, getFormDefinition } from "../content/forms";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
-import { ACQUIRED_CONTACT_NAMES, CONTACT_NAMES } from "../content/names";
+import { createRandomProspect } from "../content/prospectDirectory";
 import { PERSON_RARITIES } from "../content/rarities";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import {
@@ -31,7 +30,7 @@ import {
   getWritingPower,
 } from "./formulas";
 import { nextRandom, randomBetween } from "./random";
-import { selectActiveEmail } from "./selectors";
+import { selectActiveEmail, selectAvailableEventMembers } from "./selectors";
 import type {
   CampaignEmail,
   Contact,
@@ -81,14 +80,6 @@ function scaleContactGain(
 
 function makeId(prefix: string, now: number, suffix: number | string): string {
   return `${prefix}-${now.toString(36)}-${suffix}`;
-}
-
-function normalizeEmailLocalPart(firstName: string, lastName: string): string {
-  return `${firstName}.${lastName}`
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, ".")
-    .toLocaleLowerCase("it-IT");
 }
 
 const ANDREA_SIMONAZZI_ID: SpecialCollaboratorId = "andrea-simonazzi";
@@ -150,14 +141,13 @@ function createContacts(
       ? undefined
       : chooseOrdinaryRarity(nextSeed);
     if (ordinary) nextSeed = ordinary.nextSeed;
-    const [regularFirstName, regularLastName] = CONTACT_NAMES[index % CONTACT_NAMES.length];
-    const firstName = legendaryProfile?.firstName ?? regularFirstName;
-    const lastName = legendaryProfile?.lastName ?? regularLastName;
+    const generated = createRandomProspect(nextSeed, legendaryProfile);
+    const { firstName, lastName, email } = generated;
     return {
       id: makeId("contact", now, index),
       firstName,
       lastName,
-      email: createProspectEmail(normalizeEmailLocalPart(firstName, lastName), index),
+      email,
       source: "tutorial" as const,
       acquiredAt: now,
       status: index === 0 ? "writing" as const : "available" as const,
@@ -316,16 +306,13 @@ function createAcquiredContacts(
     if (specialProfile) progress = addLegendaryEncounter(progress, specialProfile.id);
     const ordinary = specialProfile ? undefined : chooseOrdinaryRarity(nextSeed);
     if (ordinary) nextSeed = ordinary.nextSeed;
-    const [regularFirstName, regularLastName] =
-      ACQUIRED_CONTACT_NAMES[sequence % ACQUIRED_CONTACT_NAMES.length];
-    const firstName = specialProfile?.firstName ?? regularFirstName;
-    const lastName = specialProfile?.lastName ?? regularLastName;
-    const localPart = normalizeEmailLocalPart(firstName, lastName);
+    const generated = createRandomProspect(nextSeed, specialProfile);
+    const { firstName, lastName, email } = generated;
     return {
       id: makeId("contact", now, `acquired-${sequence}`),
       firstName,
       lastName,
-      email: createProspectEmail(localPart, sequence),
+      email,
       source,
       acquiredAt: now,
       status: "available" as const,
@@ -690,13 +677,9 @@ function startAcquisitionEvent(
   now: number,
 ): GameState {
   const definition = getAcquisitionEventDefinition(definitionId);
-  const maxConcurrentEvents = 1 + Math.floor(state.network.schools.length / 2);
-  const runningEvents = state.acquisitionEvents.filter((event) => event.status === "running").length;
-  if (!definition || runningEvents >= maxConcurrentEvents) {
-    return state;
-  }
+  if (!definition) return state;
   if (definitionId === "park-sparring" && now < state.activities.nextSparringAt) return state;
-  if (state.school.activeMembers < definition.requiredMembers) return state;
+  if (selectAvailableEventMembers(state) < definition.requiredMembers) return state;
   if (state.equipment.availableSwords < definition.requiredSwords) return state;
   if (state.school.euros < definition.cost) return state;
 
@@ -716,6 +699,7 @@ function startAcquisitionEvent(
     peopleMet: outcome.peopleMet,
     demonstrationsGiven: outcome.demonstrationsGiven,
     contactReward: outcome.contactsObtained,
+    membersUsed: definition.requiredMembers,
     equipmentUsed: definition.requiredSwords,
     wearAdded: Math.max(
       0,

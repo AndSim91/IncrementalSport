@@ -1,12 +1,13 @@
 import { GAME_CONFIG } from "./config";
 import { createInitialState } from "./engine";
 import { simulateOfflineProgress } from "./offline";
-import { createProspectEmail } from "../content/emailAddresses";
+import { createProspectEmail } from "../content/prospectDirectory";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import { createInitialUpgradeLevels, getUpgradeEffectTotal } from "../content/upgrades";
 import { getEmailPresentationLevel } from "../content/emailPresentation";
 import { createShortGoalFromStatistics } from "../content/shortGoals";
 import { normalizeStackedMessages } from "./messages";
+import { getAcquisitionEventDefinition } from "../content/events";
 import type { GameState, UpgradeLevels } from "./types";
 
 const SAVE_KEY = "oggetto-nuovi-iscritti.save";
@@ -35,6 +36,7 @@ function isGameState(value: unknown): value is GameState {
       email.presentationLevel <= 4
     ) &&
     Array.isArray(state.acquisitionEvents) &&
+    state.acquisitionEvents.every((event) => typeof event.membersUsed === "number") &&
     typeof state.activities?.nextSparringAt === "number" &&
     typeof state.upgrades?.["comfortable-keyboard"] === "number" &&
     typeof state.statistics?.peopleMet === "number" &&
@@ -423,12 +425,25 @@ function migrate(value: unknown): unknown {
     const referenceTime = migrated.lastSavedAt ?? migrated.createdAt ?? Date.now();
     migrated = {
       ...migrated,
-      version: GAME_CONFIG.version,
+      version: 19,
       shortGoal: createShortGoalFromStatistics(
         migrated.statistics as GameState["statistics"],
         0,
         referenceTime,
       ),
+    };
+  }
+
+  if (migrated.version === 19) {
+    migrated = {
+      ...migrated,
+      version: GAME_CONFIG.version,
+      acquisitionEvents: (migrated.acquisitionEvents ?? []).map((event) => ({
+        ...event,
+        membersUsed: event.membersUsed ??
+          getAcquisitionEventDefinition(event.definitionId)?.requiredMembers ??
+          0,
+      })),
     };
   }
 

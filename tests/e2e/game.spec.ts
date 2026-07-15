@@ -69,7 +69,7 @@ test("legge le notifiche e apre shop ed eventi", async ({ page }) => {
   await expect.poll(async () => {
     const text = await page.locator(".event-notice strong").textContent();
     return Number(text?.match(/\d+/)?.[0] ?? 0);
-  }, { timeout: 17_000 }).toBeGreaterThan(7);
+  }, { timeout: 17_000 }).toBeGreaterThan(4);
   if (process.env.QA_SCREENSHOT_DIR) {
     await page.screenshot({ path: `${process.env.QA_SCREENSHOT_DIR}/events-after-sparring.png` });
   }

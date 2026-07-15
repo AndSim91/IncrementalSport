@@ -3013,30 +3013,41 @@ svg {
   background: var(--blue-050);
 }
 
-.event-equipment-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.event-capacity-note {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: 1100px;
-  padding: 10px 15px;
   border: 1px solid var(--line);
   border-top: 0;
   background: var(--surface-muted);
 }
 
-.event-equipment-note svg {
+.event-capacity-note > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+}
+
+.event-capacity-note > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.event-capacity-note svg {
   width: 18px;
+  flex: 0 0 auto;
   color: var(--blue-600);
 }
 
-.event-equipment-note > span {
+.event-capacity-note span {
   display: flex;
-  align-items: center;
-  gap: 18px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.event-equipment-note small {
+.event-capacity-note small {
   color: var(--ink-muted);
+  font-size: 11px;
 }
 
 .event-notice svg {
@@ -3090,7 +3101,8 @@ svg {
   line-height: 1.45;
 }
 
-.event-copy small {
+.event-potential {
+  display: inline-block;
   color: var(--success);
   font-weight: 600;
 }
@@ -3098,16 +3110,6 @@ svg {
 .event-progress-block {
   max-width: 540px;
   margin-top: 12px;
-}
-
-.event-funnel-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  margin-bottom: 8px;
-  color: var(--blue-700);
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .event-progress-label {
@@ -3219,6 +3221,15 @@ svg {
   .event-row > button {
     grid-column: 1;
     justify-self: start;
+  }
+
+  .event-capacity-note {
+    grid-template-columns: 1fr;
+  }
+
+  .event-capacity-note > div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 
   .upgrade-price {

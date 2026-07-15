@@ -15,6 +15,13 @@ export function selectAvailableContacts(state: GameState): number {
   return state.contacts.filter((contact) => contact.status === "available").length;
 }
 
+export function selectAvailableEventMembers(state: GameState): number {
+  const assignedMembers = state.acquisitionEvents
+    .filter((event) => event.status === "running")
+    .reduce((total, event) => total + event.membersUsed, 0);
+  return Math.max(0, state.school.activeMembers - assignedMembers);
+}
+
 export function selectUpcomingTrials(state: GameState): ScheduledTrial[] {
   return state.scheduledTrials
     .filter((trial) => trial.status === "scheduled")

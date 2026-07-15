@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PROSPECT_EMAIL_PROVIDERS } from "../content/emailAddresses";
+import { PROSPECT_EMAIL_PROVIDERS } from "../content/prospectDirectory";
+import { getAcquisitionEventDefinition } from "../content/events";
 import { GAME_CONFIG } from "./config";
 import { canFoundSchool, createInitialState, gameReducer, getLegendaryEnrollmentChance, getPrestigeRequirements } from "./engine";
-import { getEmailBookingChance, getEnrollmentChance } from "./formulas";
+import { getEmailBookingChance, getEnrollmentChance, getEventFunnelOutcome } from "./formulas";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import { PERSON_RARITIES } from "../content/rarities";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
@@ -20,10 +21,11 @@ describe("game engine", () => {
 
     expect(state.contacts).toHaveLength(5);
     expect(state.contacts.filter((contact) => contact.status === "available")).toHaveLength(4);
-    expect(state.contacts.map((contact) => contact.email.split("@")[1])).toEqual([
-      ...PROSPECT_EMAIL_PROVIDERS,
-      "cmail.com",
-    ]);
+    expect(state.contacts.every((contact) =>
+      PROSPECT_EMAIL_PROVIDERS.includes(
+        contact.email.split("@")[1] as (typeof PROSPECT_EMAIL_PROVIDERS)[number],
+      )
+    )).toBe(true);
     expect(selectActiveEmail(state)?.status).toBe("writing");
     expect(state.school.euros).toBe(0);
     expect(state.contacts.every((contact) => contact.rarity !== "legendary")).toBe(true);
@@ -62,6 +64,7 @@ describe("game engine", () => {
       peopleMet: 1,
       demonstrationsGiven: 1,
       contactReward: 1,
+      membersUsed: 0,
       equipmentUsed: 0,
       wearAdded: 0,
       status: "running" as const,
@@ -238,6 +241,7 @@ describe("game engine", () => {
       peopleMet: 1,
       demonstrationsGiven: 1,
       contactReward: 1,
+      membersUsed: 0,
       equipmentUsed: 0,
       wearAdded: 0,
       status: "running" as const,
@@ -355,16 +359,13 @@ describe("game engine", () => {
 
     expect(started.school.euros).toBe(0);
     expect(event.status).toBe("running");
-    expect(completed.contacts).toHaveLength(state.contacts.length + 4);
-    expect(completed.contacts.slice(-2).map((contact) => contact.email.split("@")[1])).toEqual([
-      "yabadabadoo.it",
-      "gspot.com",
-    ]);
-    expect(completed.contacts.slice(-2).map((contact) => contact.email.split("@")[0])).toEqual([
-      "federica.massa",
-      "andrea.simonazzi",
-    ]);
-    expect(completed.statistics.contactsAcquired).toBe(4);
+    expect(completed.contacts).toHaveLength(state.contacts.length + event.contactReward);
+    expect(completed.contacts.slice(-2).every((contact) =>
+      PROSPECT_EMAIL_PROVIDERS.includes(
+        contact.email.split("@")[1] as (typeof PROSPECT_EMAIL_PROVIDERS)[number],
+      )
+    )).toBe(true);
+    expect(completed.statistics.contactsAcquired).toBe(event.contactReward);
     expect(completed.statistics.peopleMet).toBe(event.peopleMet);
     expect(completed.statistics.demonstrationsGiven).toBe(event.demonstrationsGiven);
     expect(completed.statistics.eventsCompleted).toBe(1);
@@ -414,7 +415,7 @@ describe("game engine", () => {
     });
     const funded = {
       ...state,
-      school: { ...state.school, euros: 20, activeMembers: 1 },
+      school: { ...state.school, euros: 80, activeMembers: 2 },
     };
     const started = gameReducer(funded, {
       type: "START_ACQUISITION_EVENT",
@@ -423,7 +424,7 @@ describe("game engine", () => {
     });
 
     expect(blocked).toBe(state);
-    expect(started.school.euros).toBe(5);
+    expect(started.school.euros).toBe(0);
     expect(started.acquisitionEvents).toHaveLength(1);
   });
 
@@ -473,6 +474,7 @@ describe("game engine", () => {
       peopleMet: 1,
       demonstrationsGiven: 1,
       contactReward: 1,
+      membersUsed: 0,
       equipmentUsed: 0,
       wearAdded: 0,
       status: "running" as const,
@@ -520,6 +522,7 @@ describe("game engine", () => {
       peopleMet: 1,
       demonstrationsGiven: 1,
       contactReward: 1,
+      membersUsed: 0,
       equipmentUsed: 0,
       wearAdded: 0,
       status: "running" as const,
@@ -658,14 +661,12 @@ describe("game engine", () => {
       upgradeId: "prepared-presentation",
       now: 3_000,
     });
-    const eventStarted = gameReducer(charismatic, {
-      type: "START_ACQUISITION_EVENT",
-      definitionId: "park-sparring",
-      now: 4_000,
-    });
+    const sparring = getAcquisitionEventDefinition("park-sparring")!;
 
     expect(faster.player.writingPower).toBe(2);
-    expect(eventStarted.acquisitionEvents[0].contactReward).toBeGreaterThan(2);
+    expect(getEventFunnelOutcome(charismatic, sparring).emailShareChance).toBeGreaterThan(
+      getEventFunnelOutcome(faster, sparring).emailShareChance,
+    );
   });
 
   it("applies writing and welcome upgrades to conversion chances", () => {
@@ -967,29 +968,21 @@ describe("game engine", () => {
     expect(upgraded.school.euros).toBe(14);
   });
 
-  it("adds event capacity as the school network grows", () => {
+  it("runs events together while both members and swords remain available", () => {
     const initial = createInitialState(1_000);
-    const archived = {
-      id: "school-archive",
-      name: "Sede precedente",
-      city: "Genova",
-      motto: "",
-      specialization: "generale" as const,
-      membersAtTransfer: 100,
-      emailsSent: 20,
-      eventsCompleted: 12,
-      transferredAt: 1_000,
-    };
-    const networked = {
+    const resourced = {
       ...initial,
-      school: { ...initial.school, euros: 100, activeMembers: 10 },
-      network: { ...initial.network, schools: [archived, { ...archived, id: "school-archive-2" }] },
+      school: { ...initial.school, euros: 200, activeMembers: 3 },
     };
 
-    const first = gameReducer(networked, { type: "START_ACQUISITION_EVENT", definitionId: "park-sparring", now: 2_000 });
-    const second = gameReducer(first, { type: "START_ACQUISITION_EVENT", definitionId: "public-demo", now: 2_100 });
+    const first = gameReducer(resourced, { type: "START_ACQUISITION_EVENT", definitionId: "public-demo", now: 2_000 });
+    const second = gameReducer(first, { type: "START_ACQUISITION_EVENT", definitionId: "organized-flyering", now: 2_100 });
+    const blockedByCapacity = gameReducer(second, { type: "START_ACQUISITION_EVENT", definitionId: "organized-flyering", now: 2_200 });
 
     expect(second.acquisitionEvents.filter((event) => event.status === "running")).toHaveLength(2);
+    expect(second.equipment.availableSwords).toBe(0);
+    expect(second.acquisitionEvents.map((event) => event.membersUsed)).toEqual([2, 1]);
+    expect(blockedByCapacity).toBe(second);
   });
 
   it("guarantees a booking after four consecutive lost email outcomes", () => {

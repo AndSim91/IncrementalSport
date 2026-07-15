@@ -36,13 +36,17 @@ describe("CalendarView", () => {
     vi.setSystemTime(15_000);
     const onOpenSentEmail = vi.fn();
     const state = stateWithTrial("trialScheduled");
+    const contact = state.contacts[0];
+    const displayName = `${contact.firstName} ${contact.lastName}`;
 
     render(<CalendarView state={state} onOpenSentEmail={onOpenSentEmail} />);
 
     expect(screen.getByText("In corso")).toBeVisible();
-    expect(screen.getByText("Giulia Ferrando")).toBeVisible();
+    expect(screen.getByText(displayName)).toBeVisible();
     expect(
-      screen.getByRole("progressbar", { name: "Avanzamento lezione di prova di Giulia Ferrando" }),
+      screen.getByRole("progressbar", {
+        name: `Avanzamento lezione di prova di ${displayName}`,
+      }),
     ).toHaveAttribute("aria-valuenow", "50");
 
     fireEvent.click(screen.getByRole("button", { name: "Apri mail inviata" }));

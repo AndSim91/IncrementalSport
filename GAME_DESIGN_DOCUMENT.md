@@ -216,7 +216,7 @@ Le spade della scuola sono gestite come inventario operativo:
 - in manutenzione;
 - temporaneamente inutilizzabili.
 
-Nella prima versione la quantità di spade non impone una capienza rigida. L'usura è attivata soprattutto da eventi narrativi; un valore di usura più alto aumenta la probabilità di inconvenienti e riduce l'efficacia degli eventi.
+Le spade impongono una capienza operativa: quelle assegnate a un evento non sono disponibili fino alla sua conclusione. Un valore di usura più alto riduce inoltre l'efficacia degli eventi.
 
 ### 5.7 Reputazione di rete
 
@@ -386,26 +386,28 @@ Gli esiti negativi dei singoli contatti non producono messaggi: sono visibili so
 
 Gli eventi sono programmati attraverso il Calendario di Outlook e si svolgono in tempo compresso. Esistono eventi fissi ed eventi che compaiono casualmente. Nella prima versione gli esiti sono automatici: il sistema decisionale verrà valutato successivamente.
 
-Ogni evento può richiedere:
+Ogni evento richiede:
 
 - un tempo di preparazione;
-- uno o più collaboratori;
+- un numero di iscritti da impiegare;
+- un numero di spade da impiegare;
 - una durata;
 - un costo in Euro;
-- talvolta una soglia di iscritti o collaboratori;
 - eventuali requisiti di Carisma, Social o Attrezzatura.
+
+Non esiste un limite numerico separato agli eventi contemporanei. Il giocatore può avviarne più di uno finché restano disponibili sia gli iscritti sia le spade richieste; entrambe le risorse tornano disponibili al termine dell'attività.
 
 Tipi iniziali:
 
-| Evento | Durata | Rischio | Contatti | Nota |
-|---|---:|---:|---:|---|
-| Sparring esterno | breve | basso | pochissimi | fonte gratuita di emergenza |
-| Dimostrazione pubblica | media | medio | medi | include prove sul posto |
-| Stand sportivo | lunga | basso | molti | forte effetto Carisma |
-| Evento locale | media | medio | variabili | pubblico generalista |
-| Evento a tema | lunga | medio | molti | evitare riferimenti diretti a franchise |
-| Open day della scuola | media | basso | medi, alta qualità | migliora con la scuola |
-| Volantinaggio organizzato benissimo | breve | alto | imprevedibili | volutamente comico |
+| Evento | Costo | Iscritti | Spade | Potenzialità |
+|---|---:|---:|---:|---:|
+| Sparring esterno | €0 | 0 | 2 | bassa |
+| Dimostrazione pubblica | €80 | 2 | 4 | media |
+| Stand sportivo | €160 | 4 | 6 | media |
+| Evento locale | €120 | 3 | 4 | media |
+| Evento a tema | €320 | 8 | 6 | alta |
+| Open day della scuola | €200 | 5 | 4 | media |
+| Volantinaggio organizzato benissimo | €40 | 1 | 2 | bassa |
 
 ### 8.2 Persone incontrate e contatti ottenuti
 
@@ -430,7 +432,7 @@ contattiOttenuti = proveDimostrative
 Ipotesi iniziali:
 
 - persone che provano sul posto: 35%;
-- persone che lasciano l'email dopo la prova: 25%;
+- persone che lasciano l'email dopo la prova: 25–35% secondo l'evento;
 - entrambi i passaggi sono migliorabili tramite Carisma;
 - il numero di persone presenti varia in base al tipo di evento, non al meteo o al giorno della settimana.
 
@@ -626,7 +628,7 @@ Genera passivamente contatti email anche senza eventi. Le campagne social consum
 
 ### 10.6 Attrezzatura
 
-Influenza qualità e frequenza degli eventi e riduce il rischio di eventi narrativi negativi. Nella prima versione non determina una capienza rigida.
+Influenza qualità e frequenza degli eventi e riduce il rischio di eventi narrativi negativi. Le spade disponibili determinano la capienza contemporanea insieme agli iscritti liberi.
 
 | Potenziamento | Effetto indicativo |
 |---|---|

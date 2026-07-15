@@ -54,11 +54,12 @@ describe("PeopleView", () => {
   it("starts the Form path from an enrolled member", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
+    const displayName = `${enrolled.firstName} ${enrolled.lastName}`;
     const onStartTraining = vi.fn();
     render(<PeopleView state={{ ...initial, school: { ...initial.school, activeMembers: 1, euros: 20 }, contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact), unlocks: { ...initial.unlocks, forms: true } }} onAssign={() => undefined} onStartTraining={onStartTraining} />);
 
     fireEvent.click(screen.getByRole("tab", { name: /Iscritti/ }));
-    fireEvent.change(screen.getByRole("combobox", { name: "Formazione per Giulia Ferrando" }), { target: { value: "form-1" } });
+    fireEvent.change(screen.getByRole("combobox", { name: `Formazione per ${displayName}` }), { target: { value: "form-1" } });
     fireEvent.click(screen.getByRole("button", { name: "Avvia" }));
 
     expect(onStartTraining).toHaveBeenCalledWith(enrolled.id, "form-1");

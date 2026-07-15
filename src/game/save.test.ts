@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "./engine";
+import { createInitialState, gameReducer } from "./engine";
 import { exportGame, importGame, loadGame, resetGame, saveGame } from "./save";
 import { GAME_CONFIG } from "./config";
+import { PROSPECT_EMAIL_PROVIDERS } from "../content/prospectDirectory";
 
 describe("local save", () => {
   it("round-trips the game state", () => {
@@ -33,13 +34,13 @@ describe("local save", () => {
 
     const migrated = loadGame(1_000);
 
-    expect(migrated.contacts.map((contact) => contact.email.split("@")[1])).toEqual([
-      "cmail.com",
-      "hotlook.it",
-      "yabadabadoo.it",
-      "gspot.com",
-      "cmail.com",
-    ]);
+    const providers = migrated.contacts.map((contact) => contact.email.split("@")[1]);
+    expect(providers.every((provider) =>
+      PROSPECT_EMAIL_PROVIDERS.includes(
+        provider as (typeof PROSPECT_EMAIL_PROVIDERS)[number],
+      )
+    )).toBe(true);
+    expect(new Set(providers).size).toBeGreaterThan(1);
   });
 
   it("removes numeric suffixes from previously saved prospect emails", () => {
@@ -378,6 +379,26 @@ describe("local save", () => {
     expect(migrated.shortGoal.baseline).toBe(12);
     expect(migrated.messages).toHaveLength(1);
     expect(migrated.messages[0].stackCount).toBe(2);
+  });
+
+  it("migrates version 19 running events with their assigned members", () => {
+    const initial = createInitialState(1_000);
+    const started = gameReducer({
+      ...initial,
+      school: { ...initial.school, euros: 80, activeMembers: 2 },
+    }, {
+      type: "START_ACQUISITION_EVENT",
+      definitionId: "public-demo",
+      now: 2_000,
+    });
+    const legacy = JSON.parse(JSON.stringify({ ...started, version: 19 }));
+    delete legacy.acquisitionEvents[0].membersUsed;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(2_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.acquisitionEvents[0].membersUsed).toBe(2);
   });
 
   it("resets both primary and backup saves", () => {

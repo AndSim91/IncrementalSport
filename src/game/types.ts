@@ -103,6 +103,7 @@ export interface AcquisitionEvent {
   peopleMet: number;
   demonstrationsGiven: number;
   contactReward: number;
+  membersUsed: number;
   equipmentUsed: number;
   wearAdded: number;
   status: "running" | "completed";
