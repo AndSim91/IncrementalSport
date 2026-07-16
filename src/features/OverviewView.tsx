@@ -74,7 +74,7 @@ export function OverviewView({
 
       <section className="settings-sheet">
         <h2>Profilo email</h2>
-        <p>Questo nome viene inserito nella firma delle bozze e delle nuove campagne.</p>
+        <p>Questo nome identifica il profilo delle bozze e delle nuove campagne.</p>
         <form
           className="profile-settings-form"
           onSubmit={(event) => {

@@ -30,11 +30,9 @@ export interface EmailCatalogEntry {
 
 type TemplateCopy = EmailCatalogEntry;
 
-const signature = (senderName: string) => `
+const signature = `
 
-Un saluto,
-${senderName} · Ordine delle Onde
-LudoSport Genova`;
+Un saluto,`;
 
 const MOJIBAKE_REPAIRS: Array<[string, string]> = [
   ["Ã ", "à"],
@@ -88,6 +86,12 @@ function cleanDraftCopy(value: string): string {
 
 function cleanCatalogCopy(value: string): string {
   return repairEncoding(value).replace(/[^\S\r\n]{2,}/g, " ").trim();
+}
+
+function normalizeEmailSignoff(body: string, senderName: string): string {
+  const legacySuffix = senderName ? `\n\n${senderName}` : "";
+  if (!legacySuffix || !body.endsWith(legacySuffix)) return body;
+  return `${body.slice(0, -legacySuffix.length)}\n\nUn saluto,`;
 }
 
 /**
@@ -238,9 +242,7 @@ function capitalize(value: string) {
   return value ? `${value[0].toLocaleUpperCase("it-IT")}${value.slice(1)}` : value;
 }
 
-function fullSignature(senderName: string) {
-  return `Un saluto,\n${senderName} · Ordine delle Onde\nLudoSport Genova`;
-}
+const fullSignature = "Un saluto,";
 
 function expandedOpening(copy: TemplateCopy, index: number, firstName: string) {
   const opening = cleanCatalogCopy(copy.opening);
@@ -249,51 +251,45 @@ function expandedOpening(copy: TemplateCopy, index: number, firstName: string) {
   return `Ciao ${firstName},\n\n${capitalize(opening)}\n\n${invitation} ${appendix}`;
 }
 
-function expandedBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
-  return `${expandedOpening(copy, index, firstName)}${signature(senderName)}`;
+function expandedBody(copy: TemplateCopy, index: number, firstName: string) {
+  return `${expandedOpening(copy, index, firstName)}${signature}`;
 }
 
-function detailedBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
-  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${signature(senderName)}`;
+function detailedBody(copy: TemplateCopy, index: number, firstName: string) {
+  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${signature}`;
 }
 
-function premiumBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
-  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${PREMIUM_APPENDIX}${signature(senderName)}`;
+function premiumBody(copy: TemplateCopy, index: number, firstName: string) {
+  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${PREMIUM_APPENDIX}${signature}`;
 }
 
 function bodyForLevel(
   copy: TemplateCopy,
   index: number,
   firstName: string,
-  senderName: string,
   level: EmailPresentationLevel,
 ) {
   const compact = level === 0 ? copy.shortDraft : cleanDraftCopy(copy.shortClean);
-  if (level === 0) {
-    return `Ciao ${firstName},\n${compact}\n\n${senderName}`;
-  }
-  if (level === 1) {
-    return `Ciao ${firstName},\n${compact}\n\n${senderName}`;
-  }
+  if (level <= 1) return `Ciao ${firstName},\n${compact}${signature}`;
   if (level === 2) {
-    return `Ciao ${firstName},\n\n${compact}\n\n${fullSignature(senderName)}`;
+    return `Ciao ${firstName},\n\n${compact}\n\n${fullSignature}`;
   }
 
-  const expanded = expandedBody(copy, index, firstName, senderName);
+  const expanded = expandedBody(copy, index, firstName);
   if (level === 3) return expanded;
-  if (level === 4) return `${detailedBody(copy, index, firstName, senderName)}\n\nRispondi a questa email per prenotare la tua prova.`;
-  if (level === 5) return `${detailedBody(copy, index, firstName, senderName)}\n\nRispondi a questa email per prenotare: ti indicheremo orario, luogo e cosa portare.`;
+  if (level === 4) return `${detailedBody(copy, index, firstName)}\n\nRispondi a questa email per prenotare la tua prova.`;
+  if (level === 5) return `${detailedBody(copy, index, firstName)}\n\nRispondi a questa email per prenotare: ti indicheremo orario, luogo e cosa portare.`;
   if (level === 6) {
-    return `${premiumBody(copy, index, firstName, senderName)}\n\nQuando: prossima lezione disponibile\nDove: PalaGym Assarotti, Genova\nCosa portare: abiti comodi e scarpe da palestra.`;
+    return `${premiumBody(copy, index, firstName)}\n\nQuando: prossima lezione disponibile\nDove: PalaGym Assarotti, Genova\nCosa portare: abiti comodi e scarpe da palestra.`;
   }
-  return `${premiumBody(copy, index, firstName, senderName)}${MARKETING_APPENDIX}`;
+  return `${premiumBody(copy, index, firstName)}${MARKETING_APPENDIX}`;
 }
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = EMAIL_CATALOG.map((copy, index) => ({
   id: copy.id,
   subject: copy.subject,
   body: (name, senderName, presentationLevel = 0) =>
-    bodyForLevel(copy, index, name, senderName, presentationLevel),
+    bodyForLevel(copy, index, name, presentationLevel),
 }));
 
 export function getDefaultEmailTemplateCopy(
@@ -323,9 +319,10 @@ export function resolveEmailTemplateCopy(
   if (presentationLevel === 1) {
     const draftOverride = getEmailCopyOverride(template.id, 0);
     if (draftOverride) {
+      const renderedBody = renderEmailCopyTokens(draftOverride.body, firstName, senderName);
       return {
         subject: cleanDraftCopy(renderEmailCopyTokens(draftOverride.subject, firstName, senderName)),
-        body: cleanDraftCopy(renderEmailCopyTokens(draftOverride.body, firstName, senderName)),
+        body: normalizeEmailSignoff(cleanDraftCopy(renderedBody), senderName),
       };
     }
   }
@@ -333,6 +330,9 @@ export function resolveEmailTemplateCopy(
   if (!override) return defaults;
   return {
     subject: renderEmailCopyTokens(override.subject, firstName, senderName),
-    body: renderEmailCopyTokens(override.body, firstName, senderName),
+    body: normalizeEmailSignoff(
+      renderEmailCopyTokens(override.body, firstName, senderName),
+      senderName,
+    ),
   };
 }

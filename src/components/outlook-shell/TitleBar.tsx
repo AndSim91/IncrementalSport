@@ -1,8 +1,12 @@
 import { Icon } from "../common/Icon";
 import { getGameMonthName, getSchoolYear } from "../../game/calendar";
 import { GAME_CONFIG } from "../../game/config";
-
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+import {
+  formatCompactCurrency,
+  formatCompactNumber,
+  formatExactCurrency,
+  formatExactNumber,
+} from "./resourceFormatting";
 
 export function TitleBar({
   currentMonth,
@@ -32,20 +36,20 @@ export function TitleBar({
         <Icon name="menu" />
       </button>
       <div className="title-resources" aria-label="Situazione del gioco">
-        <span className="title-resource" aria-label={`Contatti disponibili: ${availableContacts}`}>
+        <span className="title-resource" aria-label={`Contatti disponibili: ${formatExactNumber(availableContacts)}`}>
           <Icon name="contact" />
           <small>Contatti</small>
-          <strong>{availableContacts}</strong>
+          <strong title={formatExactNumber(availableContacts)}>{formatCompactNumber(availableContacts)}</strong>
         </span>
-        <span className="title-resource" aria-label={`Iscritti attivi: ${activeMembers}`}>
+        <span className="title-resource" aria-label={`Iscritti attivi: ${formatExactNumber(activeMembers)}`}>
           <Icon name="people" />
           <small>Iscritti</small>
-          <strong>{activeMembers}</strong>
+          <strong title={formatExactNumber(activeMembers)}>{formatCompactNumber(activeMembers)}</strong>
         </span>
-        <span className="title-resource" aria-label={`Disponibilità economica: ${euro.format(euros)}`}>
+        <span className="title-resource" aria-label={`Disponibilità economica: ${formatExactCurrency(euros)}`}>
           <Icon name="coin" />
           <small>Disponibilità</small>
-          <strong>{euro.format(euros)}</strong>
+          <strong title={formatExactCurrency(euros)}>{formatCompactCurrency(euros)}</strong>
         </span>
       </div>
       <span

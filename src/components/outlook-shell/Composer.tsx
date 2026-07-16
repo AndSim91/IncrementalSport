@@ -1,9 +1,27 @@
 import { MAIL_SENDER_ADDRESS } from "../../content/emailAddresses";
 import { selectActiveContact, selectActiveEmail, selectEmailProgress } from "../../game/selectors";
 import type { GameState } from "../../game/types";
-import { EMAIL_PRESENTATION_LEVELS } from "../../content/emailPresentation";
 import { Icon } from "../common/Icon";
 import { CampaignEmailContent } from "./CampaignEmailContent";
+
+function EmailBuildProgress({ progress }: { progress: number }) {
+  return (
+    <div
+      className="composer-build-progress"
+      role="progressbar"
+      aria-label={`Costruzione email ${progress}%`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={progress}
+    >
+      <span className="composer-build-progress-label">Costruzione email</span>
+      <span className="composer-build-progress-track" aria-hidden="true">
+        <span style={{ width: `${progress}%` }} />
+      </span>
+      <b>{progress}%</b>
+    </div>
+  );
+}
 
 export function Composer({ state, onWrite }: { state: GameState; onWrite: () => void }) {
   const email = selectActiveEmail(state);
@@ -38,8 +56,10 @@ export function Composer({ state, onWrite }: { state: GameState; onWrite: () => 
         {email.status === "sending" ? <div className="sending-toast"><Icon name="send" /> Invio in corso…</div> : null}
       </div>
       <div className="composer-status">
-        <div className="progress-dots" aria-label={`Completamento ${progress}%`}><i className={progress > 0 ? "on" : ""}/><i className={progress >= 34 ? "on" : ""}/><i className={progress >= 67 ? "on" : ""}/></div>
-        <span>Bozza salvata</span><em>{email.status === "sending" ? "Invio in corso…" : "Digitazione in corso…"}</em><b>{email.revealedCharacters} / {email.body.length} caratteri · {state.player.writingPower} per input · {EMAIL_PRESENTATION_LEVELS[email.presentationLevel].label}</b>
+        <span>Bozza salvata</span>
+        <em>{email.status === "sending" ? "Invio in corso…" : "Digitazione in corso…"}</em>
+        <span className="composer-status-count">{email.revealedCharacters} / {email.body.length} caratteri · {state.player.writingPower} per input</span>
+        <EmailBuildProgress progress={Math.max(0, Math.min(100, progress))} />
       </div>
     </main>
   );

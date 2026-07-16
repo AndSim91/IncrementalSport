@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TitleBar } from "./TitleBar";
+import { formatExactCurrency } from "./resourceFormatting";
 
 describe("TitleBar", () => {
   it("shows the month, school year, and progress toward the next month", () => {
@@ -15,7 +16,7 @@ describe("TitleBar", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Situazione del gioco")).toHaveTextContent("Contatti4Iscritti3Disponibilità120,00 €");
+    expect(screen.getByLabelText("Situazione del gioco")).toHaveTextContent(/120\s+€/);
     expect(screen.getByLabelText("Mese corrente: Settembre, anno scolastico 1"))
       .toHaveTextContent("SettembreAnno scolastico 1");
     expect(screen.getByRole("progressbar", {
@@ -47,5 +48,28 @@ describe("TitleBar", () => {
     );
     expect(screen.getByLabelText("Mese corrente: Settembre, anno scolastico 2"))
       .toHaveTextContent("SettembreAnno scolastico 2");
+  });
+
+  it("compacts large resources without losing the exact accessible value", () => {
+    const euros = 99_999_999_088;
+    const { container } = render(
+      <TitleBar
+        currentMonth={9}
+        nextMonthAt={121_000}
+        now={61_000}
+        availableContacts={1_200_000}
+        activeMembers={999_999}
+        euros={euros}
+      />,
+    );
+
+    expect(container.querySelector(".title-resources")).toHaveTextContent(/100\s+Mld\s+€/);
+    expect(container.querySelectorAll(".title-resource")[2]).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining(formatExactCurrency(euros)),
+    );
+    expect(container.querySelector(`strong[title="${formatExactCurrency(euros)}"]`)).toHaveTextContent(
+      /100\s+Mld\s+€/,
+    );
   });
 });

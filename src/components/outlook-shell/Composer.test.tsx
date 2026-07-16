@@ -25,4 +25,11 @@ describe("Composer", () => {
       "rarity-rare",
     );
   });
+
+  it("shows one global email progress bar in the composer footer", () => {
+    render(<Composer state={createInitialState(1_000)} onWrite={() => undefined} />);
+
+    expect(screen.getByRole("progressbar", { name: "Costruzione email 0%" })).toBeVisible();
+    expect(screen.queryByText(/Email aziendale grezza/)).not.toBeInTheDocument();
+  });
 });

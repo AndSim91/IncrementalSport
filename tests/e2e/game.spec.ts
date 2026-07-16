@@ -41,7 +41,7 @@ test("invia automaticamente la mail completa e apre il contatto successivo", asy
   await sentFolder.click();
   await expect(page.locator(".campaign-status")).toHaveText("In attesa");
   await expect(page.getByRole("article")).toContainText("Buongiorno Giulia,");
-  await expect(page.getByRole("article")).toContainText("Andrea Ungaro - Ordine delle Onde");
+  await expect(page.getByRole("article")).toContainText("Un saluto,");
 });
 
 test("legge le notifiche e sblocca progressivamente gli eventi", async ({ page }) => {

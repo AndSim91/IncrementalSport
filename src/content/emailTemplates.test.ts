@@ -22,12 +22,13 @@ describe("email template archive", () => {
     expect(ids.size).toBe(100);
     expect(subjects.size).toBe(100);
     expect(bodies.size).toBe(100);
-    expect([...bodies].every((body) => body.length >= 150 && body.length <= 200)).toBe(true);
+    expect([...bodies].every((body) => body.length >= 135 && body.length <= 200)).toBe(true);
     expect([...bodies].every((body) => !body.includes("…"))).toBe(true);
     expect([...bodies].every((body) => !body.includes("..."))).toBe(true);
     expect([...bodies].some((body) => body.includes("Udosport") && body.includes("provore"))).toBe(true);
     expect([...bodies].some((body) => body.includes("La prova e"))).toBe(true);
     expect([...bodies].every((body) => !body.includes("LudoSport Genova"))).toBe(true);
+    expect([...bodies].every((body) => !body.includes("Andrea Ungaro"))).toBe(true);
 
     const firstDraft = EMAIL_TEMPLATES[0].body("Nome", "Andrea Ungaro");
     const firstClean = EMAIL_TEMPLATES[0].body("Nome", "Andrea Ungaro", 1);
@@ -45,8 +46,9 @@ describe("email template archive", () => {
     const marketingBodies = EMAIL_TEMPLATES.map((template) => template.body("Nome", "Andrea Ungaro", 7));
 
     expect(cleanBodies.every((body) => !body.includes("Spero che ti interessa"))).toBe(true);
-    expect(professionalBodies.every((body) => body.includes("LudoSport Genova"))).toBe(true);
-    expect(personalizedBodies.every((body) => body.length >= 250 && body.length <= 450)).toBe(true);
+    expect(professionalBodies.every((body) => body.includes("Un saluto,"))).toBe(true);
+    expect(professionalBodies.every((body) => !body.includes("Ordine delle Onde\nLudoSport Genova"))).toBe(true);
+    expect(personalizedBodies.every((body) => body.length >= 220 && body.length <= 450)).toBe(true);
     expect(ctaBodies.every((body) => body.length <= 1_200)).toBe(true);
     expect(layoutBodies.every((body) => body.length <= 1_300)).toBe(true);
     expect(flyerBodies.every((body) => body.length <= 3_000)).toBe(true);

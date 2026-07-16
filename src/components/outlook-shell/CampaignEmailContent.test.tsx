@@ -7,16 +7,24 @@ import { CampaignEmailContent } from "./CampaignEmailContent";
 afterEach(() => cleanup());
 
 describe("CampaignEmailContent", () => {
-  it("keeps the initial campaign as plain text", () => {
+  it("builds the visual structure before showing any copy", () => {
     const email = createInitialState(1_000, "Andrea Ungaro").emails[0];
-    render(<CampaignEmailContent email={email} />);
+    render(<CampaignEmailContent email={email} revealedCharacters={0} />);
+
+    expect(screen.getByRole("img", { name: "Struttura della mail in costruzione" })).toBeVisible();
+    expect(screen.queryByText(/BOZZA NON REVISIONATA/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ciao/)).not.toBeInTheDocument();
+  });
+
+  it("reveals the initial campaign as plain text after the structure is built", () => {
+    const email = createInitialState(1_000, "Andrea Ungaro").emails[0];
+    render(<CampaignEmailContent email={email} revealedCharacters={email.body.length} />);
 
     expect(screen.getByLabelText("Email in formato Bozza disastrata")).toHaveAttribute(
       "data-email-presentation",
       "0",
     );
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders the complete flyer with local imagery and inert visual CTAs", () => {
@@ -44,5 +52,6 @@ describe("CampaignEmailContent", () => {
     );
     expect(screen.getByText("PARLIAMONE")).toBeVisible();
     expect(screen.getByText("DA VEDERE")).toBeVisible();
+    expect(screen.queryByText(/Andrea Ungaro · Ordine delle Onde/)).not.toBeInTheDocument();
   });
 });

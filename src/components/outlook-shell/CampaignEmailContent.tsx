@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { getEmailStructureProgress, getEmailTextRevealCount } from "../../content/emailBuild";
 import { EMAIL_PRESENTATION_LEVELS } from "../../content/emailPresentation";
 import type { CampaignEmail } from "../../game/types";
 
@@ -58,16 +59,11 @@ function EmailCopy({
 }) {
   const sections = getTextSections(body);
   const greetingIndex = sections.length > 0 ? 0 : -1;
-  const signatureIndex = sections.findIndex((section) => section.text.includes("Un saluto"));
 
   return (
     <div className="campaign-copy">
       {sections.map((section, index) => {
-        const className = index === greetingIndex
-          ? "campaign-greeting"
-          : index === signatureIndex
-            ? "campaign-signature"
-            : undefined;
+        const className = index === greetingIndex ? "campaign-greeting" : undefined;
         return (
           <p key={section.start} className={className}>
             <RevealedText
@@ -106,44 +102,51 @@ function FakeCta({
   );
 }
 
-function BuildProgress({
+function EmailStructurePreview({
   level,
   progress,
 }: {
   level: CampaignEmail["presentationLevel"];
   progress: number;
 }) {
-  const format = EMAIL_PRESENTATION_LEVELS[level];
-  return (
-    <div className="campaign-build-progress" aria-label={`Costruzione email ${progress}%`}>
-      <div className="campaign-build-progress-heading">
-        <span>Costruzione email</span>
-        <strong>Livello {level} · {format.label}</strong>
-        <b>{progress}%</b>
-      </div>
-      <div className="campaign-build-progress-track" aria-hidden="true">
-        <span style={{ width: `${progress}%` }} />
-      </div>
-    </div>
-  );
-}
+  const hasFrame = progress >= 12;
+  const hasHeading = progress >= 30;
+  const hasBody = progress >= 56;
+  const hasSignature = progress >= 80;
 
-function BuildPlaceholder({
-  level,
-  progress,
-}: {
-  level: CampaignEmail["presentationLevel"];
-  progress: number;
-}) {
-  const message = progress === 0
-    ? "Fai clic nel foglio o premi un tasto per iniziare a costruire."
-    : `La mail sta prendendo forma: ${progress}% completato.`;
   return (
-    <div className="campaign-blank-state">
-      <span className="campaign-blank-cross" aria-hidden="true">＋</span>
-      <strong>Foglio bianco · Livello {level}</strong>
-      <p>{message}</p>
-      <small>Ogni input aggiunge un frammento alla campagna.</small>
+    <div
+      className={`email-structure-preview email-structure-level-${level}`}
+      role="img"
+      aria-label="Struttura della mail in costruzione"
+    >
+      <div className="email-structure-canvas" aria-hidden="true">
+        {hasFrame ? (
+          <div className="email-structure-frame">
+            <span className="email-structure-accent" style={{ width: `${Math.min(100, progress * 2)}%` }} />
+          </div>
+        ) : null}
+        {hasHeading ? (
+          <div className="email-structure-heading">
+            <span style={{ width: `${Math.min(78, progress)}%` }} />
+            <i style={{ width: `${Math.min(42, Math.max(0, progress - 20))}%` }} />
+          </div>
+        ) : null}
+        {hasBody ? (
+          <div className="email-structure-body">
+            <span style={{ width: `${Math.min(94, progress + 18)}%` }} />
+            <span style={{ width: `${Math.min(82, progress + 4)}%` }} />
+            <span style={{ width: `${Math.min(88, progress - 2)}%` }} />
+            <span style={{ width: `${Math.min(58, Math.max(18, progress - 24))}%` }} />
+          </div>
+        ) : null}
+        {hasSignature ? (
+          <div className="email-structure-signature">
+            <span />
+            <i />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -221,19 +224,26 @@ export function CampaignEmailContent({
 }) {
   const level = email.presentationLevel;
   const format = EMAIL_PRESENTATION_LEVELS[level];
+  const progressEmail = { ...email, revealedCharacters };
+  const structureProgress = getEmailStructureProgress(progressEmail);
+  const textRevealedCharacters = getEmailTextRevealCount(progressEmail);
   const progress = email.body.length === 0
     ? 0
     : Math.round((revealedCharacters / email.body.length) * 100);
-  const hasStarted = revealedCharacters > 0;
   const signatureStart = email.body.indexOf("Un saluto");
-  const signatureVisible = level >= 2 && signatureStart >= 0 && revealedCharacters >= signatureStart;
+  const signatureEnd = signatureStart + "Un saluto,".length;
+  const signatureVisible = level >= 2 && signatureStart >= 0 && textRevealedCharacters >= signatureEnd;
   const ctaVisible = level >= 3 && progress >= 68;
   const formsVisible = level >= 4 && progress >= 42;
   const heroVisible = level >= 6 && progress >= 12;
   const detailsVisible = level >= 6 && progress >= 82;
 
+  if (textRevealedCharacters === 0) {
+    return <EmailStructurePreview level={level} progress={structureProgress} />;
+  }
+
   if (level <= 1) {
-    const visible = email.body.slice(0, revealedCharacters);
+    const visible = email.body.slice(0, textRevealedCharacters);
     return (
       <div
         className={`typed-copy typed-copy-level-${level}`}
@@ -253,12 +263,6 @@ export function CampaignEmailContent({
       aria-label={`Email in formato ${format.label}`}
       data-email-presentation={level}
     >
-      <BuildProgress level={level} progress={Math.max(0, Math.min(100, progress))} />
-
-      {!hasStarted ? <BuildPlaceholder level={level} progress={progress} /> : null}
-
-      {hasStarted ? (
-        <>
           <header className="campaign-title">
             <div className="campaign-title-rule" aria-hidden="true" />
             {level >= 6 ? <span>ORDINE DELLE ONDE · GENOVA</span> : null}
@@ -281,7 +285,7 @@ export function CampaignEmailContent({
             {level >= 6 ? <strong className="campaign-section-label">UNISCITI A UNA LEZIONE DI LIGHT SABER COMBAT</strong> : null}
             <EmailCopy
               body={email.body}
-              revealedCharacters={revealedCharacters}
+              revealedCharacters={textRevealedCharacters}
               showCaret={showCaret}
             />
 
@@ -320,8 +324,6 @@ export function CampaignEmailContent({
               <p>Ricevi questo messaggio perché hai mostrato curiosità per i corsi LudoSport a Genova. Questa è una campagna simulata all'interno del gioco.</p>
             </footer>
           ) : null}
-        </>
-      ) : null}
     </div>
   );
 }
