@@ -22,36 +22,36 @@ export const EMAIL_PRESENTATION_LEVELS: Record<
   { label: string; description: string }
 > = {
   0: {
-    label: "Bozza con refusi",
-    description: "Una mail breve, personale e ancora piena di piccoli errori.",
+    label: "Bozza disastrata",
+    description: "Una mail breve, simpatica e piena di refusi, errori e italiano creativo.",
   },
   1: {
-    label: "Controllo ortografico",
-    description: "La stessa mail, ripulita da refusi ed errori grammaticali.",
+    label: "Correzione grammaticale",
+    description: "Gli errori spariscono, ma le battute e l'energia della bozza restano.",
   },
   2: {
-    label: "Email professionale",
-    description: "Firma completa, paragrafi leggibili e spaziatura coerente.",
+    label: "Email aziendale grezza",
+    description: "Una tabella CSS rudimentale, tono professionale e logo nella firma.",
   },
   3: {
-    label: "Invito personalizzato",
-    description: "Un nuovo set di inviti più lunghi parla meglio al destinatario.",
+    label: "Email con CTA finte",
+    description: "La struttura migliora e compaiono pulsanti visivi che non portano da nessuna parte.",
   },
   4: {
-    label: "Call to action",
-    description: "Link e pulsanti rendono immediato il passo successivo.",
+    label: "Forme e armi",
+    description: "Il testo si allunga e racconta il percorso LudoSport, le Forme e le armi sportive.",
   },
   5: {
-    label: "Impaginazione",
-    description: "La mail riceve una struttura CSS ordinata e riconoscibile.",
+    label: "Layout marketing",
+    description: "La stessa idea diventa una mail più fluida, elegante e persuasiva.",
   },
   6: {
-    label: "Pubblicità vincente",
-    description: "Il testo diventa un volantino completo con immagini e dettagli.",
+    label: "Testo premium",
+    description: "Un testo lungo, entusiasta e curioso spiega perché vale la pena cominciare.",
   },
   7: {
-    label: "Corso di Marketing",
-    description: "Una campagna completa spiega lo sport in modo approfondito.",
+    label: "Volantino digitale",
+    description: "Il massimo splendore: testo approfondito, gerarchia visiva e grafica da campagna.",
   },
 };
 

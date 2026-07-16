@@ -32,16 +32,20 @@ const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR"
 
 interface AdminEmailViewProps {
   upgrades: UpgradeLevels;
+  availableContacts: number;
   activeMembers: number;
   euros: number;
+  onAddContacts: (amount: number) => void;
   onAddMembers: (amount: number) => void;
   onAddEuros: (amount: number) => void;
 }
 
 export function AdminEmailView({
   upgrades,
+  availableContacts,
   activeMembers,
   euros,
+  onAddContacts,
   onAddMembers,
   onAddEuros,
 }: AdminEmailViewProps) {
@@ -53,13 +57,16 @@ export function AdminEmailView({
   const [overrides, setOverrides] = useState(loadEmailCopyOverrides);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [contactAmount, setContactAmount] = useState("1");
   const [memberAmount, setMemberAmount] = useState("1");
   const [euroAmount, setEuroAmount] = useState("1000");
 
-  const parsedMemberAmount = Math.floor(Number(memberAmount));
+  const parsedContactAmount = Number(contactAmount);
+  const parsedMemberAmount = Number(memberAmount);
   const parsedEuroAmount = Number(euroAmount);
-  const canAddMembers = Number.isSafeInteger(parsedMemberAmount) && parsedMemberAmount > 0;
-  const canAddEuros = Number.isFinite(parsedEuroAmount) && parsedEuroAmount > 0;
+  const canAddContacts = Number.isSafeInteger(parsedContactAmount) && parsedContactAmount !== 0;
+  const canAddMembers = Number.isSafeInteger(parsedMemberAmount) && parsedMemberAmount !== 0;
+  const canAddEuros = Number.isFinite(parsedEuroAmount) && parsedEuroAmount !== 0;
 
   const selectedTemplate =
     EMAIL_TEMPLATES.find((template) => template.id === selectedTemplateId) ??
@@ -150,8 +157,27 @@ export function AdminEmailView({
         <div className="admin-resource-heading">
           <span>Risorse partita</span>
           <h2 id="admin-resource-title">Aggiunte manuali</h2>
-          <p>Le quantità vengono sommate ai valori attuali.</p>
+          <p>Le quantità vengono sommate ai valori attuali. I valori negativi diminuiscono la disponibilità.</p>
         </div>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canAddContacts) onAddContacts(parsedContactAmount);
+          }}
+        >
+          <label htmlFor="admin-contact-amount">
+            Contatti email da aggiungere
+            <input
+              id="admin-contact-amount"
+              type="number"
+              step="1"
+              value={contactAmount}
+              onChange={(event) => setContactAmount(event.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={!canAddContacts}>Aggiungi contatti email</button>
+          <small>Disponibili: {availableContacts}</small>
+        </form>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -163,7 +189,6 @@ export function AdminEmailView({
             <input
               id="admin-member-amount"
               type="number"
-              min="1"
               step="1"
               value={memberAmount}
               onChange={(event) => setMemberAmount(event.target.value)}
@@ -183,7 +208,6 @@ export function AdminEmailView({
             <input
               id="admin-euro-amount"
               type="number"
-              min="0.01"
               step="0.01"
               value={euroAmount}
               onChange={(event) => setEuroAmount(event.target.value)}

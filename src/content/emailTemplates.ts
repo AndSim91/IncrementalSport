@@ -33,8 +33,62 @@ type TemplateCopy = EmailCatalogEntry;
 const signature = (senderName: string) => `
 
 Un saluto,
-${senderName} - Ordine delle Onde
+${senderName} · Ordine delle Onde
 LudoSport Genova`;
+
+const MOJIBAKE_REPAIRS: Array<[string, string]> = [
+  ["Ã ", "à"],
+  ["Ã¨", "è"],
+  ["Ã©", "é"],
+  ["Ã¬", "ì"],
+  ["Ã²", "ò"],
+  ["Ã¹", "ù"],
+  ["Ã€", "À"],
+  ["Ãˆ", "È"],
+  ["Ã‰", "É"],
+  ["ÃŒ", "Ì"],
+  ["Ã’", "Ò"],
+  ["Ã™", "Ù"],
+  ["Â ", " "],
+  ["Â°", "°"],
+  ["Â", ""],
+  ["â‚¬", "€"],
+  ["â€™", "’"],
+  ["â€“", "–"],
+  ["â€¦", "…"],
+];
+
+function repairEncoding(value: string): string {
+  return MOJIBAKE_REPAIRS.reduce(
+    (result, [broken, fixed]) => result.replaceAll(broken, fixed),
+    value,
+  );
+}
+
+function cleanDraftCopy(value: string): string {
+  return repairEncoding(value)
+    .replace(/\bprovore\b/gi, "provare")
+    .replace(/\bUdosport\b/g, "LudoSport")
+    .replace(/\be (gratis|gratuita|figo|divertenta|uno sport|una sfida|un modo)\b/gi, "è $1")
+    .replace(/\bapparte\b/gi, "a parte")
+    .replace(/\bperche\b/gi, "perché")
+    .replace(/\bfinche\b/gi, "finché")
+    .replace(/\bpiu\b/gi, "più")
+    .replace(/\bqualita\b/gi, "qualità")
+    .replace(/\bcuriosita\b/gi, "curiosità")
+    .replace(/\battivita\b/gi, "attività")
+    .replace(/\bunita\b/gi, "unità")
+    .replace(/\bun p[oò]('?)/gi, "un po'")
+    .replace(/c'(?:Ã¨|è) l'hanno/gi, "ce l'hanno")
+    .replace(/c'era/gi, "c'era")
+    .replace(/[^\S\r\n]{2,}/g, " ")
+    .replace(/\n /g, "\n")
+    .trim();
+}
+
+function cleanCatalogCopy(value: string): string {
+  return repairEncoding(value).replace(/[^\S\r\n]{2,}/g, " ").trim();
+}
 
 /**
  * Catalogo unico modificabile a mano: shortDraft è il livello 0, shortClean
@@ -150,24 +204,61 @@ const MEDIUM_APPENDIXES = [
   "Bastano abiti comodi e la curiosità di fare qualcosa di diverso.",
 ] as const;
 
+const FORMS_AND_WEAPONS_APPENDIX = `
+
+Il percorso non si ferma alla prima lezione. LudoSport è un sistema di combattimento sportivo con tre armi: lama singola, doppia lama e staffa. Ogni arma cambia distanza, ritmo e modo di occupare lo spazio, ma tutte si imparano con controllo, ascolto e rispetto.
+
+Le sette Forme aggiungono linguaggi diversi: difesa, velocità, fluidità, cambi di direzione e gestione della distanza. Non è necessario scegliere tutto subito: la progressione serve proprio a scoprire quale modo di muoversi ti incuriosisce di più.`;
+
+const PREMIUM_APPENDIX = `
+
+Il Light Saber Combat è uno sport completo: allena gambe, postura, coordinazione, attenzione e capacità di prendere decisioni mentre il corpo è in movimento. Una parata non è soltanto un gesto da ricordare; è il risultato di distanza, tempo, angolo e lettura della persona davanti a te. La parte sorprendente è che questi elementi diventano comprensibili prima di quanto immagini, perché ogni esercizio aggiunge un tassello concreto.
+
+LudoSport organizza il percorso attorno a sette Forme di combattimento. La Forma 1 costruisce una base protetta e leggibile; le Forme successive esplorano velocità, pressione, fluidità, cambi di altezza e linee più complesse. Il risultato non è una coreografia da ripetere a memoria, ma un vocabolario tecnico che puoi studiare, adattare e riconoscere anche quando il ritmo cambia.
+
+Le armi sportive seguono la stessa logica. La lama singola è il punto di partenza più intuitivo; la doppia lama apre un gioco di continuità e controllo; la staffa mette alla prova spazio, traiettorie e presenza. Il combattimento resta codificato e controllato: la tecnica è la prima forma di sicurezza, e la sicurezza permette di allenarsi con più libertà, non con meno entusiasmo.
+
+In palestra alterniamo spiegazione, esercizi individuali, lavoro in coppia e confronto con persone che hanno livelli diversi. È un ambiente in cui puoi arrivare curioso, sbagliare una sequenza, ridere del tuo primo passo laterale e tornare la settimana dopo con una domanda nuova. Non serve recitare la parte dell'eroe: basta presentarsi, ascoltare e lasciare che il corpo impari.
+
+La scuola mette a disposizione il materiale necessario per cominciare. Porta abiti comodi, scarpe da palestra e la disponibilità a fare qualcosa che non assomiglia alla solita attività settimanale. Potresti scoprire uno sport; potresti trovare una comunità; potresti semplicemente uscire dalla palestra con una nuova Forma preferita e il sospetto che il lunedì sera sia stato rivalutato.`;
+
 const MARKETING_APPENDIX = `
 
-Il Light Saber Combat è uno sport completo che unisce movimento, tecnica e capacità di lettura. Durante l'allenamento si lavora sulla postura, sulla coordinazione, sulla gestione della distanza e sulla precisione del gesto. Ogni esercizio è costruito per essere comprensibile anche a chi non ha mai praticato discipline simili.
+Se questa email fosse una mappa, la prima prova sarebbe il punto in cui compare la luce. Da lì impari a stare nello spazio, muovere il corpo con intenzione e leggere ciò che succede prima di reagire.
 
-La lezione alterna spiegazioni, pratica individuale, lavoro in coppia e momenti di confronto con il gruppo. La sicurezza viene prima di tutto: si imparano regole, controllo e rispetto dell'avversario prima di aumentare ritmo e complessità. In questo modo il percorso resta impegnativo, ma accessibile.
+Le sette Forme LudoSport sono prospettive diverse su attacco, difesa, ritmo e controllo. Non sono una gara da finire in fretta: una Forma può sembrarti naturale, un'altra può regalarti il problema tecnico che non sapevi di voler risolvere.
 
-L'Ordine delle Onde mette a disposizione l'attrezzatura necessaria per iniziare. Non servono acquisti, esperienza precedente o preparazione atletica speciale. La prima lezione serve a conoscere il metodo, gli istruttori, la palestra e le persone con cui potresti allenarti ogni settimana.`;
+La lama singola costruisce una base versatile, la doppia lama chiede continuità e coordinazione, la staffa apre linee e distanze nuove. Le proverai nel tempo, quando avrai una base abbastanza solida da apprezzare davvero le differenze.
+
+In palestra alterniamo regole, postura, esercizi individuali, lavoro in coppia e confronto. Il gesto è controllato, il rispetto è reale e il gruppo rende più leggero anche il momento in cui la tua parata arriva al terzo tentativo.
+
+L'Ordine delle Onde ti aspetta con una lezione gratuita, attrezzatura disponibile e persone pronte a spiegarti da dove cominciare. Se hai letto fin qui, la curiosità ha già fatto il primo allenamento.`;
 
 function capitalize(value: string) {
   return value ? `${value[0].toLocaleUpperCase("it-IT")}${value.slice(1)}` : value;
 }
 
 function fullSignature(senderName: string) {
-  return `Un saluto,\n${senderName} - Ordine delle Onde\nLudoSport Genova`;
+  return `Un saluto,\n${senderName} · Ordine delle Onde\nLudoSport Genova`;
+}
+
+function expandedOpening(copy: TemplateCopy, index: number, firstName: string) {
+  const opening = cleanCatalogCopy(copy.opening);
+  const invitation = cleanCatalogCopy(copy.invitation);
+  const appendix = cleanCatalogCopy(MEDIUM_APPENDIXES[index % MEDIUM_APPENDIXES.length]);
+  return `Ciao ${firstName},\n\n${capitalize(opening)}\n\n${invitation} ${appendix}`;
 }
 
 function expandedBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
-  return `Ciao ${firstName},\n\n${capitalize(copy.opening)}\n\n${copy.invitation} ${MEDIUM_APPENDIXES[index % MEDIUM_APPENDIXES.length]}${signature(senderName)}`;
+  return `${expandedOpening(copy, index, firstName)}${signature(senderName)}`;
+}
+
+function detailedBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
+  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${signature(senderName)}`;
+}
+
+function premiumBody(copy: TemplateCopy, index: number, firstName: string, senderName: string) {
+  return `${expandedOpening(copy, index, firstName)}${FORMS_AND_WEAPONS_APPENDIX}${PREMIUM_APPENDIX}${signature(senderName)}`;
 }
 
 function bodyForLevel(
@@ -177,7 +268,7 @@ function bodyForLevel(
   senderName: string,
   level: EmailPresentationLevel,
 ) {
-  const compact = level === 0 ? copy.shortDraft : copy.shortClean;
+  const compact = level === 0 ? copy.shortDraft : cleanDraftCopy(copy.shortClean);
   if (level === 0) {
     return `Ciao ${firstName},\n${compact}\n\n${senderName}`;
   }
@@ -190,16 +281,12 @@ function bodyForLevel(
 
   const expanded = expandedBody(copy, index, firstName, senderName);
   if (level === 3) return expanded;
-  if (level === 4) {
-    return `${expanded}\n\nRispondi a questa email per prenotare la tua prova.`;
-  }
-  if (level === 5) {
-    return `${expanded}\n\nRispondi a questa email per prenotare; ti indicheremo orario, luogo e cosa portare.`;
-  }
+  if (level === 4) return `${detailedBody(copy, index, firstName, senderName)}\n\nRispondi a questa email per prenotare la tua prova.`;
+  if (level === 5) return `${detailedBody(copy, index, firstName, senderName)}\n\nRispondi a questa email per prenotare: ti indicheremo orario, luogo e cosa portare.`;
   if (level === 6) {
-    return `${expanded}\n\nQuando: prossima lezione disponibile\nDove: PalaGym Assarotti, Genova\nCosa portare: abiti comodi e scarpe da palestra.`;
+    return `${premiumBody(copy, index, firstName, senderName)}\n\nQuando: prossima lezione disponibile\nDove: PalaGym Assarotti, Genova\nCosa portare: abiti comodi e scarpe da palestra.`;
   }
-  return `${expanded}${MARKETING_APPENDIX}`;
+  return `${premiumBody(copy, index, firstName, senderName)}${MARKETING_APPENDIX}`;
 }
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = EMAIL_CATALOG.map((copy, index) => ({
@@ -233,6 +320,15 @@ export function resolveEmailTemplateCopy(
     senderName,
     presentationLevel,
   );
+  if (presentationLevel === 1) {
+    const draftOverride = getEmailCopyOverride(template.id, 0);
+    if (draftOverride) {
+      return {
+        subject: cleanDraftCopy(renderEmailCopyTokens(draftOverride.subject, firstName, senderName)),
+        body: cleanDraftCopy(renderEmailCopyTokens(draftOverride.body, firstName, senderName)),
+      };
+    }
+  }
   const override = getEmailCopyOverride(template.id, presentationLevel);
   if (!override) return defaults;
   return {

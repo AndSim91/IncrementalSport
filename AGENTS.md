@@ -1,5 +1,14 @@
 # Istruzioni di lavoro del progetto
 
+## Principi architetturali
+
+- Costruire in moduli piccoli e isolati.
+- Mantenere ogni componente riutilizzabile.
+- Preferire architetture semplici a soluzioni ingegnose ma complesse.
+- Evitare componenti, servizi e moduli monolitici ("God components", "God services" e "God modules").
+- Progettare fin dall'inizio tenendo conto della scalabilità.
+- Considerare sempre la sicurezza e verificare criticamente le soluzioni generate dall'AI.
+
 ## Test
 
 - La velocità è la priorità: dopo ogni modifica eseguire solo controlli brevi, mirati e direttamente pertinenti al codice cambiato.

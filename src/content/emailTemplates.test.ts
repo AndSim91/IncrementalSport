@@ -47,9 +47,9 @@ describe("email template archive", () => {
     expect(cleanBodies.every((body) => !body.includes("Spero che ti interessa"))).toBe(true);
     expect(professionalBodies.every((body) => body.includes("LudoSport Genova"))).toBe(true);
     expect(personalizedBodies.every((body) => body.length >= 250 && body.length <= 450)).toBe(true);
-    expect(ctaBodies.every((body) => body.length <= 500)).toBe(true);
-    expect(layoutBodies.every((body) => body.length <= 600)).toBe(true);
-    expect(flyerBodies.every((body) => body.length <= 800)).toBe(true);
-    expect(marketingBodies.every((body) => body.length <= 2_000)).toBe(true);
+    expect(ctaBodies.every((body) => body.length <= 1_200)).toBe(true);
+    expect(layoutBodies.every((body) => body.length <= 1_300)).toBe(true);
+    expect(flyerBodies.every((body) => body.length <= 3_000)).toBe(true);
+    expect(marketingBodies.every((body) => body.length <= 4_000)).toBe(true);
   });
 });

@@ -408,6 +408,7 @@ export type GameAction =
   | { type: "TICK"; now: number; gainMultiplier?: number }
   | { type: "OFFLINE_PASSIVE_PROGRESS"; now: number; elapsedMs: number; rawElapsedMs: number }
   | { type: "REPLACE_STATE"; state: GameState }
+  | { type: "ADMIN_ADD_CONTACTS"; amount: number }
   | { type: "ADMIN_ADD_MEMBERS"; amount: number }
   | { type: "ADMIN_ADD_EUROS"; amount: number }
   | { type: "UPDATE_PROFILE_NAME"; displayName: string }

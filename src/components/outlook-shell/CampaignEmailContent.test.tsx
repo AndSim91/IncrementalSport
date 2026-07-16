@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { EMAIL_TEMPLATES } from "../../content/emailTemplates";
 import { createInitialState } from "../../game/engine";
 import { CampaignEmailContent } from "./CampaignEmailContent";
 
@@ -10,7 +11,7 @@ describe("CampaignEmailContent", () => {
     const email = createInitialState(1_000, "Andrea Ungaro").emails[0];
     render(<CampaignEmailContent email={email} />);
 
-    expect(screen.getByLabelText("Email in formato Bozza con refusi")).toHaveAttribute(
+    expect(screen.getByLabelText("Email in formato Bozza disastrata")).toHaveAttribute(
       "data-email-presentation",
       "0",
     );
@@ -18,24 +19,30 @@ describe("CampaignEmailContent", () => {
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 
-  it("renders the complete flyer with local imagery and working links", () => {
+  it("renders the complete flyer with local imagery and inert visual CTAs", () => {
     const initial = createInitialState(1_000, "Andrea Ungaro");
-    const email = { ...initial.emails[0], presentationLevel: 6 as const };
+    const levelSevenCopy = EMAIL_TEMPLATES[0].body("Nome", "Andrea Ungaro", 7);
+    const email = {
+      ...initial.emails[0],
+      body: levelSevenCopy,
+      presentationLevel: 7 as const,
+      revealedCharacters: levelSevenCopy.length,
+    };
     render(<CampaignEmailContent email={email} />);
 
-    expect(screen.getByLabelText("Email in formato Pubblicità vincente")).toHaveAttribute(
+    expect(screen.getByLabelText("Email in formato Volantino digitale")).toHaveAttribute(
       "data-email-presentation",
-      "6",
+      "7",
     );
     expect(screen.getByRole("img", { name: "LudoSport Genova" })).toHaveAttribute(
       "src",
       "/email-assets/ludosport-genova.png",
     );
-    expect(screen.getByRole("link", { name: "Prenota una prova" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("mailto:genova@ludosport.net"),
+    expect(screen.getByRole("button", { name: /Prenota una prova/ })).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("non attivo"),
     );
-    expect(screen.getByText("COME PRENOTARE")).toBeVisible();
+    expect(screen.getByText("PARLIAMONE")).toBeVisible();
     expect(screen.getByText("DA VEDERE")).toBeVisible();
   });
 });

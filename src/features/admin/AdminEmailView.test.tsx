@@ -14,12 +14,18 @@ afterEach(() => {
 });
 
 describe("AdminEmailView", () => {
-  const renderAdmin = (onAddMembers = vi.fn(), onAddEuros = vi.fn()) => {
+  const renderAdmin = (
+    onAddContacts = vi.fn(),
+    onAddMembers = vi.fn(),
+    onAddEuros = vi.fn(),
+  ) => {
     render(
       <AdminEmailView
         upgrades={createInitialUpgradeLevels()}
+        availableContacts={4}
         activeMembers={4}
         euros={250}
+        onAddContacts={onAddContacts}
         onAddMembers={onAddMembers}
         onAddEuros={onAddEuros}
       />,
@@ -61,15 +67,21 @@ describe("AdminEmailView", () => {
   });
 
   it("adds the manually entered members and euros", () => {
+    const onAddContacts = vi.fn();
     const onAddMembers = vi.fn();
     const onAddEuros = vi.fn();
-    renderAdmin(onAddMembers, onAddEuros);
+    renderAdmin(onAddContacts, onAddMembers, onAddEuros);
 
+    expect(screen.getByLabelText("Contatti email da aggiungere")).toHaveValue(1);
     expect(screen.getByLabelText("Iscritti da aggiungere")).toHaveValue(1);
     expect(screen.getByLabelText("Euro da aggiungere")).toHaveValue(1000);
 
+    fireEvent.change(screen.getByLabelText("Contatti email da aggiungere"), {
+      target: { value: "-2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Aggiungi contatti email" }));
     fireEvent.change(screen.getByLabelText("Iscritti da aggiungere"), {
-      target: { value: "7" },
+      target: { value: "-7" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Aggiungi iscritti" }));
     fireEvent.change(screen.getByLabelText("Euro da aggiungere"), {
@@ -77,7 +89,8 @@ describe("AdminEmailView", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Aggiungi Euro" }));
 
-    expect(onAddMembers).toHaveBeenCalledWith(7);
+    expect(onAddContacts).toHaveBeenCalledWith(-2);
+    expect(onAddMembers).toHaveBeenCalledWith(-7);
     expect(onAddEuros).toHaveBeenCalledWith(1250.5);
   });
 });

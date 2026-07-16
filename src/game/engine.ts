@@ -2173,15 +2173,48 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "REPLACE_STATE":
       nextState = action.state;
       break;
+    case "ADMIN_ADD_CONTACTS": {
+      const amount = Math.trunc(action.amount);
+      if (!Number.isSafeInteger(amount) || amount === 0) {
+        nextState = state;
+        break;
+      }
+      if (amount > 0) {
+        const acquired = createAcquiredContacts(state, amount, "event", state.lastSavedAt);
+        nextState = startNextCampaign({
+          ...state,
+          randomSeed: acquired.nextSeed,
+          legendaryCollaborators: addLegendaryEncounters(
+            state.legendaryCollaborators,
+            acquired.contacts,
+          ),
+          contacts: [...state.contacts, ...acquired.contacts],
+        }, state.lastSavedAt);
+        break;
+      }
+      let remaining = Math.abs(amount);
+      const contacts = state.contacts.filter((contact) => {
+        if (contact.status !== "available" || remaining === 0) return true;
+        remaining -= 1;
+        return false;
+      });
+      nextState = contacts.length === state.contacts.length
+        ? state
+        : { ...state, contacts };
+      break;
+    }
     case "ADMIN_ADD_MEMBERS": {
       const amount = Math.trunc(action.amount);
-      if (!Number.isSafeInteger(amount) || amount <= 0) {
+      if (!Number.isSafeInteger(amount) || amount === 0) {
         nextState = state;
         break;
       }
       const activeMembers = state.school.activeMembers + amount;
-      const historicMembers = state.school.historicMembers + amount;
-      if (!Number.isSafeInteger(activeMembers) || !Number.isSafeInteger(historicMembers)) {
+      const nextActiveMembers = Math.max(0, activeMembers);
+      const historicMembers = amount > 0
+        ? state.school.historicMembers + amount
+        : state.school.historicMembers;
+      if (!Number.isSafeInteger(nextActiveMembers) || !Number.isSafeInteger(historicMembers)) {
         nextState = state;
         break;
       }
@@ -2189,22 +2222,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         school: {
           ...state.school,
-          activeMembers,
-          peakActiveMembers: Math.max(state.school.peakActiveMembers, activeMembers),
+          activeMembers: nextActiveMembers,
+          peakActiveMembers: Math.max(state.school.peakActiveMembers, nextActiveMembers),
           historicMembers,
         },
         unlocks: {
           ...state.unlocks,
-          upgrades: true,
-          social: state.unlocks.social || activeMembers >= 10,
-          forms: true,
+          upgrades: amount > 0 ? true : state.unlocks.upgrades,
+          social: amount > 0 && nextActiveMembers >= 10
+            ? true
+            : state.unlocks.social,
+          forms: amount > 0 ? true : state.unlocks.forms,
         },
       };
       break;
     }
     case "ADMIN_ADD_EUROS": {
-      const euros = Math.round((state.school.euros + action.amount) * 100) / 100;
-      nextState = Number.isFinite(action.amount) && action.amount > 0 && Number.isFinite(euros)
+      if (!Number.isFinite(action.amount) || action.amount === 0) {
+        nextState = state;
+        break;
+      }
+      const euros = Math.max(0, Math.round((state.school.euros + action.amount) * 100) / 100);
+      nextState = Number.isFinite(euros)
         ? { ...state, school: { ...state.school, euros } }
         : state;
       break;

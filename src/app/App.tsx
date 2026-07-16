@@ -22,6 +22,7 @@ import { UpgradesView } from "../features/upgrades/UpgradesView";
 import { useGameEngine } from "../game/useGameEngine";
 import { isGameAreaUnlocked } from "../game/progression";
 import { exportGame, importGame, resetGame, saveGame } from "../game/save";
+import { selectAvailableContacts } from "../game/selectors";
 
 function targetConsumesKeyboard(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -123,6 +124,9 @@ export function App() {
         currentMonth={state.school.currentMonth}
         nextMonthAt={state.school.nextFeeAt}
         now={state.automation.lastProcessedAt}
+        availableContacts={selectAvailableContacts(state)}
+        activeMembers={state.school.activeMembers}
+        euros={state.school.euros}
       />
       <CommandBar
         onCompose={() => { setView("mail"); setMailFolder("inbox"); setSelectedMessageId(null); }}
@@ -209,8 +213,10 @@ export function App() {
         ) : activeView === "admin" ? (
           <AdminEmailView
             upgrades={state.upgrades}
+            availableContacts={selectAvailableContacts(state)}
             activeMembers={state.school.activeMembers}
             euros={state.school.euros}
+            onAddContacts={(amount) => dispatch({ type: "ADMIN_ADD_CONTACTS", amount })}
             onAddMembers={(amount) => dispatch({ type: "ADMIN_ADD_MEMBERS", amount })}
             onAddEuros={(amount) => dispatch({ type: "ADMIN_ADD_EUROS", amount })}
           />
