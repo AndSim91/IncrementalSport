@@ -124,7 +124,13 @@ export function DayPanel({ state }: { state: GameState }) {
             >
               <span className="appointment-timing">{timing}</span>
               <i />
-              <div><strong>Lezione di prova</strong><span>{contactName}</span><small>Ordine delle Onde</small></div>
+              <div>
+                <strong>Lezione di prova</strong>
+                <span className={contact ? `rarity-name rarity-${contact.rarity}` : undefined}>
+                  {contactName}
+                </span>
+                <small>Ordine delle Onde</small>
+              </div>
             </div>
             {expiryProgress === null ? null : (
               <div

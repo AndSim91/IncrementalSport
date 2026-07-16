@@ -179,12 +179,12 @@ I Contatti sono indirizzi email inventati ottenuti attraverso eventi, lezioni di
 
 Ogni contatto riceve una rarità al momento dell'acquisizione. La rarità determina la probabilità di prenotare una prova dopo la mail e quella di iscriversi dopo la prova:
 
-| Rarità | Comparsa | Prova dopo la mail | Iscrizione base | Iscrizione massima | Collaboratore |
-|---|---:|---:|---:|---:|---|
-| Comune | 80% | 30% | 50% | 100% | Mai |
-| Raro | 12,5% | 50% | 40% | 90% | Mai |
-| Ultra Raro | 5,5% | 75% | 30% | 50% | Dopo il Corso Y |
-| Leggendario | 2% | 100% | 20% | 35% | Subito dopo l'iscrizione |
+| Rarità | Comparsa | Prova dopo la mail | Iscrizione base | Effettiva base mail → iscritto | Iscrizione massima | Collaboratore |
+|---|---:|---:|---:|---:|---:|---|
+| Comune | 80% | 40% | 62,5% | 25% | 100% | Mai |
+| Raro | 12,5% | 50% | 40% | 20% | 90% | Mai |
+| Ultra Raro | 5,5% | 75% | 23,33% | 17,5% | 50% | Dopo il Corso Y |
+| Leggendario | 2% | 100% | 15% | 15% | 35% | Subito dopo l'iscrizione |
 
 I potenziamenti di Scrittura migliorano la prenotazione della prova fino al 100%. I potenziamenti di Accoglienza fanno avanzare ogni rarità dalla propria probabilità base d'iscrizione al proprio massimo specifico.
 
@@ -1242,8 +1242,7 @@ Il riepilogo mostra:
 - 1 carattere per input;
 - 0 collaboratori;
 - 6 spade disponibili;
-- prenotazione prova dopo email: 20% provvisorio;
-- iscrizione dopo prova in palestra: 50% provvisorio;
+- prenotazione e iscrizione dipendono dalla rarità secondo la tabella dei Contatti;
 - bonus immediato per ogni nuova iscrizione: €20;
 - quota ricorrente: €40 per iscritto attivo a ogni mese di gioco;
 - durata di un mese di gioco: 120 secondi, ciclo Gennaio–Dicembre e anno scolastico Settembre–Agosto sempre visibile;

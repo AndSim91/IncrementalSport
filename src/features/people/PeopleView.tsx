@@ -58,7 +58,7 @@ const statusLabels: Record<Contact["status"], string> = {
 
 const percent = new Intl.NumberFormat("it-IT", {
   style: "percent",
-  maximumFractionDigits: 1,
+  maximumFractionDigits: 2,
 });
 const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
 
@@ -248,10 +248,10 @@ function RarityOverview({ state }: { state: GameState }) {
   return (
     <section className="rarity-overview" aria-label="Sistema di rarità">
       <div><strong>Probabilità e rarità</strong><span>Valori base ed efficacia attuale con i tuoi potenziamenti</span></div>
-      <article><strong>Comune</strong><span>Comparsa: {percent.format(common.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "common"))}</span><span>Iscrizione: {percent.format(common.baseEnrollmentChance)} base · {percent.format(commonEnrollmentChance)} attuale · max {percent.format(common.maxEnrollmentChance)}</span><span>Non diventa collaboratore</span></article>
-      <article className="rare"><strong>Raro</strong><span>Comparsa: {percent.format(rare.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "rare"))}</span><span>Iscrizione: {percent.format(rare.baseEnrollmentChance)} base · {percent.format(rareEnrollmentChance)} attuale · max {percent.format(rare.maxEnrollmentChance)}</span><span>Non diventa collaboratore</span></article>
-      <article className="ultra-rare"><strong>Ultra Raro</strong><span>Comparsa: {percent.format(ultraRare.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "ultra-rare"))}</span><span>Iscrizione: {percent.format(ultraRare.baseEnrollmentChance)} base · {percent.format(ultraRareEnrollmentChance)} attuale · max {percent.format(ultraRare.maxEnrollmentChance)}</span><span>Diventa collaboratore completando il Corso Y</span></article>
-      <article className="legendary"><strong>Leggendario</strong><span>Comparsa: {percent.format(legendary.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "legendary"))}</span><span>Iscrizione: {percent.format(legendary.baseEnrollmentChance)} base · {percent.format(legendaryEnrollmentChance)} attuale · max {percent.format(legendary.maxEnrollmentChance)}</span><span>Collaboratore dall'iscrizione · potere VIP ×2</span></article>
+      <article><strong>Comune</strong><span>Comparsa: {percent.format(common.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "common"))}</span><span>Iscrizione: {percent.format(common.baseEnrollmentChance)} base · {percent.format(commonEnrollmentChance)} attuale · max {percent.format(common.maxEnrollmentChance)}</span><span>Effettiva base mail → iscritto: {percent.format(common.baseTrialBookingChance * common.baseEnrollmentChance)}</span><span>Non diventa collaboratore</span></article>
+      <article className="rare"><strong>Raro</strong><span>Comparsa: {percent.format(rare.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "rare"))}</span><span>Iscrizione: {percent.format(rare.baseEnrollmentChance)} base · {percent.format(rareEnrollmentChance)} attuale · max {percent.format(rare.maxEnrollmentChance)}</span><span>Effettiva base mail → iscritto: {percent.format(rare.baseTrialBookingChance * rare.baseEnrollmentChance)}</span><span>Non diventa collaboratore</span></article>
+      <article className="ultra-rare"><strong>Ultra Raro</strong><span>Comparsa: {percent.format(ultraRare.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "ultra-rare"))}</span><span>Iscrizione: {percent.format(ultraRare.baseEnrollmentChance)} base · {percent.format(ultraRareEnrollmentChance)} attuale · max {percent.format(ultraRare.maxEnrollmentChance)}</span><span>Effettiva base mail → iscritto: {percent.format(ultraRare.baseTrialBookingChance * ultraRare.baseEnrollmentChance)}</span><span>Diventa collaboratore completando il Corso Y</span></article>
+      <article className="legendary"><strong>Leggendario</strong><span>Comparsa: {percent.format(legendary.queueAppearanceChance)}</span><span>Prova dopo la mail: {percent.format(getEmailBookingChance(state, "legendary"))}</span><span>Iscrizione: {percent.format(legendary.baseEnrollmentChance)} base · {percent.format(legendaryEnrollmentChance)} attuale · max {percent.format(legendary.maxEnrollmentChance)}</span><span>Effettiva base mail → iscritto: {percent.format(legendary.baseTrialBookingChance * legendary.baseEnrollmentChance)}</span><span>Collaboratore dall'iscrizione · potere VIP ×2</span></article>
     </section>
   );
 }

@@ -148,17 +148,16 @@ function chooseOrdinaryRarity(seed: number) {
   };
 }
 
-export function getLegendaryAppearanceChance(_foundedSchools: number): number {
+export function getLegendaryAppearanceChance(): number {
   return PERSON_RARITIES.legendary.queueAppearanceChance;
 }
 
 function chooseLegendaryProfile(
   seed: number,
   progress: LegendaryCollaboratorProgress,
-  foundedSchools: number,
 ) {
   const [appearanceRoll, seedAfterAppearance] = nextRandom(seed);
-  if (appearanceRoll >= getLegendaryAppearanceChance(foundedSchools)) {
+  if (appearanceRoll >= getLegendaryAppearanceChance()) {
     return { profile: undefined, nextSeed: seedAfterAppearance };
   }
   const candidates = SPECIAL_COLLABORATORS.filter((profile) =>
@@ -187,7 +186,7 @@ function createContacts(
       ? ANDREA_SIMONAZZI_PROFILE
       : undefined;
     if (!legendaryProfile) {
-      const selected = chooseLegendaryProfile(nextSeed, progress, 0);
+      const selected = chooseLegendaryProfile(nextSeed, progress);
       legendaryProfile = selected.profile;
       nextSeed = selected.nextSeed;
     }
@@ -377,7 +376,7 @@ function createAcquiredContacts(
       state.network.schools.length === 0 &&
       !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
       ? { profile: ANDREA_SIMONAZZI_PROFILE, nextSeed }
-      : chooseLegendaryProfile(nextSeed, progress, state.network.schools.length);
+      : chooseLegendaryProfile(nextSeed, progress);
     const specialProfile = selected.profile;
     nextSeed = selected.nextSeed;
     if (specialProfile) progress = addLegendaryEncounter(progress, specialProfile.id);
@@ -731,6 +730,8 @@ function resolveTrial(
   const alreadyEnrolledLegendary = specialProfileId
     ? state.legendaryCollaborators.enrolledProfileIds.includes(specialProfileId)
     : false;
+  const guaranteedInitialSchoolAndrea =
+    specialProfileId === ANDREA_SIMONAZZI_ID && state.network.schools.length === 0;
   const recentTrials = state.scheduledTrials
     .filter((candidate) => candidate.status === "completed")
     .slice()
@@ -742,7 +743,8 @@ function resolveTrial(
     (trialLossStreak === -1 ? recentTrials.length : trialLossStreak) >= 4;
   const enrolled = specialProfileId
     ? !alreadyEnrolledLegendary &&
-      enrollmentRoll < getLegendaryEnrollmentChance(state, specialProfileId)
+      (guaranteedInitialSchoolAndrea ||
+        enrollmentRoll < getLegendaryEnrollmentChance(state, specialProfileId))
     : tutorialGuarantee || protectedEnrollment ||
       enrollmentRoll < getEnrollmentChance(state, trialContact?.rarity ?? "common");
   const enrollmentBonus = scaleCurrencyGain(GAME_CONFIG.enrollmentBonus, gainMultiplier);

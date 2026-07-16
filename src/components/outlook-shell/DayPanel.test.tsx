@@ -52,6 +52,21 @@ describe("DayPanel", () => {
     expect(screen.getByText("In corso…")).toBeVisible();
   });
 
+  it("colors the attendee name according to their rarity", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(15_000);
+    const state = stateWithTrial("trialScheduled", "scheduled");
+    const contact = state.contacts[0];
+    state.contacts[0] = { ...contact, rarity: "rare" };
+
+    render(<DayPanel state={state} />);
+
+    expect(screen.getByText(`${contact.firstName} ${contact.lastName}`)).toHaveClass(
+      "rarity-name",
+      "rarity-rare",
+    );
+  });
+
   it.each([
     ["enrolled", "Iscritto", "appointment-enrolled"],
     ["lost", "Non iscritto", "appointment-lost"],

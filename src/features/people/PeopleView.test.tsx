@@ -41,13 +41,19 @@ describe("PeopleView", () => {
     expect(screen.getByRole("heading", { name: "Iscritti" })).toBeVisible();
     expect(screen.queryByRole("tab", { name: /Potenziali interessati/ })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
-      "ComuneComparsa: 80%Prova dopo la mail: 30%",
+      "ComuneComparsa: 80%Prova dopo la mail: 40%",
     );
     expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
       "Ultra RaroComparsa: 5,5%Prova dopo la mail: 75%",
     );
     expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
       "LeggendarioComparsa: 2%Prova dopo la mail: 100%",
+    );
+    expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
+      "Effettiva base mail → iscritto: 25%",
+    );
+    expect(screen.getByRole("region", { name: "Sistema di rarità" })).toHaveTextContent(
+      "Effettiva base mail → iscritto: 17,5%",
     );
     fireEvent.click(screen.getByRole("tab", { name: /Collaboratori/ }));
     expect(screen.getByText("Andrea Simonazzi")).toHaveClass("rarity-legendary");

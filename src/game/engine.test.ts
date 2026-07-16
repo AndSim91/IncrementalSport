@@ -42,14 +42,22 @@ describe("game engine", () => {
       (total, rarity) => total + rarity.queueAppearanceChance,
       0,
     )).toBe(1);
-    expect(getEnrollmentChance(state, "common")).toBe(0.5);
+    expect(getEnrollmentChance(state, "common")).toBe(0.625);
     expect(getEnrollmentChance(state, "rare")).toBe(0.4);
-    expect(getEnrollmentChance(state, "ultra-rare")).toBe(0.3);
-    expect(getEnrollmentChance(state, "legendary")).toBe(0.2);
-    expect(getEmailBookingChance(state, "common")).toBe(0.3);
+    expect(getEnrollmentChance(state, "ultra-rare")).toBeCloseTo(7 / 30);
+    expect(getEnrollmentChance(state, "legendary")).toBe(0.15);
+    expect(getEmailBookingChance(state, "common")).toBe(0.4);
     expect(getEmailBookingChance(state, "rare")).toBe(0.5);
     expect(getEmailBookingChance(state, "ultra-rare")).toBe(0.75);
     expect(getEmailBookingChance(state, "legendary")).toBe(1);
+    expect(getEmailBookingChance(state, "common") * getEnrollmentChance(state, "common"))
+      .toBeCloseTo(0.25);
+    expect(getEmailBookingChance(state, "rare") * getEnrollmentChance(state, "rare"))
+      .toBeCloseTo(0.2);
+    expect(getEmailBookingChance(state, "ultra-rare") * getEnrollmentChance(state, "ultra-rare"))
+      .toBeCloseTo(0.175);
+    expect(getEmailBookingChance(state, "legendary") * getEnrollmentChance(state, "legendary"))
+      .toBeCloseTo(0.15);
   });
 
   it("reveals only the configured amount of predetermined text", () => {
@@ -341,8 +349,8 @@ describe("game engine", () => {
       },
     }, { type: "TICK", now: 2_000 });
 
-    expect(getLegendaryEnrollmentChance(initial, "andrea-simonazzi")).toBe(0.2);
-    expect(getLegendaryEnrollmentChance(initial, "eva-parodi")).toBe(0.2);
+    expect(getLegendaryEnrollmentChance(initial, "andrea-simonazzi")).toBe(0.15);
+    expect(getLegendaryEnrollmentChance(initial, "eva-parodi")).toBe(0.15);
     expect(firstAttempt.contacts.find((contact) => contact.id === eva.id)?.status).toBe("lost");
     expect(firstAttempt.legendaryCollaborators.enrollmentAttempts["eva-parodi"]).toBe(1);
     expect(firstAttempt.collaborators).toHaveLength(0);
@@ -367,6 +375,50 @@ describe("game engine", () => {
 
     expect(getLegendaryEnrollmentChance(withEqualAttempts, "andrea-simonazzi"))
       .toBe(getLegendaryEnrollmentChance(withEqualAttempts, "eva-parodi"));
+  });
+
+  it("guarantees Andrea Simonazzi's enrollment in the initial school for every roll", () => {
+    const initial = createInitialState(1_000, "", false);
+    const andrea = {
+      ...initial.contacts[0],
+      firstName: "Andrea",
+      lastName: "Simonazzi",
+      rarity: "legendary" as const,
+      specialProfileId: "andrea-simonazzi" as const,
+      status: "trialScheduled" as const,
+    };
+
+    for (const resultSeed of [0, 1, 123, 2_147_483_646]) {
+      const trial = {
+        id: `trial-andrea-${resultSeed}`,
+        contactId: andrea.id,
+        startsAt: 1_500,
+        resolvesAt: 2_000,
+        resultSeed,
+        status: "scheduled" as const,
+      };
+      const ready = {
+        ...initial,
+        school: {
+          ...initial.school,
+          activeMembers: 3,
+          peakActiveMembers: 3,
+          historicMembers: 3,
+        },
+        contacts: initial.contacts.map((contact) =>
+          contact.id === andrea.id ? andrea : contact,
+        ),
+        scheduledTrials: [trial],
+      };
+
+      const resolved = gameReducer(ready, { type: "TICK", now: trial.resolvesAt });
+
+      expect(
+        resolved.contacts.find((contact) => contact.id === andrea.id)?.status,
+      ).toBe("enrolled");
+      expect(resolved.legendaryCollaborators.enrolledProfileIds)
+        .toContain("andrea-simonazzi");
+    }
   });
 
   it("schedules booked trials without adding an inbox message", () => {
@@ -864,9 +916,7 @@ describe("game engine", () => {
       automation: { ...initial.automation, lastProcessedAt: 2_000 },
     }, { type: "TICK", now: 2_000 });
 
-    expect(getLegendaryAppearanceChance(0)).toBe(0.02);
-    expect(getLegendaryAppearanceChance(1)).toBe(0.02);
-    expect(getLegendaryAppearanceChance(4)).toBe(0.02);
+    expect(getLegendaryAppearanceChance()).toBe(0.02);
     expect(resolved.contacts.at(-1)?.specialProfileId).toBe("andrea-simonazzi");
     expect(resolved.legendaryCollaborators.encounteredProfileIds).toContain(
       resolved.contacts.at(-1)?.specialProfileId,
@@ -1144,9 +1194,9 @@ describe("game engine", () => {
       },
     };
 
-    expect(getEmailBookingChance(improved)).toBeCloseTo(0.348);
-    expect(getEnrollmentChance(improved)).toBeCloseTo(0.52);
-    expect(getEnrollmentChance(improved, "legendary")).toBeCloseTo(0.206);
+    expect(getEmailBookingChance(improved)).toBeCloseTo(0.464);
+    expect(getEnrollmentChance(improved)).toBeCloseTo(0.64);
+    expect(getEnrollmentChance(improved, "legendary")).toBeCloseTo(0.158);
 
     const maximized = {
       ...initial,
