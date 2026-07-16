@@ -5,6 +5,7 @@ import {
   formatEmailSignature,
   resolveEmailTemplateCopy,
 } from "./emailTemplates";
+import { hasLevelZeroProofreadingError } from "./levelZeroProofreading";
 
 describe("email template archive", () => {
   it("keeps every campaign copy in one editable catalog", () => {
@@ -31,7 +32,7 @@ describe("email template archive", () => {
     expect([...bodies].every((body) => !body.includes("…"))).toBe(true);
     expect([...bodies].every((body) => !body.includes("..."))).toBe(true);
     expect([...bodies].some((body) => body.includes("Udosport") && body.includes("provore"))).toBe(true);
-    expect([...bodies].some((body) => body.includes("La prova e"))).toBe(true);
+    expect([...bodies].every((body) => !body.includes("La prova e"))).toBe(true);
     expect([...bodies].every((body) => !body.includes("LudoSport Genova"))).toBe(true);
     expect([...bodies].every((body) => !body.endsWith("Andrea Ungaro"))).toBe(true);
 
@@ -43,6 +44,15 @@ describe("email template archive", () => {
     expect(firstClean).not.toContain("Un saluto,");
   });
 
+  it("keeps at least one underlined error in every level zero email", () => {
+    const draftsWithoutErrors = EMAIL_TEMPLATES.flatMap((template) => {
+      const draft = resolveEmailTemplateCopy(template, "Nome", "Andrea Ungaro", 0);
+      return hasLevelZeroProofreadingError(draft.body) ? [] : [template.id];
+    });
+
+    expect(draftsWithoutErrors).toEqual([]);
+  });
+
   it("removes the signoff from level 0 and 1 overrides", () => {
     const template = EMAIL_TEMPLATES[0];
     const draft = resolveEmailTemplateCopy(template, "Nome", "Andrea Ungaro", 0);
@@ -52,6 +62,28 @@ describe("email template archive", () => {
     expect(clean.body).not.toContain("Un saluto,");
     expect(draft.body).not.toContain("Andrea Ungaro");
     expect(clean.body).not.toContain("Andrea Ungaro");
+  });
+
+  it("removes every intentional proofreading error from level one onward", () => {
+    const copiesWithErrors = ([1, 2, 3, 4, 5, 6, 7] as const).flatMap((level) =>
+      EMAIL_TEMPLATES.flatMap((template) => {
+        const copy = resolveEmailTemplateCopy(template, "Nome", "Andrea Ungaro", level);
+        return hasLevelZeroProofreadingError(`${copy.subject}\n${copy.body}`)
+          ? [`${level}:${template.id}`]
+          : [];
+      }),
+    );
+
+    expect(copiesWithErrors).toEqual([]);
+
+    const correctedInvite = resolveEmailTemplateCopy(
+      EMAIL_TEMPLATES.find((template) => template.id === "invito-concreto")!,
+      "Roberto",
+      "Andrea Ungaro",
+      1,
+    );
+    expect(correctedInvite.body).toContain("impugni una spada e provi");
+    expect(correctedInvite.body).not.toContain("spadda");
   });
 
   it("progresses from cleaned short copy to the marketing course", () => {

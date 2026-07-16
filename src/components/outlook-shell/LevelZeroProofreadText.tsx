@@ -1,50 +1,5 @@
 import type { ReactNode } from "react";
-
-interface GrammarErrorRange {
-  start: number;
-  end: number;
-}
-
-const LEVEL_ZERO_GRAMMAR_ERRORS = [
-  /\bprovore\b/giu,
-  /\bUdosport\b/gu,
-  /\bfiga\b/giu,
-  /\bdivertenta\b/giu,
-  /\bapparte\b/giu,
-  /\b(?:perchè|finchè|purchè)(?!\p{L})/giu,
-  /\bpò(?!\p{L})/giu,
-  /\bc['’]è l['’]hanno\b/giu,
-  /\bcontrolla\b(?=\s+te\b)/giu,
-  /\bsi ricarica\b(?=\s+con\b)/giu,
-  /\bnon sbriciolano\b/giu,
-  /\burgentino\b/giu,
-  /\bera\b(?=\s+tutto calcolato\b)/giu,
-  /\bnecessita\b(?=\s+spade\b)/giu,
-  /\bFuture\b(?=\s+scuole\b)/gu,
-  /\bli abbiamo chiesto\b/giu,
-  /\busa\b(?=,?\s+possibilmente\b)/giu,
-  /\bvieni\b(?=\.\s+Se non rispondi\b)/giu,
-  /\bportare\b(?=\s+biscotti\b)/giu,
-] as const;
-
-function getGrammarErrorRanges(text: string): GrammarErrorRange[] {
-  const ranges = LEVEL_ZERO_GRAMMAR_ERRORS.flatMap((pattern) =>
-    Array.from(text.matchAll(pattern), (match) => ({
-      start: match.index,
-      end: match.index + match[0].length,
-    })),
-  ).sort((left, right) => left.start - right.start || left.end - right.end);
-
-  return ranges.reduce<GrammarErrorRange[]>((merged, range) => {
-    const previous = merged.at(-1);
-    if (!previous || range.start > previous.end) {
-      merged.push(range);
-    } else {
-      previous.end = Math.max(previous.end, range.end);
-    }
-    return merged;
-  }, []);
-}
+import { getLevelZeroProofreadingErrorRanges } from "../../content/levelZeroProofreading";
 
 export function LevelZeroProofreadText({
   text,
@@ -56,7 +11,7 @@ export function LevelZeroProofreadText({
   showCaret?: boolean;
 }) {
   const visibleLength = Math.max(0, Math.min(text.length, revealedCharacters));
-  const ranges = getGrammarErrorRanges(text);
+  const ranges = getLevelZeroProofreadingErrorRanges(text);
   const content: ReactNode[] = [];
   let cursor = 0;
 

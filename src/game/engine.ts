@@ -126,6 +126,11 @@ function makeId(prefix: string, now: number, suffix: number | string): string {
   return `${prefix}-${now.toString(36)}-${suffix}`;
 }
 
+const ANDREA_SIMONAZZI_ID: SpecialCollaboratorId = "andrea-simonazzi";
+const ANDREA_SIMONAZZI_PROFILE = SPECIAL_COLLABORATORS.find(
+  (profile) => profile.id === ANDREA_SIMONAZZI_ID,
+)!;
+
 function chooseOrdinaryRarity(seed: number) {
   const [rarityRoll, nextSeed] = nextRandom(seed);
   return {
@@ -166,14 +171,18 @@ function chooseLegendaryProfile(
 
 function createContacts(
   now: number,
+  includeAndrea: boolean,
   seed: number,
   existingProgress: LegendaryCollaboratorProgress,
 ): { contacts: Contact[]; nextSeed: number; progress: LegendaryCollaboratorProgress } {
   let nextSeed = seed;
   let progress = existingProgress;
   const contacts = Array.from({ length: GAME_CONFIG.initialContacts }, (_, index) => {
-    let legendaryProfile: (typeof SPECIAL_COLLABORATORS)[number] | undefined;
-    if (index >= 8) {
+    let legendaryProfile = includeAndrea && index === 8 &&
+      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
+      ? ANDREA_SIMONAZZI_PROFILE
+      : undefined;
+    if (!legendaryProfile && index >= 9) {
       const selected = chooseLegendaryProfile(nextSeed, progress, 0);
       legendaryProfile = selected.profile;
       nextSeed = selected.nextSeed;
@@ -257,10 +266,9 @@ function systemMessage(now: number): InboxMessage {
 export function createInitialState(
   now = Date.now(),
   displayName = "",
-  _legacyIncludeAndrea = true,
+  includeAndrea = true,
   existingLegendaryProgress?: LegendaryCollaboratorProgress,
 ): GameState {
-  void _legacyIncludeAndrea;
   const initialSeed = (now ^ 0x5f3759df) | 0;
   const legendaryProgress = existingLegendaryProgress ?? {
     encounteredProfileIds: [],
@@ -270,6 +278,7 @@ export function createInitialState(
   };
   const initialContacts = createContacts(
     now,
+    includeAndrea,
     initialSeed,
     legendaryProgress,
   );
@@ -360,7 +369,11 @@ function createAcquiredContacts(
   const contacts = Array.from({ length: count }, (_, index) => {
     const sequence = state.statistics.contactsAcquired + index;
     const queuePosition = state.contacts.length + index + 1;
-    const selected = queuePosition >= 9
+    const selected = queuePosition === 9 &&
+      state.network.schools.length === 0 &&
+      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
+      ? { profile: ANDREA_SIMONAZZI_PROFILE, nextSeed }
+      : queuePosition >= 9
         ? chooseLegendaryProfile(nextSeed, progress, state.network.schools.length)
         : { profile: undefined, nextSeed };
     const specialProfile = selected.profile;
@@ -1774,7 +1787,7 @@ function foundSchool(
   const fresh = createInitialState(
     now,
     state.profile.displayName,
-    true,
+    false,
     legendaryProgress,
   );
   const archivedSchool = {

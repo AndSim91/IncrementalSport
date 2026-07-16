@@ -50,7 +50,7 @@ describe("game engine", () => {
     expect(next.statistics.inputs).toBe(1);
   });
 
-  it("starts unbiased random Legendary rolls at the ninth queued email", () => {
+  it("guarantees Andrea Simonazzi as the ninth contact in the initial school", () => {
     const initial = createInitialState(1_000, "", false);
     const padding = initial.contacts.slice(0, 3).map((contact, index) => ({
       ...contact,
@@ -75,7 +75,7 @@ describe("game engine", () => {
     };
     const state = gameReducer({
       ...initial,
-      randomSeed: 1_216,
+      randomSeed: 42,
       contacts: [...initial.contacts, ...padding],
       acquisitionEvents: [event],
       automation: { ...initial.automation, lastProcessedAt: 2_000 },
@@ -83,8 +83,57 @@ describe("game engine", () => {
 
     expect(state.contacts.slice(0, 8).every((contact) => contact.rarity !== "legendary")).toBe(true);
     expect(state.contacts[8].rarity).toBe("legendary");
-    expect(SPECIAL_COLLABORATORS.map((profile) => profile.id))
-      .toContain(state.contacts[8].specialProfileId);
+    expect(state.contacts[8].specialProfileId).toBe("andrea-simonazzi");
+    expect(state.legendaryCollaborators.encounteredProfileIds).toContain("andrea-simonazzi");
+  });
+
+  it("does not guarantee Andrea Simonazzi as the ninth contact in later schools", () => {
+    const initial = createInitialState(1_000, "", false);
+    const padding = initial.contacts.slice(0, 3).map((contact, index) => ({
+      ...contact,
+      id: `later-school-padding-${index}`,
+      status: "available" as const,
+    }));
+    const event = {
+      id: "later-school-ninth-contact",
+      definitionId: "public-demo" as const,
+      title: "Dimostrazione pubblica",
+      location: "Trieste",
+      startedAt: 1_000,
+      resolvesAt: 2_000,
+      cost: 0,
+      peopleMet: 1,
+      demonstrationsGiven: 1,
+      contactReward: 1,
+      membersUsed: 0,
+      equipmentUsed: 0,
+      wearAdded: 0,
+      status: "running" as const,
+    };
+    const state = gameReducer({
+      ...initial,
+      randomSeed: 42,
+      contacts: [...initial.contacts, ...padding],
+      network: {
+        ...initial.network,
+        schools: [{
+          id: "school-archive",
+          name: "Ordine delle Onde",
+          city: "Genova",
+          motto: "",
+          specialization: "generale" as const,
+          membersAtTransfer: 80,
+          emailsSent: 30,
+          eventsCompleted: 50,
+          transferredAt: 1_500,
+        }],
+      },
+      acquisitionEvents: [event],
+      automation: { ...initial.automation, lastProcessedAt: 2_000 },
+    }, { type: "TICK", now: 2_000 });
+
+    expect(state.contacts).toHaveLength(9);
+    expect(state.contacts[8].specialProfileId).not.toBe("andrea-simonazzi");
   });
 
   it("stores the user name in the active email", () => {

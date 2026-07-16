@@ -510,7 +510,7 @@ Regole:
 
 Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 
-- Andrea Simonazzi segue esattamente le stesse regole di ogni altro Leggendario, senza garanzie di comparsa, prenotazione, iscrizione o permanenza;
+- Andrea Simonazzi è garantito come 9° contatto nella scuola iniziale; nelle scuole successive la sua comparsa torna casuale come per ogni altro Leggendario, senza garanzie di prenotazione, iscrizione o permanenza;
 - tutti i Leggendari possono lasciare la scuola con una probabilità annuale pari al 10% del rischio ordinario associato alla loro Forma più alta fino alla Forma 6; a Forma 7 usano la curva specifica per rarità e prestigio;
 - la probabilità di comparsa del pool Leggendario è 5% nella scuola iniziale e 2,5% in tutte le scuole successive;
 - con il prestigio tutti i profili Leggendari tornano disponibili nel pool della nuova scuola;
