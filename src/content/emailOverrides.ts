@@ -1,4 +1,5 @@
 import type { EmailPresentationLevel } from "../game/types";
+import fileOverrides from "./emailCatalogOverrides.json";
 
 export interface EmailCopyOverride {
   subject: string;
@@ -7,8 +8,8 @@ export interface EmailCopyOverride {
 
 export type EmailCopyOverrides = Record<string, EmailCopyOverride>;
 
-export const EMAIL_COPY_OVERRIDES_STORAGE_KEY =
-  "oggetto-nuovi-iscritti.dev-email-copy.v1";
+export const EMAIL_COPY_OVERRIDES_FILE = "src/content/emailCatalogOverrides.json";
+export const EMAIL_COPY_OVERRIDES_ENDPOINT = "/__admin/email-catalogs";
 
 export const EMAIL_COPY_TOKENS = {
   firstName: "{{firstName}}",
@@ -22,33 +23,39 @@ export function getEmailCopyOverrideKey(
   return `${level}:${templateId}`;
 }
 
-function isEmailCopyOverride(value: unknown): value is EmailCopyOverride {
+export function isEmailCopyOverride(value: unknown): value is EmailCopyOverride {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<EmailCopyOverride>;
   return typeof candidate.subject === "string" && typeof candidate.body === "string";
 }
 
-export function loadEmailCopyOverrides(): EmailCopyOverrides {
-  if (!import.meta.env.DEV || typeof localStorage === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(EMAIL_COPY_OVERRIDES_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return {};
-    return Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, EmailCopyOverride] =>
-        isEmailCopyOverride(entry[1]),
-      ),
-    );
-  } catch {
-    return {};
-  }
+function normalizeEmailCopyOverrides(value: unknown): EmailCopyOverrides {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, EmailCopyOverride] =>
+      isEmailCopyOverride(entry[1]),
+    ),
+  );
 }
 
-export function saveEmailCopyOverrides(overrides: EmailCopyOverrides): boolean {
-  if (!import.meta.env.DEV || typeof localStorage === "undefined") return false;
+let runtimeOverrides = normalizeEmailCopyOverrides(fileOverrides);
+
+export function loadEmailCopyOverrides(): EmailCopyOverrides {
+  return { ...runtimeOverrides };
+}
+
+export async function saveEmailCopyOverrides(
+  overrides: EmailCopyOverrides,
+): Promise<boolean> {
+  if (!import.meta.env.DEV) return false;
   try {
-    localStorage.setItem(EMAIL_COPY_OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+    const response = await fetch(EMAIL_COPY_OVERRIDES_ENDPOINT, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(overrides),
+    });
+    if (!response.ok) return false;
+    runtimeOverrides = normalizeEmailCopyOverrides(overrides);
     return true;
   } catch {
     return false;
@@ -59,7 +66,7 @@ export function getEmailCopyOverride(
   templateId: string,
   level: EmailPresentationLevel,
 ): EmailCopyOverride | undefined {
-  return loadEmailCopyOverrides()[getEmailCopyOverrideKey(templateId, level)];
+  return runtimeOverrides[getEmailCopyOverrideKey(templateId, level)];
 }
 
 export function renderEmailCopyTokens(

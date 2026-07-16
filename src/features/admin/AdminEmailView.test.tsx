@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialUpgradeLevels } from "../../content/upgrades";
 import {
   EMAIL_TEMPLATES,
@@ -10,10 +10,13 @@ import { AdminEmailView } from "./AdminEmailView";
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
 
 describe("AdminEmailView", () => {
-  it("saves subject and body overrides for the selected upgrade catalog", () => {
+  it("saves subject and body overrides in the repository file", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
     render(<AdminEmailView upgrades={createInitialUpgradeLevels()} />);
 
     fireEvent.click(
@@ -25,7 +28,15 @@ describe("AdminEmailView", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Corpo email" }), {
       target: { value: "Ciao {{firstName}},\n\nTi aspettiamo.\n\n{{senderName}}" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salva cataloghi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salva cataloghi nel file" }));
+
+    expect(
+      await screen.findByText("File modificato: src/content/emailCatalogOverrides.json"),
+    ).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/__admin/email-catalogs",
+      expect.objectContaining({ method: "PUT" }),
+    );
 
     const template = EMAIL_TEMPLATES[0];
     expect(resolveEmailTemplateCopy(template, "Giulia", "Andrea", 1)).toEqual({

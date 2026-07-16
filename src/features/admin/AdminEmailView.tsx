@@ -6,6 +6,7 @@ import {
 } from "../../content/emailPresentation";
 import {
   EMAIL_COPY_TOKENS,
+  EMAIL_COPY_OVERRIDES_FILE,
   getEmailCopyOverrideKey,
   loadEmailCopyOverrides,
   renderEmailCopyTokens,
@@ -36,6 +37,7 @@ export function AdminEmailView({ upgrades }: { upgrades: UpgradeLevels }) {
   const [query, setQuery] = useState("");
   const [overrides, setOverrides] = useState(loadEmailCopyOverrides);
   const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const selectedTemplate =
     EMAIL_TEMPLATES.find((template) => template.id === selectedTemplateId) ??
@@ -86,12 +88,15 @@ export function AdminEmailView({ upgrades }: { upgrades: UpgradeLevels }) {
     setStatus("Ripristino non ancora salvato");
   };
 
-  const save = () => {
-    const success = saveEmailCopyOverrides(overrides);
+  const save = async () => {
+    setSaving(true);
+    setStatus(`Salvataggio di ${EMAIL_COPY_OVERRIDES_FILE}...`);
+    const success = await saveEmailCopyOverrides(overrides);
+    setSaving(false);
     setStatus(
       success
-        ? "Cataloghi salvati. Le modifiche verranno usate dalle nuove email."
-        : "Impossibile salvare i cataloghi nel browser.",
+        ? `File modificato: ${EMAIL_COPY_OVERRIDES_FILE}`
+        : `Impossibile modificare ${EMAIL_COPY_OVERRIDES_FILE}. Verifica che l'app sia avviata con il server Vite dev.`,
     );
   };
 
@@ -106,7 +111,7 @@ export function AdminEmailView({ upgrades }: { upgrades: UpgradeLevels }) {
         <Icon name="admin" />
         <div>
           <h1>Admin · Cataloghi email</h1>
-          <p>Editor disponibile solo in sviluppo per oggetti e corpi delle campagne</p>
+          <p>Salvataggio diretto nel file {EMAIL_COPY_OVERRIDES_FILE}</p>
         </div>
         <span className="dev-only-badge">DEV ONLY</span>
       </header>
@@ -182,7 +187,7 @@ export function AdminEmailView({ upgrades }: { upgrades: UpgradeLevels }) {
           className="admin-email-editor"
           onSubmit={(event) => {
             event.preventDefault();
-            save();
+            void save();
           }}
         >
           <div className="admin-editor-heading">
@@ -238,8 +243,11 @@ export function AdminEmailView({ upgrades }: { upgrades: UpgradeLevels }) {
           </details>
 
           <div className="admin-editor-actions">
-            <button type="submit" disabled={!editorCopy.subject.trim() || !editorCopy.body.trim()}>
-              Salva cataloghi
+            <button
+              type="submit"
+              disabled={saving || !editorCopy.subject.trim() || !editorCopy.body.trim()}
+            >
+              {saving ? "Salvataggio file..." : "Salva cataloghi nel file"}
             </button>
             <button type="button" className="secondary" onClick={restoreDefault}>
               Ripristina questa email
