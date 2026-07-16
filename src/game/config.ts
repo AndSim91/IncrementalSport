@@ -10,7 +10,7 @@ export const GAME_CONFIG = {
   sendDelayMs: 350,
   monthlyMemberFee: 40,
   enrollmentBonus: 20,
-  gameMonthMs: 120_000,
+  gameMonthMs: 60_000,
   sparringCooldownMs: 30_000,
   equipmentMaintenanceCost: 10,
   equipmentMaintenanceCostPerSword: 50,

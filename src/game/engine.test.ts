@@ -289,6 +289,10 @@ describe("game engine", () => {
     state = {
       ...state,
       emails: [{ ...email, revealedCharacters: email.body.length - 1 }],
+      school: {
+        ...state.school,
+        nextFeeAt: 1_000 + GAME_CONFIG.gameMonthMs * 2,
+      },
     };
     state = gameReducer(state, { type: "WRITE", now: 2_000 });
     state = gameReducer(state, { type: "TICK", now: 3_000 });

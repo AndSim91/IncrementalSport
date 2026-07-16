@@ -75,8 +75,8 @@ export function PeopleView({
 }) {
   const [tab, setTab] = useState<PeopleTab>("members");
   const members = state.contacts.filter((contact) => contact.status === "enrolled");
-  const collaboratorContactIds = new Set(
-    state.collaborators.map((collaborator) => collaborator.contactId),
+  const collaboratorsByContactId = new Map(
+    state.collaborators.map((collaborator) => [collaborator.contactId, collaborator]),
   );
   const showCollaborators = state.unlocks.collaborators || state.collaborators.length > 0;
   const showRarityOverview =
@@ -132,14 +132,16 @@ export function PeopleView({
         <section className="people-table member-development-list" aria-label="Iscritti">
           <div className="people-row people-head member-row"><span>Nome</span><span>Indirizzo</span><span>Percorso</span><span>Stato</span><span>Prossima evoluzione</span></div>
           {members.map((contact) => {
-            const isCollaborator = collaboratorContactIds.has(contact.id);
+            const collaborator = collaboratorsByContactId.get(contact.id);
+            const isCollaborator = Boolean(collaborator);
+            const memberForms = collaborator?.forms ?? contact.forms;
             return (
               <div className="people-row member-row" key={contact.id}>
                 <PersonName displayName={`${contact.firstName} ${contact.lastName}`} rarity={contact.rarity} label="Nome" />
                 <span data-label="Indirizzo"><span className={`rarity-address rarity-${contact.rarity}`}>{contact.email}</span></span>
                 <div className="member-path" data-label="Percorso">
-                  <strong>{formatFormPath(contact.forms)}</strong>
-                  <FormLogoStrip forms={contact.forms} showLabels={false} />
+                  <strong>{formatFormPath(memberForms)}</strong>
+                  <FormLogoStrip forms={memberForms} showLabels={false} />
                 </div>
                 <span className="member-status" data-label="Stato">
                   <span>{isCollaborator ? "Collaboratore" : statusLabels[contact.status]}</span>
@@ -209,9 +211,21 @@ function FormLogoStrip({ forms, showLabels = true }: { forms: FormId[]; showLabe
 
 function CollaboratorMasterySummary({ collaborator }: { collaborator: Collaborator }) {
   const mastery = collaborator.mastery ?? createInitialCollaboratorMastery();
+  const activeRole = collaborator.assignment;
+  const activeProgress = activeRole
+    ? getCollaboratorMasteryProgress(mastery[activeRole])
+    : undefined;
+  const activeXpLabel = activeProgress?.nextXp === undefined
+    ? `${activeProgress?.currentXp ?? 0} XP`
+    : `${activeProgress.currentXp}/${activeProgress.nextXp} XP`;
+
   return (
-    <div className="collaborator-mastery" aria-label={`Maestrie di ${collaborator.displayName}`}>
-      <span>Maestrie operative</span>
+    <details className="collaborator-mastery" aria-label={`Maestrie di ${collaborator.displayName}`}>
+      <summary>
+        <span>Maestria operativa</span>
+        <strong>{activeProgress ? `${COLLABORATOR_MASTERY_ROLE_LABELS[activeRole]} · ${activeProgress.definition.name}` : "Assegna un ruolo per iniziare"}</strong>
+        <small>{activeProgress ? `${activeXpLabel} · +${Math.round(activeProgress.definition.multiplier * 100)}%` : "6 percorsi disponibili"}</small>
+      </summary>
       <div className="mastery-grid">
         {COLLABORATOR_MASTERY_ROLES.map((role) => {
           const progress = getCollaboratorMasteryProgress(mastery[role]);
@@ -232,7 +246,7 @@ function CollaboratorMasterySummary({ collaborator }: { collaborator: Collaborat
           );
         })}
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -291,13 +305,11 @@ function InstructorPanel({
   const teachingCount = selectInstructorTeachingCount(state, collaborator.id);
   const capacity = selectInstructorCapacity(state);
   const enabled = collaborator.autoTeachingEnabled !== false;
-  const preferences = collaborator.formBranchPreferences?.join(", ") || "non ancora sviluppate";
   return <div className="instructor-panel">
     <div className="instructor-panel-heading">
-      <span><strong>Istruttore stile Tiamat</strong><small>{teachingCount}/{capacity} allievi in contemporanea</small></span>
-      <label className="instructor-toggle"><input type="checkbox" checked={enabled} onChange={(event) => onToggle?.(collaborator.id, event.target.checked)} /> Insegnamento automatico</label>
+      <span><strong>Lezioni automatiche</strong><small>{teachingCount}/{capacity} allievi</small></span>
+      <label className="instructor-toggle"><input type="checkbox" checked={enabled} onChange={(event) => onToggle?.(collaborator.id, event.target.checked)} /> Attive</label>
     </div>
-    <small>Preferenze d'arma: {preferences}</small>
     <small>{enabled ? (teachingCount > 0 ? "Le lezioni in corso termineranno regolarmente." : "In attesa del prossimo allievo compatibile.") : "Pausa: non verranno avviate nuove lezioni."}</small>
     <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />
   </div>;

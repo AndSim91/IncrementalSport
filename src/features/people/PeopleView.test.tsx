@@ -71,6 +71,33 @@ describe("PeopleView", () => {
     expect(onAssign).toHaveBeenCalledWith("collaborator-1", "writing");
   });
 
+  it("shows a collaborator's learned path in the members tab", () => {
+    const initial = createInitialState(1_000);
+    const enrolled = { ...initial.contacts[0], status: "enrolled" as const, forms: [] as FormId[] };
+    const state = {
+      ...initial,
+      contacts: initial.contacts.map((contact) => contact.id === enrolled.id ? enrolled : contact),
+      collaborators: [
+        {
+          id: "collaborator-1",
+          contactId: enrolled.id,
+          displayName: `${enrolled.firstName} ${enrolled.lastName}`,
+          joinedAt: 1_000,
+          forms: ["form-1" as const],
+          instructorForms: [],
+          assignment: null,
+          rarity: enrolled.rarity,
+        },
+      ],
+      unlocks: { ...initial.unlocks, collaborators: true },
+    };
+
+    render(<PeopleView state={state} onAssign={() => undefined} onStartTraining={() => undefined} />);
+
+    expect(screen.getByText("Forma 1", { exact: true })).toBeVisible();
+    expect(screen.queryByText(/Da iniziare/)).not.toBeInTheDocument();
+  });
+
   it("lets enrolled members start a manual form training without an instructor", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };

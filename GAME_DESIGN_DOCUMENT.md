@@ -159,7 +159,7 @@ Gli **Iscritti** sono il punteggio principale, la dimensione della scuola e una 
 - **Iscritti storici:** totale lordo ottenuto nella partita e nei cicli di prestigio.
 - **Ultra Rari:** contatti rossi che diventano Collaboratori delle Onde dopo il Corso Y.
 
-Ogni nuovo iscritto accredita immediatamente un bonus di iscrizione di **€20**. In seguito, ogni iscritto attivo genera una quota di **€40 per mese di gioco**. Un mese dura **120 secondi reali** e segue il normale ciclo da Gennaio a Dicembre; dopo Dicembre torna Gennaio. L'anno scolastico, sempre visibile nella barra superiore, va da Settembre ad Agosto; la formazione si ferma a Luglio e Agosto e gli eventuali abbandoni vengono verificati nel passaggio tra Giugno e Luglio. Un evento positivo di passaparola può produrre più potenziali iscritti; un litigio o un mancato rinnovo può ridurre il totale.
+Ogni nuovo iscritto accredita immediatamente un bonus di iscrizione di **€20**. In seguito, ogni iscritto attivo genera una quota di **€40 per mese di gioco**. Un mese dura **60 secondi reali** e segue il normale ciclo da Gennaio a Dicembre; dopo Dicembre torna Gennaio. L'anno scolastico, sempre visibile nella barra superiore, va da Settembre ad Agosto; la formazione si ferma a Luglio e Agosto e gli eventuali abbandoni vengono verificati nel passaggio tra Giugno e Luglio. Un evento positivo di passaparola può produrre più potenziali iscritti; un litigio o un mancato rinnovo può ridurre il totale.
 
 ### 5.2 Euro
 
@@ -344,7 +344,7 @@ Per il primo prototipo:
 | Bonus di iscrizione | immediato (€20) |
 | Accredito della quota mensile | al cambio mese (€40 per iscritto) |
 
-Il mese di gioco dura 120 secondi e il calendario scorre da Gennaio a Dicembre. La formazione segue invece l'anno scolastico Settembre–Agosto: le lezioni sono attive da Settembre a Giugno, Luglio e Agosto sono pausa estiva e gli abbandoni vengono elaborati nel passaggio da Giugno a Luglio. L'anno scolastico indicato accanto al mese corrente nella barra superiore riparte a Settembre. Gli altri tempi devono essere configurabili dai dati e non scritti direttamente nella logica.
+Il mese di gioco dura 60 secondi e il calendario scorre da Gennaio a Dicembre. La formazione segue invece l'anno scolastico Settembre–Agosto: le lezioni sono attive da Settembre a Giugno, Luglio e Agosto sono pausa estiva e gli abbandoni vengono elaborati nel passaggio da Giugno a Luglio. L'anno scolastico indicato accanto al mese corrente nella barra superiore riparte a Settembre. Gli altri tempi devono essere configurabili dai dati e non scritti direttamente nella logica.
 
 ### 7.3 Formule di conversione
 
@@ -1245,7 +1245,7 @@ Il riepilogo mostra:
 - prenotazione e iscrizione dipendono dalla rarità secondo la tabella dei Contatti;
 - bonus immediato per ogni nuova iscrizione: €20;
 - quota ricorrente: €40 per iscritto attivo a ogni mese di gioco;
-- durata di un mese di gioco: 120 secondi, ciclo Gennaio–Dicembre e anno scolastico Settembre–Agosto sempre visibile;
+- durata di un mese di gioco: 60 secondi, ciclo Gennaio–Dicembre e anno scolastico Settembre–Agosto sempre visibile;
 - il primo iscritto può essere assistito dal tutorial per evitare sfortuna estrema;
 - il primo Ultra Raro deve comparire abbastanza presto da introdurre l'automazione senza spezzare il ritmo;
 - il primo evento e il primo sparring sono gratuiti e guidati.
