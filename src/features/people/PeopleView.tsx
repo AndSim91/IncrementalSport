@@ -101,29 +101,46 @@ export function PeopleView({
             const contact = state.contacts.find((candidate) => candidate.id === collaborator.contactId);
             const bonusSummary = getCollaboratorBonusSummary(collaborator);
             return (
-              <article className="collaborator-row" key={collaborator.id}>
-                <div className={`person-avatar rarity-${collaborator.rarity}`}>{collaborator.displayName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
-                <div className="collaborator-copy">
-                  <PersonName displayName={collaborator.displayName} rarity={collaborator.rarity} />
-                  <span className={`rarity-address rarity-${collaborator.rarity}`}>{contact?.email}</span>
-                  <small>{collaborator.rarity === "legendary" ? "Livello Leggendario · Potere VIP ×2" : "Livello Ultra Raro · Corso Y completato"}</small>
+              <article className={`collaborator-row rarity-${collaborator.rarity}`} key={collaborator.id}>
+                <div className="collaborator-identity">
+                  <div className={`person-avatar rarity-${collaborator.rarity}`} aria-hidden="true">{collaborator.displayName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div>
+                  <div className="collaborator-copy">
+                    <PersonName displayName={collaborator.displayName} rarity={collaborator.rarity} />
+                    <span className={`collaborator-tier rarity-${collaborator.rarity}`}>
+                      {collaborator.rarity === "legendary" ? "Collaboratore VIP" : "Ultra Raro · Corso Y completato"}
+                    </span>
+                    <span className={`rarity-address rarity-${collaborator.rarity}`}>{contact?.email}</span>
+                  </div>
+                </div>
+                <div className="collaborator-profile">
+                  <div className="collaborator-section-heading">
+                    <strong>{collaborator.forms.length} {collaborator.forms.length === 1 ? "forma conosciuta" : "forme conosciute"}</strong>
+                  </div>
                   <FormLogoStrip forms={collaborator.forms} />
-                  <small className="form-bonus-summary">{bonusSummary || "Nessun bonus d'arma attivo"}</small>
+                  <div className="collaborator-bonus">
+                    <span>Bonus attivo</span>
+                    <strong className="form-bonus-summary">{bonusSummary || "Nessun bonus d'arma attivo"}</strong>
+                  </div>
                   <CollaboratorMasterySummary collaborator={collaborator} />
                   {collaborator.assignment === "instructor" || collaborator.instructorForms.length > 0
-                    ? <small>Attestati da istruttore: {collaborator.instructorForms.length}</small>
+                    ? <small className="collaborator-certificates">Attestati da istruttore: {collaborator.instructorForms.length}</small>
                     : null}
                 </div>
-                <label><span>Assegnazione</span><select aria-label="Assegnazione" value={collaborator.assignment ?? ""} onChange={(event) => onAssign(collaborator.id, (event.target.value || null) as CollaboratorAssignment)}><option value="">Non assegnato</option>{Object.entries(assignmentLabels).map(([value, label]) => {
-                  const disabled = value === "social" && !state.unlocks.social;
-                  const suffix = value === "social" && !state.unlocks.social
-                    ? " — si sblocca con 10 iscritti"
-                    : "";
-                  return <option value={value} key={value} disabled={disabled}>{label}{suffix}</option>;
-                })}</select></label>
-                {collaborator.assignment === "instructor"
-                  ? <InstructorPanel collaborator={collaborator} state={state} onStartTraining={onStartTraining} onToggle={onToggleInstructorAutomation} />
-                  : <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />}
+                <div className="collaborator-actions">
+                  <label className="collaborator-assignment"><span>Assegnazione</span><select aria-label="Assegnazione" value={collaborator.assignment ?? ""} onChange={(event) => onAssign(collaborator.id, (event.target.value || null) as CollaboratorAssignment)}><option value="">Non assegnato</option>{Object.entries(assignmentLabels).map(([value, label]) => {
+                    const disabled = value === "social" && !state.unlocks.social;
+                    const suffix = value === "social" && !state.unlocks.social
+                      ? " — si sblocca con 10 iscritti"
+                      : "";
+                    return <option value={value} key={value} disabled={disabled}>{label}{suffix}</option>;
+                  })}</select></label>
+                  <div className="collaborator-training">
+                    <span className="collaborator-action-label">Formazione</span>
+                    {collaborator.assignment === "instructor"
+                      ? <InstructorPanel collaborator={collaborator} state={state} onStartTraining={onStartTraining} onToggle={onToggleInstructorAutomation} />
+                      : <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />}
+                  </div>
+                </div>
               </article>
             );
           })}
@@ -223,7 +240,7 @@ function CollaboratorMasterySummary({ collaborator }: { collaborator: Collaborat
     <details className="collaborator-mastery" aria-label={`Maestrie di ${collaborator.displayName}`}>
       <summary>
         <span>Maestria operativa</span>
-        <strong>{activeProgress ? `${COLLABORATOR_MASTERY_ROLE_LABELS[activeRole]} · ${activeProgress.definition.name}` : "Assegna un ruolo per iniziare"}</strong>
+        <strong>{activeRole && activeProgress ? `${COLLABORATOR_MASTERY_ROLE_LABELS[activeRole]} · ${activeProgress.definition.name}` : "Assegna un ruolo per iniziare"}</strong>
         <small>{activeProgress ? `${activeXpLabel} · +${Math.round(activeProgress.definition.multiplier * 100)}%` : "6 percorsi disponibili"}</small>
       </summary>
       <div className="mastery-grid">
@@ -291,6 +308,51 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
   return <button type="button" role="tab" aria-selected={active} className={active ? "active" : ""} onClick={onClick}>{label}</button>;
 }
 
+type InstructorTeachingEntry = {
+  id: string;
+  displayName: string;
+  training: NonNullable<FormStudent["training"]>;
+};
+
+function getInstructorTeachingStudents(state: GameState, instructorId: string): InstructorTeachingEntry[] {
+  return [
+    ...state.contacts.flatMap((contact) => contact.training?.instructorId === instructorId
+      ? [{ id: contact.id, displayName: `${contact.firstName} ${contact.lastName}`, training: contact.training }]
+      : []),
+    ...state.collaborators.flatMap((collaborator) => collaborator.training?.instructorId === instructorId
+      ? [{ id: collaborator.id, displayName: collaborator.displayName, training: collaborator.training }]
+      : []),
+  ];
+}
+
+function getTrainingProgress(training: NonNullable<FormStudent["training"]>, now: number): number {
+  const duration = training.completesAt - training.startedAt;
+  return duration <= 0 ? 100 : Math.min(100, Math.max(0, Math.round(((now - training.startedAt) / duration) * 100)));
+}
+
+function InstructorTeachingSummary({ entries, now }: { entries: InstructorTeachingEntry[]; now: number }) {
+  return (
+    <div className="instructor-teaching" aria-label="Allievi in formazione">
+      {entries.map((entry) => {
+        const definition = getFormDefinition(entry.training.formId);
+        const progress = getTrainingProgress(entry.training, now);
+        return (
+          <div className="instructor-student" key={entry.id}>
+            <span className="instructor-student-copy">
+              <strong>{entry.displayName}</strong>
+              <small>{definition?.title}{definition?.branch ? ` · ${definition.branch}` : ""}</small>
+            </span>
+            <strong className="instructor-student-progress">{progress}%</strong>
+            <div role="progressbar" aria-label={`Formazione di ${entry.displayName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+              <span style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function InstructorPanel({
   collaborator,
   state,
@@ -302,15 +364,25 @@ function InstructorPanel({
   onStartTraining: (personId: string, formId: FormId) => void;
   onToggle?: (collaboratorId: string, enabled: boolean) => void;
 }) {
+  const [now, setNow] = useState(() => Date.now());
   const teachingCount = selectInstructorTeachingCount(state, collaborator.id);
   const capacity = selectInstructorCapacity(state);
+  const teaching = getInstructorTeachingStudents(state, collaborator.id);
   const enabled = collaborator.autoTeachingEnabled !== false;
+  useEffect(() => {
+    if (teaching.length === 0) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [teaching.length]);
+
   return <div className="instructor-panel">
     <div className="instructor-panel-heading">
       <span><strong>Lezioni automatiche</strong><small>{teachingCount}/{capacity} allievi</small></span>
       <label className="instructor-toggle"><input type="checkbox" checked={enabled} onChange={(event) => onToggle?.(collaborator.id, event.target.checked)} /> Attive</label>
     </div>
-    <small>{enabled ? (teachingCount > 0 ? "Le lezioni in corso termineranno regolarmente." : "In attesa del prossimo allievo compatibile.") : "Pausa: non verranno avviate nuove lezioni."}</small>
+    {teaching.length > 0
+      ? <InstructorTeachingSummary entries={teaching} now={now} />
+      : <small>{enabled ? "In attesa del prossimo allievo compatibile." : "Pausa: non verranno avviate nuove lezioni."}</small>}
     <TrainingControl personId={collaborator.id} displayName={collaborator.displayName} student={collaborator} state={state} onStartTraining={onStartTraining} />
   </div>;
 }
@@ -348,8 +420,7 @@ function TrainingControl({
     const instructor = student.training.instructorId
       ? state.collaborators.find((candidate) => candidate.id === student.training?.instructorId)
       : undefined;
-    const duration = student.training.completesAt - student.training.startedAt;
-    const progress = duration <= 0 ? 100 : Math.min(100, Math.max(0, Math.round(((now - student.training.startedAt) / duration) * 100)));
+    const progress = getTrainingProgress(student.training, now);
     return <div className="training-progress"><span>{definition?.title}{definition?.branch ? ` — ${definition.branch}` : ""}{instructor ? ` · con ${instructor.displayName}` : ""}{student.training.includesInstructorCertification ? " · attestato incluso" : ""}</span><strong>{progress}%</strong><div role="progressbar" aria-label={`Formazione di ${displayName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div>;
   }
   if (isSummerBreak(state.school.currentMonth)) {

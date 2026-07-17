@@ -759,7 +759,7 @@ function migrate(value: unknown): unknown {
     );
     migrated = {
       ...migrated,
-      version: GAME_CONFIG.version,
+      version: 32,
       contacts: (migrated.contacts ?? []).map((contact) =>
         legacyCollaboratorContactIds.has(contact.id) && contact.rarity === "rare"
           ? { ...contact, rarity: "ultra-rare" }
@@ -770,6 +770,19 @@ function migrate(value: unknown): unknown {
           ? { ...collaborator, rarity: "ultra-rare" }
           : collaborator,
       ),
+    };
+  }
+
+  if (migrated.version === 32) {
+    migrated = {
+      ...migrated,
+      version: GAME_CONFIG.version,
+      narrative: migrated.narrative
+        ? {
+            ...migrated.narrative,
+            history: migrated.narrative.history.slice(-GAME_CONFIG.narrativeHistoryLimit),
+          }
+        : migrated.narrative,
     };
   }
 

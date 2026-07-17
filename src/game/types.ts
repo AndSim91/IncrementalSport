@@ -213,6 +213,10 @@ export interface NarrativeEventRecord {
   title: string;
   occurredAt: number;
   summary: string;
+  person?: {
+    displayName: string;
+    rarity: PersonRarity;
+  };
 }
 
 export type ShortGoalId =

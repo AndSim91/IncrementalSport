@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../../game/engine";
 import { ActivitiesView } from "./ActivitiesView";
@@ -32,6 +32,32 @@ describe("ActivitiesView", () => {
     expect(screen.getByText("1/12 completati")).toBeVisible();
     expect(screen.getByText("Passaparola inatteso")).toBeVisible();
     expect(screen.getByText("Sono arrivati nuovi contatti.")).toBeVisible();
+  });
+
+  it("shows the missed renewal student with rarity color and caps the visible history at 30 rows", () => {
+    const initial = createInitialState(1_000);
+    const state = {
+      ...initial,
+      narrative: {
+        nextEventAt: 10_000,
+        history: Array.from({ length: 35 }, (_, index) => ({
+          id: `story-${index}`,
+          definitionId: index === 34 ? "missed-renewal" as const : "word-of-mouth" as const,
+          title: `Episodio ${index}`,
+          occurredAt: 2_000 + index,
+          summary: `Dettaglio ${index}`,
+          ...(index === 34 ? { person: { displayName: "Allievo Raro", rarity: "rare" as const } } : {}),
+        })),
+      },
+      statistics: { ...initial.statistics, narrativeEvents: 35 },
+    };
+
+    render(<ActivitiesView state={state} onRunSocialCampaign={() => undefined} />);
+
+    const region = screen.getByRole("region", { name: "Cronaca della scuola" });
+    expect(within(region).getAllByRole("article")).toHaveLength(30);
+    expect(within(region).getByText("Allievo Raro")).toHaveClass("rarity-name", "rarity-rare");
+    expect(within(region).queryByText("Episodio 4")).not.toBeInTheDocument();
   });
 
   it("keeps later operational panels hidden until they become relevant", () => {

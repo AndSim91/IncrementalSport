@@ -619,6 +619,26 @@ describe("local save", () => {
       .toBe("ultra-rare");
   });
 
+  it("keeps only the latest 30 school history entries when loading a version 32 save", () => {
+    const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
+    legacy.version = 32;
+    legacy.narrative.history = Array.from({ length: 35 }, (_, index) => ({
+      id: `story-${index}`,
+      definitionId: "word-of-mouth",
+      title: `Episodio ${index}`,
+      occurredAt: 1_000 + index,
+      summary: `Dettaglio ${index}`,
+    }));
+    legacy.statistics.narrativeEvents = 35;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.narrative.history).toHaveLength(GAME_CONFIG.narrativeHistoryLimit);
+    expect(migrated.narrative.history[0].id).toBe("story-5");
+  });
+
   it("resets both primary and backup saves", () => {
     const state = createInitialState(1_000);
     saveGame(state, 2_000);

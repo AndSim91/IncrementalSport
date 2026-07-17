@@ -43,6 +43,9 @@ export function ActivitiesView({
   const earnedAchievements = ACHIEVEMENTS.filter((achievement) =>
     state.achievements.includes(achievement.id),
   );
+  const narrativeHistory = state.narrative.history
+    .slice(-GAME_CONFIG.narrativeHistoryLimit)
+    .reverse();
 
   return (
     <main className="overview-view activities-view">
@@ -106,9 +109,13 @@ export function ActivitiesView({
           <div><Icon name="mail" /><span><strong>Cronaca della scuola</strong><small>{state.statistics.narrativeEvents} episodi registrati</small></span></div>
         </div>
         <div className="narrative-list">
-            {state.narrative.history.slice().reverse().map((event) => (
+            {narrativeHistory.map((event) => (
               <article key={event.id}>
-                <div><strong>{event.title}</strong><small>{event.summary}</small></div>
+                <div>
+                  <strong>{event.title}</strong>
+                  {event.person ? <strong className={`narrative-person rarity-name rarity-${event.person.rarity}`}>{event.person.displayName}</strong> : null}
+                  <small>{event.summary}</small>
+                </div>
                 <time>{new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(event.occurredAt)}</time>
               </article>
             ))}

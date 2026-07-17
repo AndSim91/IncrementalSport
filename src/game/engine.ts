@@ -537,14 +537,11 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
       collaboratorsRecruited: state.statistics.collaboratorsRecruited + 1,
     },
   };
-  const power = contact.rarity === "legendary"
-    ? " Il suo potere VIP raddoppia l'efficacia di ogni incarico."
-    : "";
   return addMessage(
     nextState,
     now + 1,
     "Nuovo collaboratore disponibile",
-    `${collaborator.displayName} è disponibile per Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.${power}`,
+    `${collaborator.displayName} è il nuovo collaboratore della scuola. Può aiutare in vari settori automatizzando il lavoro o potenziandone l'efficacia.\n\nPuoi impiegarlo in Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.\n\nPuò anche migliorare nel tempo la sua efficacia impiegandolo più tempo in un solo ruolo.`,
     "positive",
     "focused",
     "collaborators",
@@ -1670,6 +1667,10 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
       )
     : { contacts: [], nextSeed: rewardState.state.randomSeed };
   const contacts = acquired.contacts;
+  const enrolledMembers = state.contacts.filter((contact) => contact.status === "enrolled");
+  const renewalMember = definition.id === "missed-renewal" && enrolledMembers.length > 0
+    ? enrolledMembers[Math.min(enrolledMembers.length - 1, Math.floor(eventRoll * enrolledMembers.length))]
+    : undefined;
   const euroDelta = (definition.euroDelta ?? 0) > 0
     ? scaleCurrencyGain(definition.euroDelta ?? 0, gainMultiplier)
     : (definition.euroDelta ?? 0);
@@ -1700,8 +1701,16 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
           title: definition.title,
           occurredAt: now,
           summary,
+          ...(renewalMember
+            ? {
+                person: {
+                  displayName: `${renewalMember.firstName} ${renewalMember.lastName}`,
+                  rarity: renewalMember.rarity,
+                },
+              }
+            : {}),
         },
-      ],
+      ].slice(-GAME_CONFIG.narrativeHistoryLimit),
     },
     statistics: {
       ...rewardState.state.statistics,

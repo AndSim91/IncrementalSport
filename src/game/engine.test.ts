@@ -362,6 +362,8 @@ describe("game engine", () => {
     expect(protectedAttempt.collaborators).toHaveLength(1);
     expect(protectedAttempt.collaborators[0].rarity).toBe("legendary");
     expect(protectedAttempt.unlocks.forms).toBe(true);
+    expect(protectedAttempt.messages.find((message) => message.subject === "Nuovo collaboratore disponibile")?.preview)
+      .toBe("Eva Parodi è il nuovo collaboratore della scuola. Può aiutare in vari settori automatizzando il lavoro o potenziandone l'efficacia.\n\nPuoi impiegarlo in Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.\n\nPuò anche migliorare nel tempo la sua efficacia impiegandolo più tempo in un solo ruolo.");
   });
 
   it("applies the same enrollment progression to Andrea and every other Legendary", () => {
@@ -1730,6 +1732,35 @@ describe("game engine", () => {
     expect(resolved.statistics.narrativeEvents).toBe(1);
     expect(resolved.narrative.nextEventAt).toBeGreaterThan(2_000);
     expect(repeated.narrative.history).toHaveLength(1);
+  });
+
+  it("records the student and rarity for a missed renewal", () => {
+    const initial = createInitialState(1_000);
+    const due = {
+      ...initial,
+      school: { ...initial.school, activeMembers: 2 },
+      contacts: initial.contacts.map((contact, index) => index < 2
+        ? {
+            ...contact,
+            firstName: index === 0 ? "Allievo" : "Secondo",
+            lastName: "Storico",
+            status: "enrolled" as const,
+            rarity: index === 0 ? "rare" as const : "common" as const,
+          }
+        : contact),
+      narrative: { ...initial.narrative, nextEventAt: 2_000 },
+    };
+    const resolved = Array.from({ length: 100 }, (_, randomSeed) =>
+      gameReducer({ ...due, randomSeed }, { type: "TICK", now: 2_000 }),
+    ).find((candidate) => candidate.narrative.history[0]?.definitionId === "missed-renewal");
+
+    expect(resolved).toBeDefined();
+    const event = resolved!.narrative.history[0];
+    expect(event.person?.displayName).toMatch(/^(Allievo|Secondo) Storico$/);
+    const affectedMember = due.contacts.find((contact) =>
+      `${contact.firstName} ${contact.lastName}` === event.person?.displayName,
+    );
+    expect(event.person?.rarity).toBe(affectedMember?.rarity);
   });
 
   it("includes the amount in an extraordinary contribution notification", () => {

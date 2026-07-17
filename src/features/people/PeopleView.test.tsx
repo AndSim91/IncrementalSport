@@ -62,13 +62,52 @@ describe("PeopleView", () => {
     expect(screen.getByRole("img", { name: /Corso X — emblema generato/ })).toBeVisible();
     expect(screen.getByRole("img", { name: /Corso Y — emblema ufficiale/ })).toBeVisible();
     expect(screen.queryByText("Tutorial")).not.toBeInTheDocument();
-    expect(screen.getByText(/Livello Leggendario/)).toBeVisible();
-    expect(screen.getByText(/Potere VIP ×2/)).toBeVisible();
+    expect(screen.queryByText(/Livello Leggendario/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Potere VIP ×2/)).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox", { name: "Assegnazione" }), {
       target: { value: "writing" },
     });
 
     expect(onAssign).toHaveBeenCalledWith("collaborator-1", "writing");
+  });
+
+  it("shows the assigned student's condensed training progress for an instructor", () => {
+    const initial = createInitialState(1_000);
+    const student = {
+      ...initial.contacts[1],
+      status: "enrolled" as const,
+      training: {
+        formId: "form-1" as const,
+        startedAt: 0,
+        completesAt: 1,
+        instructorId: "collaborator-1",
+      },
+    };
+    const state = {
+      ...initial,
+      contacts: initial.contacts.map((contact) => contact.id === student.id ? student : contact),
+      collaborators: [
+        {
+          id: "collaborator-1",
+          contactId: initial.contacts[0].id,
+          displayName: "Andrea Simonazzi",
+          joinedAt: 1_000,
+          forms: ["form-1" as const, "course-x" as const, "form-2" as const, "course-y" as const],
+          instructorForms: [],
+          assignment: "instructor" as const,
+          rarity: "legendary" as const,
+          specialProfileId: "andrea-simonazzi" as const,
+        },
+      ],
+      unlocks: { ...initial.unlocks, collaborators: true, forms: true },
+    };
+
+    render(<PeopleView state={state} onAssign={() => undefined} onStartTraining={() => undefined} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Collaboratori/ }));
+
+    const region = screen.getByRole("region", { name: "Collaboratori delle Onde" });
+    expect(within(region).getByText(`${student.firstName} ${student.lastName}`)).toBeVisible();
+    expect(within(region).getByRole("progressbar", { name: `Formazione di ${student.firstName} ${student.lastName}` })).toHaveAttribute("aria-valuenow", "100");
   });
 
   it("shows a collaborator's learned path in the members tab", () => {
