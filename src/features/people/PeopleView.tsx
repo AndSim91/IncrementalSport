@@ -88,9 +88,12 @@ export function PeopleView({
     <main className="overview-view people-view">
       <header><Icon name="people" /><div><h1>Iscritti</h1><p>Iscritti e Collaboratori delle Onde</p></div></header>
       <div className="people-tabs" role="tablist" aria-label="Categorie iscritti">
-        <TabButton active={tab === "members"} onClick={() => setTab("members")} label={`Iscritti (${members.length})`} />
+        <TabButton active={tab === "members"} onClick={() => setTab("members")} label={`Iscritti registrati (${members.length})`} />
         {showCollaborators ? <TabButton active={tab === "collaborators"} onClick={() => setTab("collaborators")} label={`Collaboratori (${state.collaborators.length})`} /> : null}
       </div>
+      {members.length !== state.school.activeMembers ? (
+        <p className="people-count-note">La barra superiore mostra gli iscritti attivi; qui sono elencate le persone registrate come iscritte.</p>
+      ) : null}
       {showRarityOverview ? <RarityOverview state={state} /> : null}
 
       {tab === "collaborators" ? (

@@ -7,6 +7,20 @@ import { PeopleView } from "./PeopleView";
 afterEach(() => cleanup());
 
 describe("PeopleView", () => {
+  it("distinguishes active members from the registered roster when counts diverge", () => {
+    const initial = createInitialState(1_000);
+    const contacts = initial.contacts.map((contact) => ({ ...contact, status: "enrolled" as const }));
+
+    render(<PeopleView
+      state={{ ...initial, contacts, school: { ...initial.school, activeMembers: 3 } }}
+      onAssign={() => undefined}
+      onStartTraining={() => undefined}
+    />);
+
+    expect(screen.getByRole("tab", { name: "Iscritti registrati (5)" })).toBeVisible();
+    expect(screen.getByText("La barra superiore mostra gli iscritti attivi; qui sono elencate le persone registrate come iscritte.")).toBeVisible();
+  });
+
   it("keeps advanced roster concepts hidden for the first member", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };

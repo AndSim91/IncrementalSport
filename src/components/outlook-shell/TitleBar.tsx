@@ -43,7 +43,7 @@ export function TitleBar({
         </span>
         <span className="title-resource" aria-label={`Iscritti attivi: ${formatExactNumber(activeMembers)}`}>
           <Icon name="people" />
-          <small>Iscritti</small>
+          <small>Iscritti attivi</small>
           <strong title={formatExactNumber(activeMembers)}>{formatCompactNumber(activeMembers)}</strong>
         </span>
         <span className="title-resource" aria-label={`Disponibilità economica: ${formatExactCurrency(euros)}`}>

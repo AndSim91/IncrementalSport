@@ -20,6 +20,7 @@ describe("TitleBar", () => {
     expect(screen.getByLabelText("Situazione del gioco")).toHaveTextContent(
       formatCompactCurrency(120).replace(/\u00a0/g, " "),
     );
+    expect(screen.getByText("Iscritti attivi")).toBeVisible();
     expect(screen.getByLabelText("Mese corrente: Settembre, anno scolastico 1"))
       .toHaveTextContent("SettembreAnno scolastico 1");
     expect(screen.getByRole("progressbar", {
