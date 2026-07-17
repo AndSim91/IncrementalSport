@@ -1761,6 +1761,11 @@ describe("game engine", () => {
       `${contact.firstName} ${contact.lastName}` === event.person?.displayName,
     );
     expect(event.person?.rarity).toBe(affectedMember?.rarity);
+    expect(resolved!.contacts.find((contact) => contact.id === affectedMember?.id)?.status)
+      .toBe("departed");
+    expect(resolved!.contacts.filter((contact) => contact.status === "enrolled")).toHaveLength(1);
+    expect(resolved!.school.activeMembers).toBe(1);
+    expect(resolved!.statistics.membersDeparted).toBe(1);
   });
 
   it("includes the amount in an extraordinary contribution notification", () => {

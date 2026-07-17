@@ -4,6 +4,7 @@ import { createInitialUpgradeLevels, getUpgradeEffectTotal } from "../content/up
 import { getEmailPresentationLevel } from "../content/emailPresentation";
 import { getEmailBuildLength } from "../content/emailBuild";
 import { synchronizeEquipmentAvailability } from "./equipment";
+import { departMembers } from "./membershipFlow";
 import { createShortGoalFromStatistics } from "../content/shortGoals";
 import { normalizeStackedMessages } from "./messages";
 import { GAME_CONFIG } from "./config";
@@ -699,6 +700,44 @@ export function migrate(value: unknown): unknown {
             history: migrated.narrative.history.slice(-GAME_CONFIG.narrativeHistoryLimit),
           }
         : migrated.narrative,
+    };
+  }
+
+  if (migrated.version === 33) {
+    const activeMembers = Math.max(0, migrated.school?.activeMembers ?? 0);
+    const enrolledContacts = (migrated.contacts ?? []).filter(
+      (contact) => contact.status === "enrolled",
+    );
+    const surplus = Math.max(0, enrolledContacts.length - activeMembers);
+    const renewalNames = new Set(
+      (migrated.narrative?.history ?? []).flatMap((record) =>
+        record.definitionId === "missed-renewal" && record.person
+          ? [record.person.displayName]
+          : [],
+      ),
+    );
+    const collaboratorContactIds = new Set(
+      (migrated.collaborators ?? []).map((collaborator) => collaborator.contactId),
+    );
+    const departureIds = [...enrolledContacts]
+      .sort((left, right) => {
+        const score = (contact: typeof left) => {
+          const namedInRenewal = renewalNames.has(`${contact.firstName} ${contact.lastName}`);
+          const collaborator = collaboratorContactIds.has(contact.id);
+          if (namedInRenewal && !collaborator) return 0;
+          if (!collaborator) return 1;
+          if (namedInRenewal) return 2;
+          return 3;
+        };
+        return score(left) - score(right);
+      })
+      .slice(0, surplus)
+      .map((contact) => contact.id);
+    migrated = {
+      ...(departureIds.length > 0
+        ? departMembers(migrated as GameState, departureIds, false)
+        : migrated),
+      version: GAME_CONFIG.version,
     };
   }
 

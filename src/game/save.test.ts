@@ -639,6 +639,37 @@ describe("local save", () => {
     expect(migrated.narrative.history[0].id).toBe("story-5");
   });
 
+  it("repairs enrolled contacts left behind by missed renewals in version 33 saves", () => {
+    const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
+    legacy.version = 33;
+    legacy.school.activeMembers = 1;
+    legacy.school.historicMembers = 3;
+    legacy.contacts = legacy.contacts.map((contact: { status: string }, index: number) => ({
+      ...contact,
+      status: index < 3 ? "enrolled" : contact.status,
+    }));
+    legacy.narrative.history = legacy.contacts.slice(1, 3).map((contact: { firstName: string; lastName: string }, index: number) => ({
+      id: `renewal-${index}`,
+      definitionId: "missed-renewal",
+      title: "Mancato rinnovo",
+      occurredAt: 2_000 + index,
+      summary: "Un iscritto ha sospeso temporaneamente la partecipazione.",
+      person: {
+        displayName: `${contact.firstName} ${contact.lastName}`,
+        rarity: "common",
+      },
+    }));
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.school.activeMembers).toBe(1);
+    expect(migrated.contacts.filter((contact) => contact.status === "enrolled")).toHaveLength(1);
+    expect(migrated.contacts.filter((contact) => contact.status === "departed")).toHaveLength(2);
+    expect(migrated.statistics.membersDeparted).toBe(2);
+  });
+
   it("resets both primary and backup saves", () => {
     const state = createInitialState(1_000);
     saveGame(state, 2_000);

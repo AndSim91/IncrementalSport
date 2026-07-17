@@ -11,6 +11,81 @@ import { addMessage } from "./stateUpdates";
 import { nextRandom } from "./random";
 import type { GameState, SpecialCollaboratorId } from "./types";
 
+export function departMembers(
+  state: GameState,
+  memberIds: Iterable<string>,
+  adjustActiveMembers = true,
+): GameState {
+  const requestedIds = new Set(memberIds);
+  const departed = state.contacts.filter(
+    (contact) => contact.status === "enrolled" && requestedIds.has(contact.id),
+  );
+  if (departed.length === 0) return state;
+
+  const departedIds = new Set(departed.map((contact) => contact.id));
+  const collaboratorsByContactId = new Map(
+    state.collaborators.map((collaborator) => [collaborator.contactId, collaborator]),
+  );
+  const retainedProgress = { ...state.legendaryCollaborators.retainedProgress };
+  const departedProfileIds = new Set<SpecialCollaboratorId>();
+  for (const member of departed) {
+    if (!member.specialProfileId) continue;
+    const collaborator = collaboratorsByContactId.get(member.id);
+    departedProfileIds.add(member.specialProfileId);
+    retainedProgress[member.specialProfileId] = {
+      forms: [...(collaborator?.forms ?? member.forms)],
+      instructorForms: [...(collaborator?.instructorForms ?? [])],
+      formBranchPreferences: [
+        ...(collaborator?.formBranchPreferences ?? member.formBranchPreferences ?? []),
+      ],
+      joinedAt: collaborator?.joinedAt ?? member.acquiredAt,
+      lastFormTrainingYear:
+        collaborator?.lastFormTrainingYear ?? member.lastFormTrainingYear,
+    };
+  }
+
+  return {
+    ...state,
+    contacts: state.contacts.map((contact) =>
+      departedIds.has(contact.id)
+        ? {
+            ...contact,
+            status: "departed",
+            forms: [...(collaboratorsByContactId.get(contact.id)?.forms ?? contact.forms)],
+            formBranchPreferences: [
+              ...(collaboratorsByContactId.get(contact.id)?.formBranchPreferences ??
+                contact.formBranchPreferences ?? []),
+            ],
+            lastFormTrainingYear:
+              collaboratorsByContactId.get(contact.id)?.lastFormTrainingYear ??
+              contact.lastFormTrainingYear,
+            training: undefined,
+          }
+        : contact,
+    ),
+    collaborators: state.collaborators.filter(
+      (collaborator) => !departedIds.has(collaborator.contactId),
+    ),
+    legendaryCollaborators: {
+      ...state.legendaryCollaborators,
+      enrolledProfileIds: state.legendaryCollaborators.enrolledProfileIds.filter(
+        (profileId) => !departedProfileIds.has(profileId),
+      ),
+      retainedProgress,
+    },
+    school: adjustActiveMembers
+      ? {
+          ...state.school,
+          activeMembers: Math.max(0, state.school.activeMembers - departed.length),
+        }
+      : state.school,
+    statistics: {
+      ...state.statistics,
+      membersDeparted: state.statistics.membersDeparted + departed.length,
+    },
+  };
+}
+
 function processMemberDepartures(
   state: GameState,
   completedSchoolYear: number,
@@ -51,62 +126,10 @@ function processMemberDepartures(
     .map((member) => `${member.firstName} ${member.lastName}`)
     .join(", ");
   const others = departed.length > 3 ? ` e altri ${departed.length - 3}` : "";
-  const retainedProgress = { ...state.legendaryCollaborators.retainedProgress };
-  const departedProfileIds = new Set<SpecialCollaboratorId>();
-  for (const member of departed) {
-    if (!member.specialProfileId) continue;
-    const collaborator = collaboratorsByContactId.get(member.id);
-    departedProfileIds.add(member.specialProfileId);
-    retainedProgress[member.specialProfileId] = {
-      forms: [...(collaborator?.forms ?? member.forms)],
-      instructorForms: [...(collaborator?.instructorForms ?? [])],
-      formBranchPreferences: [
-        ...(collaborator?.formBranchPreferences ?? member.formBranchPreferences ?? []),
-      ],
-      joinedAt: collaborator?.joinedAt ?? member.acquiredAt,
-      lastFormTrainingYear:
-        collaborator?.lastFormTrainingYear ?? member.lastFormTrainingYear,
-    };
-  }
-  const updated: GameState = {
-    ...state,
-    randomSeed: nextSeed,
-    contacts: state.contacts.map((contact) =>
-      departedIds.has(contact.id)
-        ? {
-            ...contact,
-            status: "departed",
-            forms: [...(collaboratorsByContactId.get(contact.id)?.forms ?? contact.forms)],
-            formBranchPreferences: [
-              ...(collaboratorsByContactId.get(contact.id)?.formBranchPreferences ??
-                contact.formBranchPreferences ?? []),
-            ],
-            lastFormTrainingYear:
-              collaboratorsByContactId.get(contact.id)?.lastFormTrainingYear ??
-              contact.lastFormTrainingYear,
-            training: undefined,
-          }
-        : contact,
-    ),
-    collaborators: state.collaborators.filter(
-      (collaborator) => !departedIds.has(collaborator.contactId),
-    ),
-    legendaryCollaborators: {
-      ...state.legendaryCollaborators,
-      enrolledProfileIds: state.legendaryCollaborators.enrolledProfileIds.filter(
-        (profileId) => !departedProfileIds.has(profileId),
-      ),
-      retainedProgress,
-    },
-    school: {
-      ...state.school,
-      activeMembers: Math.max(0, state.school.activeMembers - departed.length),
-    },
-    statistics: {
-      ...state.statistics,
-      membersDeparted: state.statistics.membersDeparted + departed.length,
-    },
-  };
+  const updated: GameState = departMembers(
+    { ...state, randomSeed: nextSeed },
+    departedIds,
+  );
   return addMessage(
     updated,
     now,

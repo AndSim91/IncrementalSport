@@ -20,7 +20,7 @@ import {
 } from "../content/upgrades";
 import { GAME_CONFIG } from "./config";
 import { scaleContactGain, scaleCurrencyGain } from "./economy";
-import { collectFees as collectMemberFees } from "./membershipFlow";
+import { collectFees as collectMemberFees, departMembers } from "./membershipFlow";
 import {
   resolveAcquisitionEvent as settleAcquisitionEvent,
   startAcquisitionEvent as beginAcquisitionEvent,
@@ -1459,7 +1459,10 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
     legendaryCollaborators: addLegendaryEncounters(rewardState.state.legendaryCollaborators, contacts),
     school: {
       ...rewardState.state.school,
-      activeMembers: Math.max(0, rewardState.state.school.activeMembers + (definition.memberDelta ?? 0)),
+      activeMembers: Math.max(
+        0,
+        rewardState.state.school.activeMembers + (renewalMember ? 0 : (definition.memberDelta ?? 0)),
+      ),
       euros: Math.max(0, rewardState.state.school.euros + euroDelta),
     },
     equipment: applySwordDamage(
@@ -1496,6 +1499,9 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
         rewardState.state.statistics.eurosEarned + Math.max(0, euroDelta),
     },
   };
+  if (renewalMember) {
+    nextState = departMembers(nextState, [renewalMember.id]);
+  }
   nextState = addMessage(
     nextState,
     now,
