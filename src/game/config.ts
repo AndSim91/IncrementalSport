@@ -1,5 +1,5 @@
 export const GAME_CONFIG = {
-  version: 34,
+  version: 35,
   initialContacts: 5,
   initialSwords: 6,
   profileNameMaxLength: 80,

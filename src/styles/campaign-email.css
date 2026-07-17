@@ -234,6 +234,99 @@
 
 }
 
+.email-source-workspace,
+.email-source-workspace * {
+  box-sizing: border-box;
+}
+
+.email-source-workspace {
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+  padding: 18px;
+  background: #f5f7f9;
+}
+
+.email-source-preview,
+.email-source-code-panel {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #d7dfe5;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgb(30 58 89 / 7%);
+}
+
+.email-source-panel-label {
+  display: block;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e7eb;
+  color: #5c6973;
+  background: #fafbfc;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.email-source-preview-canvas {
+  min-height: 420px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.email-source-preview-canvas > .campaign-email-final {
+  min-height: 420px;
+  margin-bottom: 0;
+}
+
+.email-source-code {
+  display: block;
+  width: 100%;
+  height: 120px;
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 0;
+  background: #18212b;
+  color: #c9d5df;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.email-source-code-caret {
+  display: inline-block;
+  width: 1px;
+  height: 1.2em;
+  margin-left: 1px;
+  vertical-align: -0.2em;
+  background: #61dafb;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@media (max-width: 760px) {
+  .email-source-workspace {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .email-source-preview-canvas,
+  .email-source-preview-canvas > .campaign-email-final {
+    min-height: 340px;
+  }
+
+  .email-source-code {
+    height: 96px;
+  }
+}
+
 .campaign-email-document,
 .campaign-email-document * {
   box-sizing: border-box;

@@ -84,7 +84,11 @@ export function FinalEmailDocument({
 }) {
   const sections = getFinalEmailTextSections(email.body, email.presentationLevel);
   const section = (key: FinalEmailTextSection["key"]) => sections.find((candidate) => candidate.key === key);
-  const htmlSource = buildEmailHtmlSource({ subject: email.subject, body: email.body });
+  const htmlSource = buildEmailHtmlSource({
+    subject: email.subject,
+    body: email.body,
+    presentationLevel: email.presentationLevel,
+  });
   const signoff = section("signoff");
   const level = email.presentationLevel;
   const format = EMAIL_PRESENTATION_LEVELS[level];

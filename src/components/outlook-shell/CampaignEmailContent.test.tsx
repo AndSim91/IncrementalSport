@@ -7,12 +7,41 @@ import { CampaignEmailContent } from "./CampaignEmailContent";
 afterEach(() => cleanup());
 
 describe("CampaignEmailContent", () => {
-  it("builds the visual structure before showing any copy", () => {
-    const email = createInitialState(1_000, "Andrea Ungaro").emails[0];
-    render(<CampaignEmailContent email={email} revealedCharacters={0} />);
+  it("shows the HTML editor and the larger mail preview from level 3", () => {
+    const initialEmail = createInitialState(1_000, "Andrea Ungaro").emails[0];
+    const email = { ...initialEmail, presentationLevel: 3 as const };
+    render(
+      <CampaignEmailContent
+        email={email}
+        revealedCharacters={15}
+        showCaret
+        showHtmlEditor
+      />,
+    );
 
-    expect(screen.getByRole("img", { name: "Struttura della mail in costruzione" })).toBeVisible();
+    expect(screen.getByLabelText("Composizione HTML della mail")).toBeVisible();
+    expect(screen.getByLabelText("Anteprima della mail in costruzione")).toBeVisible();
+    expect(screen.getByLabelText("Codice HTML scritto")).toHaveTextContent("<!doctype html>");
+    expect(screen.queryByRole("img", { name: "Struttura della mail in costruzione" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Ciao/)).not.toBeInTheDocument();
+  });
+
+  it.each([0, 1, 2] as const)("shows only plain text construction at level %i", (level) => {
+    const initialEmail = createInitialState(1_000, "Andrea Ungaro").emails[0];
+    const email = { ...initialEmail, presentationLevel: level };
+
+    render(
+      <CampaignEmailContent
+        email={email}
+        revealedCharacters={0}
+        showCaret
+        showHtmlEditor
+      />,
+    );
+
+    const label = ["Bozza disastrata", "Controllo ortografico", "Email professionale"][level];
+    expect(screen.getByLabelText(`Email in formato ${label}`)).toBeVisible();
+    expect(screen.queryByLabelText("Composizione HTML della mail")).not.toBeInTheDocument();
   });
 
   it("reveals the initial campaign as plain text after the structure is built", () => {
@@ -45,7 +74,7 @@ describe("CampaignEmailContent", () => {
     ).toEqual(["perchè", "provore", "Udosport"]);
   });
 
-  it("renders catalog 2 as plain text while preserving the signature", () => {
+  it("renders catalog 2 as plain text with its complete signature", () => {
     const initial = createInitialState(1_000, "Andrea Ungaro");
     const body = EMAIL_TEMPLATES[0].body("Nome", "Andrea Ungaro", 2);
     const email = {
@@ -65,10 +94,10 @@ describe("CampaignEmailContent", () => {
     );
     expect(screen.queryByText(EMAIL_TEMPLATES[0].subject)).not.toBeInTheDocument();
     expect(screen.queryByText("IL PROSSIMO PASSO")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Preview del codice HTML in costruzione")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Composizione HTML della mail")).not.toBeInTheDocument();
   });
 
-  it("keeps the final HTML canvas silent while its structure is being written", () => {
+  it("keeps the HTML preview silent while only the first source characters are written", () => {
     const initial = createInitialState(1_000, "Andrea Ungaro");
     const levelSevenCopy = EMAIL_TEMPLATES[0].body("Nome", "Andrea Ungaro", 7);
     const email = {
@@ -77,9 +106,16 @@ describe("CampaignEmailContent", () => {
       presentationLevel: 7 as const,
       revealedCharacters: 0,
     };
-    render(<CampaignEmailContent email={email} revealedCharacters={0} />);
+    const { container } = render(
+      <CampaignEmailContent
+        email={email}
+        revealedCharacters={15}
+        showHtmlEditor
+      />,
+    );
 
-    expect(screen.getByRole("img", { name: "Struttura della mail in costruzione" })).toBeVisible();
+    expect(screen.getByLabelText("Codice HTML scritto")).toHaveTextContent("<!doctype html>");
+    expect(container.querySelector(".email-source-preview-canvas")).toBeEmptyDOMElement();
     expect(screen.queryByText("Ciao! Grazie di aver provato il nostro sport al MegaCon di Genova!")).not.toBeInTheDocument();
     expect(screen.queryByText("COME PRENOTARE")).not.toBeInTheDocument();
   });

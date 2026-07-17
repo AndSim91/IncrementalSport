@@ -3,6 +3,7 @@ import { createInitialState, gameReducer } from "./engine";
 import { exportGame, importGame, loadGame, resetGame, saveGame } from "./save";
 import { GAME_CONFIG } from "./config";
 import { PROSPECT_EMAIL_PROVIDERS } from "../content/prospectDirectory";
+import { getEmailBuildLength } from "../content/emailBuild";
 import { EMAIL_TEMPLATES } from "../content/emailTemplates";
 
 describe("local save", () => {
@@ -685,6 +686,31 @@ describe("local save", () => {
     expect(migrated.contacts.filter((contact) => contact.status === "enrolled")).toHaveLength(1);
     expect(migrated.contacts.filter((contact) => contact.status === "departed")).toHaveLength(2);
     expect(migrated.statistics.membersDeparted).toBe(2);
+  });
+
+  it("preserves level 2 plain-text draft progress in version 34 saves", () => {
+    const legacy = JSON.parse(JSON.stringify(createInitialState(1_000, "Andrea Ungaro")));
+    const body = EMAIL_TEMPLATES[0].body(
+      legacy.contacts[0].firstName,
+      "Andrea Ungaro",
+      2,
+    );
+    legacy.version = 34;
+    legacy.emails[0] = {
+      ...legacy.emails[0],
+      body,
+      presentationLevel: 2,
+      revealedCharacters: Math.round(body.length / 2),
+    };
+    const previousRevealedCharacters = legacy.emails[0].revealedCharacters;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    const migrated = loadGame(1_000);
+    const migratedEmail = migrated.emails[0];
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(getEmailBuildLength(migratedEmail)).toBe(body.length);
+    expect(migratedEmail.revealedCharacters).toBe(previousRevealedCharacters);
   });
 
   it("resets both primary and backup saves", () => {

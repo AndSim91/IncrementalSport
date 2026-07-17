@@ -35,6 +35,7 @@ export function Composer({ state, onWrite }: { state: GameState; onWrite: () => 
           email={email}
           revealedCharacters={email.revealedCharacters}
           showCaret={email.status === "writing"}
+          showHtmlEditor
         />
         {email.status === "sending" ? <div className="sending-toast"><Icon name="send" /> Invio in corso…</div> : null}
       </div>

@@ -1,38 +1,44 @@
 import {
   getEmailBuildLength,
-  getEmailStructureProgress,
   getEmailTextRevealCount,
 } from "../../content/emailBuild";
 import { EMAIL_PRESENTATION_LEVELS } from "../../content/emailPresentation";
 import type { CampaignEmail } from "../../game/types";
 import { LevelZeroProofreadText } from "./LevelZeroProofreadText";
-import { EmailStructurePreview } from "./campaign-email/EmailStructurePreview";
 import { FinalEmailDocument } from "./campaign-email/FinalEmailDocument";
+import { HtmlEmailSourcePreview } from "./campaign-email/HtmlEmailSourcePreview";
 
 export function CampaignEmailContent({
   email,
   revealedCharacters = getEmailBuildLength(email),
   showCaret = false,
+  showHtmlEditor = false,
 }: {
   email: CampaignEmail;
   revealedCharacters?: number;
   showCaret?: boolean;
+  showHtmlEditor?: boolean;
 }) {
   const level = email.presentationLevel;
   const format = EMAIL_PRESENTATION_LEVELS[level];
   const progressEmail = { ...email, revealedCharacters };
-  const structureProgress = getEmailStructureProgress(progressEmail);
   const textRevealedCharacters = getEmailTextRevealCount(progressEmail);
 
-  if (textRevealedCharacters === 0) {
-    return <EmailStructurePreview level={level} progress={structureProgress} />;
+  if (level >= 3 && showHtmlEditor) {
+    return (
+      <HtmlEmailSourcePreview
+        email={email}
+        revealedCharacters={revealedCharacters}
+        showCaret={showCaret}
+      />
+    );
   }
 
   if (level >= 3) {
     return (
       <FinalEmailDocument
         email={email}
-        revealedCharacters={textRevealedCharacters}
+        revealedCharacters={email.body.length}
         showCaret={showCaret}
       />
     );

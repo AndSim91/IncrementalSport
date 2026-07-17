@@ -198,10 +198,10 @@ export function buildEmailHtmlSource({
   .source-mail img { display: block; max-width: 100%; height: auto; }
 </style>
 <div class="campaign-email-document campaign-email-final campaign-email-final-stage-${presentationLevel}" aria-label="Email HTML in costruzione">
-  <div class="final-email-paper">
-    <header class="final-email-header">
-      <img src="/email-assets/ordine-onde.png" alt="Ordine delle Onde">
-      ${renderParagraph("final-email-title", title)}
+    <div class="final-email-paper">
+      <header class="final-email-header">
+      ${presentationLevel >= 3 ? '<img src="/email-assets/ordine-onde.png" alt="Ordine delle Onde">' : '<span class="final-email-header-placeholder" aria-hidden="true"></span>'}
+      ${presentationLevel >= 3 ? renderParagraph("final-email-title", title) : ""}
     </header>
     <section class="final-email-card final-email-main-card">
       ${renderParagraph("final-email-category", textSection(sections, "mainLabel"))}

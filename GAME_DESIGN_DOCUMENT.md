@@ -305,7 +305,7 @@ La progressione dei testi delle email segue otto livelli:
 |---:|---|---|
 | 0 | Nessun potenziamento | Testo breve con piccoli refusi, 150–200 caratteri |
 | 1 | Controllo ortografico | Stesso testo senza errori |
-| 2 | Email professionale | Firma completa, struttura e spaziatura coerenti |
+| 2 | Email professionale | Firma completa, struttura e spaziatura coerenti, ancora in plain text |
 | 3 | Invito personalizzato | Nuovo set di testi, 250–450 caratteri |
 | 4 | Call to action | Link e pulsanti, massimo 500 caratteri |
 | 5 | Impaginazione | Struttura CSS, massimo 600 caratteri |
@@ -313,6 +313,8 @@ La progressione dei testi delle email segue otto livelli:
 | 7 | Corso di Marketing | Presentazione approfondita, massimo 2.000 caratteri |
 
 Il corpo iniziale usa il formato `Ciao {nome},` seguito dal testo e dal solo nome del giocatore. Il primo controllo ortografico rimuove gli errori senza cambiare il messaggio; i livelli successivi aggiungono struttura, contenuto e strumenti di conversione in modo progressivo.
+
+Ai livelli 0, 1 e 2 ogni input rivela subito il testo della mail in plain text. Dal livello 3, **Invito personalizzato**, gli input scrivono invece il sorgente HTML: la composizione mostra il codice in un riquadro secondario e l'anteprima reale della mail in un riquadro più grande e preponderante.
 
 ---
 

@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { EMAIL_TEMPLATES } from "../../content/emailTemplates";
 import { createInitialState } from "../../game/engine";
 import { Composer } from "./Composer";
 
@@ -32,5 +33,33 @@ describe("Composer", () => {
     expect(screen.queryByRole("progressbar", { name: /Costruzione email/ })).not.toBeInTheDocument();
     expect(screen.getByText(/0 \/ \d+ caratteri/)).toBeVisible();
     expect(screen.queryByText(/Email aziendale grezza/)).not.toBeInTheDocument();
+  });
+
+  it("uses the HTML source workspace for an active level 3 draft", () => {
+    const initial = createInitialState(1_000, "Andrea Ungaro");
+    const activeEmail = initial.emails[0];
+    const body = EMAIL_TEMPLATES[0].body(
+      initial.contacts[0].firstName,
+      "Andrea Ungaro",
+      3,
+    );
+    const state = {
+      ...initial,
+      emails: initial.emails.map((email) =>
+        email.id === activeEmail.id
+          ? {
+              ...email,
+              body,
+              presentationLevel: 3 as const,
+              revealedCharacters: 15,
+            }
+          : email,
+      ),
+    };
+
+    render(<Composer state={state} onWrite={() => undefined} />);
+
+    expect(screen.getByLabelText("Composizione HTML della mail")).toBeVisible();
+    expect(screen.getByLabelText("Codice HTML scritto")).toHaveTextContent("<!doctype html>");
   });
 });

@@ -210,6 +210,13 @@ export function migrateContentState(state: MigratableState): MigratableState {
       ...(departureIds.length > 0
         ? departMembers(migrated as GameState, departureIds, false)
         : migrated),
+      version: 34,
+    };
+  }
+
+  if (migrated.version === 34) {
+    migrated = {
+      ...migrated,
       version: GAME_CONFIG.version,
     };
   }

@@ -43,7 +43,7 @@ describe("final HTML email model", () => {
     expect(source).toContain("/email-assets/lezione-prova.jpg");
   });
 
-  it("keeps the third presentation level as plain text with its signature", () => {
+  it("keeps level 2 as plain text with its signature", () => {
     const body = buildFinalEmailBody(
       "Nome",
       {

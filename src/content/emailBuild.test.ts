@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../game/engine";
 import {
-  EMAIL_STRUCTURE_INPUTS,
+  getEmailBuildLength,
   getEmailBuildSource,
   getEmailStructureProgress,
   getEmailTextRevealCount,
@@ -9,18 +9,33 @@ import {
 import { EMAIL_TEMPLATES } from "./emailTemplates";
 
 describe("email construction phases", () => {
-  it("builds the visual structure before revealing copy", () => {
-    const email = createInitialState(1_000).emails[0];
+  it("writes the HTML source progressively from level 3", () => {
+    const initialEmail = createInitialState(1_000).emails[0];
+    const email = { ...initialEmail, presentationLevel: 3 as const };
+    const source = getEmailBuildSource(email);
 
+    expect(source).toContain("<!doctype html>");
     expect(getEmailStructureProgress(email)).toBe(0);
     expect(getEmailTextRevealCount(email)).toBe(0);
 
-    const builtStructure = {
+    const halfWritten = {
       ...email,
-      revealedCharacters: EMAIL_STRUCTURE_INPUTS,
+      revealedCharacters: Math.round(source.length / 2),
     };
-    expect(getEmailStructureProgress(builtStructure)).toBe(100);
-    expect(getEmailTextRevealCount(builtStructure)).toBe(0);
+    expect(getEmailStructureProgress(halfWritten)).toBe(50);
+    expect(getEmailTextRevealCount(halfWritten)).toBe(halfWritten.revealedCharacters);
+  });
+
+  it.each([0, 1, 2] as const)("reveals level %i copy from the first input", (level) => {
+    const initialEmail = createInitialState(1_000).emails[0];
+    const email = {
+      ...initialEmail,
+      presentationLevel: level,
+      revealedCharacters: 1,
+    };
+
+    expect(getEmailStructureProgress(email)).toBe(100);
+    expect(getEmailTextRevealCount(email)).toBe(1);
   });
 
   it("reveals the complete copy when the email reaches its final character", () => {
@@ -37,12 +52,11 @@ describe("email construction phases", () => {
       ...initialEmail,
       body,
       presentationLevel: 2 as const,
-      revealedCharacters: body.length,
+      revealedCharacters: 0,
     };
-
     expect(getEmailBuildSource(email)).toBe(body);
+    expect(getEmailBuildLength(email)).toBe(body.length);
     expect(getEmailStructureProgress(email)).toBe(100);
-    expect(getEmailTextRevealCount(email)).toBe(body.length);
     expect(body).toContain("Andrea Ungaro, Ordine delle Onde - Genova");
     expect(body).not.toContain("IL PROSSIMO PASSO");
   });
