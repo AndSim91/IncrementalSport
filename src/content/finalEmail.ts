@@ -33,7 +33,7 @@ export type FinalEmailTextKey =
 const DEFAULT_DETAILS = [
   "Una prova introduttiva per conoscere il percorso.",
   "Un ambiente guidato, aperto anche a chi parte da zero.",
-  "Un gruppo pronto ad accompagnarti passo dopo passo.",
+  "Un gruppo pronto ad accompagnarti passo dopo passo, con esercizi graduali e indicazioni semplici.",
 ] as const;
 
 const DEFAULT_CONTACTS = [
@@ -95,7 +95,7 @@ export function buildFinalEmailTextEntries(
   if (level >= 4) {
     entries.push({
       key: "booking",
-      text: "Scrivici per ricevere le informazioni aggiornate e scegliere il prossimo appuntamento.",
+      text: "COME PRENOTARE\nScrivici per ricevere le informazioni aggiornate e scegliere il prossimo appuntamento.",
     });
   }
   if (level >= 5) {
@@ -103,7 +103,7 @@ export function buildFinalEmailTextEntries(
     entries.push({ key: "contacts", text: contacts.join("\n") });
   }
   if (level >= 6) {
-    entries.push({ key: "videoLabel", text: "APPROFONDISCI" });
+    entries.push({ key: "videoLabel", text: "DA VEDERE" });
     entries.push({ key: "videoTitle", text: videoTitle });
   }
   if (level >= 7) {

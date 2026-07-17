@@ -1,9 +1,9 @@
 import { Icon } from "../../components/common/Icon";
+import { ProgressBar } from "../../components/common/ProgressBar";
 import { ACHIEVEMENTS } from "../../content/achievements";
 import { GAME_CONFIG } from "../../game/config";
 import type { GameState } from "../../game/types";
-
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+import { formatCurrency, formatTime } from "../../shared/formatters";
 
 function percentage(value: number, total: number) {
   if (total <= 0) return "0%";
@@ -25,8 +25,8 @@ export function ActivitiesView({
   const socialAction = !state.unlocks.social
     ? "Si sblocca con 10 iscritti"
     : state.school.euros < GAME_CONFIG.socialCampaignCost
-      ? `Servono ${euro.format(GAME_CONFIG.socialCampaignCost)}`
-      : `Avvia campagna · ${euro.format(GAME_CONFIG.socialCampaignCost)}`;
+      ? `Servono ${formatCurrency(GAME_CONFIG.socialCampaignCost)}`
+      : `Avvia campagna · ${formatCurrency(GAME_CONFIG.socialCampaignCost)}`;
   const sentWithTiming = state.emails.filter((email) => typeof email.sentAt === "number");
   const averageWritingSeconds = sentWithTiming.length === 0
     ? 0
@@ -64,7 +64,7 @@ export function ActivitiesView({
 
       {state.unlocks.social ? <section className="social-panel" aria-label="Campagne Social">
         <div><Icon name="contact" /><span><strong>Social</strong><small>{state.statistics.socialContacts} contatti raccolti online</small></span></div>
-        <><div className="social-progress-label"><span>Prossimo contatto passivo</span><strong>{socialProgress}%</strong></div><div className="social-progress" role="progressbar" aria-label="Progresso contatto Social" aria-valuemin={0} aria-valuemax={100} aria-valuenow={socialProgress}><span style={{ width: `${socialProgress}%` }} /></div></>
+        <><div className="social-progress-label"><span>Prossimo contatto passivo</span><strong>{socialProgress}%</strong></div><ProgressBar className="social-progress" label="Progresso contatto Social" value={socialProgress} /></>
         <button type="button" disabled={!canRunSocial} onClick={onRunSocialCampaign}>{socialAction}</button>
       </section> : null}
 
@@ -97,7 +97,7 @@ export function ActivitiesView({
               <article key={achievement.id} className="earned">
                 <span aria-hidden="true">✓</span>
                 <div><strong>{achievement.title}</strong><small>{achievement.description}</small></div>
-                <b>{euro.format(achievement.euroReward)}</b>
+                <b>{formatCurrency(achievement.euroReward)}</b>
               </article>
             );
           })}
@@ -116,7 +116,7 @@ export function ActivitiesView({
                   {event.person ? <strong className={`narrative-person rarity-name rarity-${event.person.rarity}`}>{event.person.displayName}</strong> : null}
                   <small>{event.summary}</small>
                 </div>
-                <time>{new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(event.occurredAt)}</time>
+                <time>{formatTime(event.occurredAt)}</time>
               </article>
             ))}
         </div>

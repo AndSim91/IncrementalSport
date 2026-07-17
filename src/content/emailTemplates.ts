@@ -402,6 +402,19 @@ export function resolveEmailTemplateCopy(
     orderName,
     city,
   );
+  const override = getEmailCopyOverride(template.id, presentationLevel);
+  if (override) {
+    return {
+      subject: renderEmailCopyTokens(override.subject, firstName, senderName),
+      body: presentationLevel === 1
+        ? renderEmailCopyTokens(override.body, firstName, senderName)
+        : normalizeEmailSignoff(
+            renderEmailCopyTokens(override.body, firstName, senderName),
+            senderName,
+            presentationLevel,
+          ),
+    };
+  }
   if (presentationLevel === 1) {
     const draftOverride = getEmailCopyOverride(template.id, 0);
     if (draftOverride) {
@@ -416,14 +429,5 @@ export function resolveEmailTemplateCopy(
       };
     }
   }
-  const override = getEmailCopyOverride(template.id, presentationLevel);
-  if (!override) return defaults;
-  return {
-    subject: renderEmailCopyTokens(override.subject, firstName, senderName),
-    body: normalizeEmailSignoff(
-      renderEmailCopyTokens(override.body, firstName, senderName),
-      senderName,
-      presentationLevel,
-    ),
-  };
+  return defaults;
 }

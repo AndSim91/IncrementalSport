@@ -103,8 +103,8 @@ describe("CampaignEmailContent", () => {
       "src",
       "/email-assets/ordine-onde.png",
     );
-    expect(screen.getByText("Ciao! Grazie di aver provato il nostro sport al MegaCon di Genova!")).toBeVisible();
-    expect(screen.getByText("COME PRENOTARE")).toBeVisible();
+    expect(screen.getByText(/grazie per l'interesse dimostrato durante il nostro incontro/)).toBeVisible();
+    expect(screen.getByText(/COME PRENOTARE/)).toBeVisible();
     expect(screen.getByText("DA VEDERE")).toBeVisible();
     expect(screen.queryByText(/Andrea Ungaro · Ordine delle Onde/)).not.toBeInTheDocument();
   });

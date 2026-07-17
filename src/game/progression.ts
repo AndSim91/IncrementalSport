@@ -1,3 +1,4 @@
+import { GAME_CONFIG } from "./config";
 import type { GameState } from "./types";
 
 export type GameArea =
@@ -24,4 +25,22 @@ export function isGameAreaUnlocked(view: GameArea, state: GameState): boolean {
     state.equipment.wear > 0 ||
     state.unlocks.collaborators ||
     state.unlocks.social;
+}
+
+export function getPrestigeRequirements(state: GameState) {
+  const cycle = state.network.schools.length + 1;
+  return {
+    historicMembers: GAME_CONFIG.prestigeHistoricMembers * cycle,
+    collaborators: GAME_CONFIG.prestigeCollaborators + (cycle - 1) * 2,
+    events: GAME_CONFIG.prestigeEvents * cycle,
+  };
+}
+
+export function canFoundSchool(state: GameState): boolean {
+  const requirements = getPrestigeRequirements(state);
+  return (
+    state.school.historicMembers >= requirements.historicMembers &&
+    state.collaborators.length >= requirements.collaborators &&
+    state.statistics.eventsCompleted >= requirements.events
+  );
 }

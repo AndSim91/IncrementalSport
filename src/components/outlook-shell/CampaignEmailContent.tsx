@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent } from "react";
+import { type MouseEvent } from "react";
 import {
   buildEmailHtmlSource,
   getFinalEmailTextSections,
@@ -6,7 +6,7 @@ import {
 } from "../../content/finalEmail";
 import {
   getEmailBuildLength,
-  getEmailBuildSource,
+  getEmailStructureProgress,
   getEmailTextRevealCount,
 } from "../../content/emailBuild";
 import { EMAIL_PRESENTATION_LEVELS } from "../../content/emailPresentation";
@@ -112,6 +112,58 @@ function FakeCta({
   );
 }
 
+function EmailStructurePreview({
+  level,
+  progress,
+}: {
+  level: CampaignEmail["presentationLevel"];
+  progress: number;
+}) {
+  const hasFrame = progress >= 12;
+  const hasHeading = progress >= 30;
+  const hasBody = progress >= 56;
+  const hasSignature = progress >= 80;
+
+  return (
+    <div
+      className={`email-structure-preview email-structure-level-${level}`}
+      role="img"
+      aria-label="Struttura della mail in costruzione"
+    >
+      <div className="email-structure-canvas" aria-hidden="true">
+        {hasFrame ? (
+          <div className="email-structure-frame">
+            <span
+              className="email-structure-accent"
+              style={{ width: `${Math.min(100, progress * 2)}%` }}
+            />
+          </div>
+        ) : null}
+        {hasHeading ? (
+          <div className="email-structure-heading">
+            <span style={{ width: `${Math.min(78, progress)}%` }} />
+            <i style={{ width: `${Math.min(42, Math.max(0, progress - 20))}%` }} />
+          </div>
+        ) : null}
+        {hasBody ? (
+          <div className="email-structure-body">
+            <span style={{ width: `${Math.min(94, progress + 18)}%` }} />
+            <span style={{ width: `${Math.min(82, progress + 4)}%` }} />
+            <span style={{ width: `${Math.min(88, progress - 2)}%` }} />
+            <span style={{ width: `${Math.min(58, Math.max(18, progress - 24))}%` }} />
+          </div>
+        ) : null}
+        {hasSignature ? (
+          <div className="email-structure-signature">
+            <span />
+            <i />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function getVisibleTextLength(section: FinalEmailTextSection, revealedCharacters: number): number {
   return Math.max(0, Math.min(section.text.length, revealedCharacters - section.start));
 }
@@ -178,49 +230,6 @@ function TypedFinalList({
   );
 }
 
-function HtmlEmailSourcePreview({
-  email,
-  revealedCharacters,
-  showCaret,
-}: {
-  email: CampaignEmail;
-  revealedCharacters: number;
-  showCaret: boolean;
-}) {
-  const source = getEmailBuildSource(email);
-  const visibleCharacters = Math.min(source.length, Math.max(0, revealedCharacters));
-  const visibleSource = source.slice(0, visibleCharacters);
-  const codeRef = useRef<HTMLPreElement>(null);
-
-  useEffect(() => {
-    const codeElement = codeRef.current;
-    if (codeElement) codeElement.scrollTop = codeElement.scrollHeight;
-  }, [visibleSource]);
-
-  return (
-    <div
-      className={`email-source-preview email-source-preview-level-${email.presentationLevel}`}
-      aria-label="Preview del codice HTML in costruzione"
-      data-email-source-length={source.length}
-      data-email-source-revealed={visibleCharacters}
-    >
-      <div
-        className="email-source-preview-canvas"
-        dangerouslySetInnerHTML={{ __html: visibleSource }}
-      />
-      <pre
-        ref={codeRef}
-        className="email-source-code"
-        aria-label="Codice HTML scritto"
-        data-email-source-code-length={visibleCharacters}
-      >{visibleSource}</pre>
-      {showCaret && visibleCharacters < source.length ? (
-        <span className="email-source-preview-caret" aria-hidden="true" />
-      ) : null}
-    </div>
-  );
-}
-
 function FinalEmailDocument({
   email,
   revealedCharacters,
@@ -230,16 +239,6 @@ function FinalEmailDocument({
   revealedCharacters: number;
   showCaret: boolean;
 }) {
-  if (email.presentationLevel >= 3) {
-    return (
-      <HtmlEmailSourcePreview
-        email={email}
-        revealedCharacters={revealedCharacters}
-        showCaret={showCaret}
-      />
-    );
-  }
-
   const sections = getFinalEmailTextSections(email.body, email.presentationLevel);
   const section = (key: FinalEmailTextSection["key"]) => sections.find((candidate) => candidate.key === key);
   const htmlSource = buildEmailHtmlSource({ subject: email.subject, body: email.body });
@@ -465,10 +464,11 @@ export function CampaignEmailContent({
   const level = email.presentationLevel;
   const format = EMAIL_PRESENTATION_LEVELS[level];
   const progressEmail = { ...email, revealedCharacters };
+  const structureProgress = getEmailStructureProgress(progressEmail);
   const textRevealedCharacters = getEmailTextRevealCount(progressEmail);
   const progress = email.body.length === 0
     ? 0
-    : Math.round((revealedCharacters / email.body.length) * 100);
+    : Math.round((textRevealedCharacters / email.body.length) * 100);
   const signatureStart = email.body.indexOf("Un saluto");
   const signatureEnd = signatureStart + "Un saluto,".length;
   const signatureVisible = level >= 2 && signatureStart >= 0 && textRevealedCharacters >= signatureEnd;
@@ -477,14 +477,8 @@ export function CampaignEmailContent({
   const heroVisible = level >= 6 && progress >= 12;
   const detailsVisible = level >= 6 && progress >= 82;
 
-  if (textRevealedCharacters === 0 && level >= 3) {
-    return (
-      <HtmlEmailSourcePreview
-        email={email}
-        revealedCharacters={revealedCharacters}
-        showCaret={showCaret}
-      />
-    );
+  if (textRevealedCharacters === 0) {
+    return <EmailStructurePreview level={level} progress={structureProgress} />;
   }
 
   if (level >= 3) {

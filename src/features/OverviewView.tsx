@@ -2,9 +2,10 @@ import { useState } from "react";
 import type { AppView } from "../components/outlook-shell/AppRail";
 import { Icon } from "../components/common/Icon";
 import { GAME_CONFIG } from "../game/config";
-import { canFoundSchool, getPrestigeRequirements } from "../game/engine";
 import { getOfflineLimitMs } from "../game/offline";
+import { canFoundSchool, getPrestigeRequirements } from "../game/progression";
 import type { GameState, SchoolFoundationDetails } from "../game/types";
+import { formatClock, formatDate } from "../shared/formatters";
 
 type OverviewViewName = Extract<AppView, "settings">;
 
@@ -92,7 +93,7 @@ export function OverviewView({
       <section className="settings-sheet">
         <h2>Salvataggio locale</h2>
         <p>I progressi sono salvati automaticamente ogni 10 secondi e dopo le azioni importanti. Il progresso offline è limitato a {Math.round(getOfflineLimitMs(state) / 3_600_000)} ore.</p>
-        <dl><div><dt>Versione salvataggio</dt><dd>{state.version}</dd></div><div><dt>Ultimo salvataggio</dt><dd>{new Intl.DateTimeFormat("it-IT", { timeStyle: "medium" }).format(state.lastSavedAt)}</dd></div></dl>
+        <dl><div><dt>Versione salvataggio</dt><dd>{state.version}</dd></div><div><dt>Ultimo salvataggio</dt><dd>{formatClock(state.lastSavedAt)}</dd></div></dl>
         <label className="preference-check"><input type="checkbox" checked={darkMode} onChange={(event) => onDarkModeChange(event.target.checked)} /><span><strong>Tema scuro</strong><small>Usa superfici blu-notte per una lettura più riposante.</small></span></label>
         <label className="preference-check"><input type="checkbox" checked={reduceMotion} onChange={(event) => onReduceMotionChange(event.target.checked)} /><span><strong>Riduci animazioni</strong><small>Disattiva transizioni, barre animate e cursore lampeggiante.</small></span></label>
         <div className="settings-actions">
@@ -111,7 +112,7 @@ export function OverviewView({
           <Requirement label="Collaboratori" value={state.collaborators.length} target={requirements.collaborators} />
           <Requirement label="Eventi completati" value={state.statistics.eventsCompleted} target={requirements.events} />
         </div>
-        {state.network.schools.length > 0 ? <div className="school-archive">{state.network.schools.slice().reverse().map((school) => <article key={school.id}><div><strong>{school.name}</strong><small>{school.city} · {school.membersAtTransfer} iscritti al trasferimento</small></div><time>{new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(school.transferredAt)}</time></article>)}</div> : null}
+        {state.network.schools.length > 0 ? <div className="school-archive">{state.network.schools.slice().reverse().map((school) => <article key={school.id}><div><strong>{school.name}</strong><small>{school.city} · {school.membersAtTransfer} iscritti al trasferimento</small></div><time>{formatDate(school.transferredAt)}</time></article>)}</div> : null}
 
         <form className="foundation-form" onSubmit={(event) => { event.preventDefault(); onFoundSchool(foundation); }}>
           <h3>Procedura apertura nuova scuola</h3>

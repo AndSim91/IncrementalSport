@@ -1,21 +1,8 @@
-import { createInitialState } from "./engine";
-import { simulateOfflineProgress } from "./offline";
-import { normalizeStackedMessages } from "./messages";
-import { STORAGE_KEYS } from "../shared/storageKeys";
-import { isValidGameState } from "./saveValidation";
-import { migrate as migrateSave } from "./saveMigrations";
+import { COLLABORATOR_MASTERY_ROLES } from "../content/mastery";
+import { GAME_CONFIG } from "./config";
 import type { GameState } from "./types";
 
-const SAVE_KEY = STORAGE_KEYS.gameSave;
-const BACKUP_KEY = `${SAVE_KEY}.backup`;
-const HIDDEN_MESSAGE_SUBJECTS = new Set([
-  "Nuova lezione di prova prenotata",
-  "Stiamo finendo i contatti",
-  "Contatti terminati",
-]);
-
-/*
-function isGameState(value: unknown): value is GameState {
+export function isValidGameState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
   return (
@@ -34,7 +21,7 @@ function isGameState(value: unknown): value is GameState {
     state.emails.every((email) =>
       Number.isInteger(email.presentationLevel) &&
       email.presentationLevel >= 0 &&
-    email.presentationLevel <= 7
+      email.presentationLevel <= 7
     ) &&
     Array.isArray(state.acquisitionEvents) &&
     state.acquisitionEvents.every((event) => typeof event.membersUsed === "number") &&
@@ -95,70 +82,4 @@ function isGameState(value: unknown): value is GameState {
     Array.isArray(state.network?.schools) &&
     typeof state.network?.prestigeOfferSent === "boolean"
   );
-}
-*/
-
-
-function read(key: string): GameState | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed: unknown = migrateSave(JSON.parse(raw));
-    return isValidGameState(parsed)
-      ? {
-          ...parsed,
-          messages: normalizeStackedMessages(
-            parsed.messages.filter(
-              (message) => !HIDDEN_MESSAGE_SUBJECTS.has(message.subject),
-            ),
-          ),
-        }
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-export function loadGame(now = Date.now()): GameState {
-  const saved = read(SAVE_KEY) ?? read(BACKUP_KEY);
-  if (!saved) return createInitialState(now);
-  if (!saved.profile.displayName.trim()) {
-    return {
-      ...saved,
-      lastSavedAt: now,
-      automation: { ...saved.automation, lastProcessedAt: now },
-    };
-  }
-  return simulateOfflineProgress(saved, now).state;
-}
-
-export function saveGame(state: GameState, now = Date.now()): void {
-  try {
-    const current = localStorage.getItem(SAVE_KEY);
-    if (current) localStorage.setItem(BACKUP_KEY, current);
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ ...state, lastSavedAt: now }));
-  } catch {
-    // Il gioco resta utilizzabile anche quando lo storage del browser è indisponibile.
-  }
-}
-
-export function exportGame(state: GameState): string {
-  return JSON.stringify(state, null, 2);
-}
-
-export function importGame(raw: string): GameState | null {
-  try {
-    const parsed = migrateSave(JSON.parse(raw));
-    return isValidGameState(parsed)
-      ? { ...parsed, messages: normalizeStackedMessages(parsed.messages) }
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-export function resetGame(now = Date.now()): GameState {
-  localStorage.removeItem(SAVE_KEY);
-  localStorage.removeItem(BACKUP_KEY);
-  return createInitialState(now);
 }

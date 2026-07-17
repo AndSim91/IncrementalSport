@@ -21,6 +21,7 @@ import type {
   EmailPresentationLevel,
   UpgradeLevels,
 } from "../../game/types";
+import { formatCurrency } from "../../shared/formatters";
 
 const PRESENTATION_LEVELS = Object.keys(EMAIL_PRESENTATION_LEVELS).map(
   Number,
@@ -28,8 +29,6 @@ const PRESENTATION_LEVELS = Object.keys(EMAIL_PRESENTATION_LEVELS).map(
 
 const previewRecipient = "Giulia";
 const previewSender = "Andrea Ungaro";
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
-
 interface AdminEmailViewProps {
   upgrades: UpgradeLevels;
   availableContacts: number;
@@ -214,7 +213,7 @@ export function AdminEmailView({
             />
           </label>
           <button type="submit" disabled={!canAddEuros}>Aggiungi Euro</button>
-          <small>Attuali: {euro.format(euros)}</small>
+          <small>Attuali: {formatCurrency(euros)}</small>
         </form>
       </section>
 

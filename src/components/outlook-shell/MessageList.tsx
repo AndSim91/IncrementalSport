@@ -6,10 +6,11 @@ import {
   selectSentEmailStatus,
 } from "../../game/selectors";
 import type { GameState, InboxMessage } from "../../game/types";
+import { formatTime } from "../../shared/formatters";
 import type { MailFolder } from "./FolderPane";
 
 function time(value: number) {
-  return new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(value);
+  return formatTime(value);
 }
 
 function statusClass(status: ReturnType<typeof selectSentEmailStatus>) {

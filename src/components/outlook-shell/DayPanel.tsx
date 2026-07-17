@@ -6,7 +6,9 @@ import {
 } from "../../content/shortGoals";
 import { selectDayTrials } from "../../game/selectors";
 import type { GameState, ScheduledTrial } from "../../game/types";
+import { formatLongDate } from "../../shared/formatters";
 import { Icon } from "../common/Icon";
+import { ProgressBar } from "../common/ProgressBar";
 
 type AppointmentPhase = "scheduled" | "in-progress" | "enrolled" | "lost";
 
@@ -45,7 +47,6 @@ function getContactName(state: GameState, id: string) {
 function ShortGoalCard({ state }: { state: GameState }) {
   const definition = SHORT_GOALS[state.shortGoal.definitionId];
   const progress = Math.min(state.shortGoal.target, getShortGoalProgress(state));
-  const percentage = Math.round((progress / state.shortGoal.target) * 100);
   return (
     <section className="short-goal-card" aria-label="Obiettivo breve">
       <div className="short-goal-heading">
@@ -54,16 +55,12 @@ function ShortGoalCard({ state }: { state: GameState }) {
       </div>
       <strong>{definition.title}</strong>
       <p>{definition.description}</p>
-      <div
+      <ProgressBar
         className="short-goal-progress"
-        role="progressbar"
-        aria-label={`Progresso: ${definition.title}`}
-        aria-valuemin={0}
-        aria-valuemax={state.shortGoal.target}
-        aria-valuenow={progress}
-      >
-        <span style={{ width: `${percentage}%` }} />
-      </div>
+        label={`Progresso: ${definition.title}`}
+        value={progress}
+        max={state.shortGoal.target}
+      />
       <div className="short-goal-footer">
         <span>{progress}/{state.shortGoal.target}</span>
         <strong>Premio € {getShortGoalReward(state.shortGoal)}</strong>
@@ -94,7 +91,7 @@ export function DayPanel({ state }: { state: GameState }) {
   return (
     <aside className="day-panel">
       <div className="day-heading"><strong>La mia giornata</strong><Icon name="calendar" /></div>
-      <div className="today">{new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long" }).format(now)}</div>
+      <div className="today">{formatLongDate(now)}</div>
       <ShortGoalCard state={state} />
       {trials.length === 0 ? (
         <div className="day-empty"><Icon name="clock" /><strong>Nessuna prova in calendario</strong><span>Gli appuntamenti confermati compariranno qui.</span></div>
@@ -133,16 +130,11 @@ export function DayPanel({ state }: { state: GameState }) {
               </div>
             </div>
             {expiryProgress === null ? null : (
-              <div
+              <ProgressBar
                 className="appointment-expiry"
-                role="progressbar"
-                aria-label={`Tempo residuo della notifica di ${contactName}`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.ceil(expiryProgress)}
-              >
-                <span style={{ width: `${expiryProgress}%` }} />
-              </div>
+                label={`Tempo residuo della notifica di ${contactName}`}
+                value={expiryProgress}
+              />
             )}
           </div>
         );

@@ -23,6 +23,7 @@ import { useGameEngine } from "../game/useGameEngine";
 import { isGameAreaUnlocked } from "../game/progression";
 import { exportGame, importGame, resetGame, saveGame } from "../game/save";
 import { selectAvailableContacts } from "../game/selectors";
+import { useAppPreferences } from "./useAppPreferences";
 
 function targetConsumesKeyboard(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -42,26 +43,17 @@ export function App() {
   const [mailFolder, setMailFolder] = useState<MailFolder>("inbox");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [selectedSentEmailId, setSelectedSentEmailId] = useState<string | null>(null);
-  const [reduceMotion, setReduceMotion] = useState(
-    () => localStorage.getItem("oggetto-nuovi-iscritti.reduce-motion") === "true",
-  );
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("oggetto-nuovi-iscritti.theme") === "dark",
-  );
+  const {
+    reduceMotion,
+    setReduceMotion,
+    darkMode,
+    setDarkMode,
+  } = useAppPreferences();
   const selectedMessage = state.messages.find((message) => message.id === selectedMessageId);
   const selectedSentEmail = state.emails.find((email) => email.id === selectedSentEmailId);
   const activeView: AppView = view === "admin"
     ? import.meta.env.DEV ? "admin" : "mail"
     : isGameAreaUnlocked(view, state) ? view : "mail";
-
-  useEffect(() => {
-    localStorage.setItem("oggetto-nuovi-iscritti.reduce-motion", String(reduceMotion));
-  }, [reduceMotion]);
-
-  useEffect(() => {
-    localStorage.setItem("oggetto-nuovi-iscritti.theme", darkMode ? "dark" : "light");
-    document.documentElement.dataset.theme = darkMode ? "dark" : "light";
-  }, [darkMode]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -244,7 +236,7 @@ export function App() {
           />
         )}
       </div>
-      <footer className="status-bar"><span>Tutti i messaggi sono aggiornati.</span><span>Connesso localmente</span><b title={state.school.motto || undefined}>{state.school.name}</b></footer>
+      <footer className="status-bar"><span>Tutti i messaggi sono aggiornati.</span><span>Profilo: {state.profile.displayName}</span><span>Connesso localmente</span><b title={state.school.motto || undefined}>{state.school.name}</b></footer>
     </div>
   );
 }

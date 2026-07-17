@@ -13,8 +13,7 @@ import { GAME_CONFIG } from "../../game/config";
 import { getOfflineLimitMs } from "../../game/offline";
 import { selectAvailableContacts, selectIncomePerMonth } from "../../game/selectors";
 import type { GameState, UpgradeId } from "../../game/types";
-
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+import { formatCurrency } from "../../shared/formatters";
 
 type ShopFilter = "recommended" | "available" | "all";
 
@@ -150,9 +149,9 @@ export function UpgradesView({
     <main className="overview-view shop-view">
       <header><Icon name="spark" /><div><h1>Upgrade</h1><p>Strumenti e procedure per far crescere l'Ordine delle Onde</p></div></header>
       <section className="income-summary" aria-label="Entrate dell'Ordine">
-        <div><span>Entrate di {monthName}</span><strong>{euro.format(incomePerMonth)} <small>al mese</small></strong></div>
-        <p>{state.school.activeMembers} {state.school.activeMembers === 1 ? "iscritto attivo" : "iscritti attivi"} × {euro.format(GAME_CONFIG.monthlyMemberFee)} di quota mensile · prossimo mese tra {secondsToNextMonth} s</p>
-        <div className="income-balance"><span>Disponibilità attuale</span><b>{euro.format(state.school.euros)}</b></div>
+        <div><span>Entrate di {monthName}</span><strong>{formatCurrency(incomePerMonth)} <small>al mese</small></strong></div>
+        <p>{state.school.activeMembers} {state.school.activeMembers === 1 ? "iscritto attivo" : "iscritti attivi"} × {formatCurrency(GAME_CONFIG.monthlyMemberFee)} di quota mensile · prossimo mese tra {secondsToNextMonth} s</p>
+        <div className="income-balance"><span>Disponibilità attuale</span><b>{formatCurrency(state.school.euros)}</b></div>
       </section>
 
       <section className="shop-guide" aria-label="Guida ai miglioramenti">
@@ -189,7 +188,7 @@ export function UpgradesView({
                     {recommended ? <small>Consigliato: {recommendationReasons[category.id]}.</small> : null}
                   </div>
                   <div className="upgrade-effect"><strong>Livello {level}/{definition.maxLevel}</strong><span>{definition.effectLabel}</span></div>
-                  <div className="upgrade-price"><span>Prezzo</span><strong>{level >= definition.maxLevel ? "—" : euro.format(cost)}</strong></div>
+                  <div className="upgrade-price"><span>Prezzo</span><strong>{level >= definition.maxLevel ? "—" : formatCurrency(cost)}</strong></div>
                   <button
                     type="button"
                     onClick={() => onBuyUpgrade(definition.id)}

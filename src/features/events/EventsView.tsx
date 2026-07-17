@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "../../components/common/Icon";
+import { ProgressBar } from "../../components/common/ProgressBar";
 import { ACQUISITION_EVENTS } from "../../content/events";
 import { GAME_CONFIG } from "../../game/config";
 import {
@@ -9,8 +10,7 @@ import {
 } from "../../game/equipment";
 import { selectAvailableEventMembers } from "../../game/selectors";
 import type { AcquisitionEvent, GameState } from "../../game/types";
-
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+import { formatCurrency, formatTime } from "../../shared/formatters";
 
 function quantityLabel(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`;
@@ -56,16 +56,16 @@ export function EventsView({
     needsMaintenance &&
     state.school.euros >= maintenanceCost &&
     runningEvents.length === 0;
-  let maintenanceLabel = `Esegui manutenzione · ${euro.format(maintenanceCost)}`;
+  let maintenanceLabel = `Esegui manutenzione · ${formatCurrency(maintenanceCost)}`;
   if (!needsMaintenance) maintenanceLabel = "Manutenzione non necessaria";
   else if (runningEvents.length > 0) maintenanceLabel = "Attendi la fine dell'evento";
   else if (state.school.euros < maintenanceCost) {
-    maintenanceLabel = `Servono ${euro.format(maintenanceCost)}`;
+    maintenanceLabel = `Servono ${formatCurrency(maintenanceCost)}`;
   }
   const canBuyOfficialSword = state.school.euros >= GAME_CONFIG.officialSwordCost;
   const swordPurchaseLabel = canBuyOfficialSword
-    ? `Ordina 1 Polaris · ${euro.format(GAME_CONFIG.officialSwordCost)}`
-    : `Servono ${euro.format(GAME_CONFIG.officialSwordCost)}`;
+    ? `Ordina 1 Polaris · ${formatCurrency(GAME_CONFIG.officialSwordCost)}`
+    : `Servono ${formatCurrency(GAME_CONFIG.officialSwordCost)}`;
   const showSupplier =
     state.school.peakActiveMembers >= 15 ||
     state.equipment.totalSwords > GAME_CONFIG.initialSwords;
@@ -99,7 +99,7 @@ export function EventsView({
                 {damagedSwords > 0 ? <small>{quantityLabel(damagedSwords, "spada danneggiata", "spade danneggiate")} · ripara per usarle agli eventi</small> : null}
               </div>
             </div>
-            <div className="equipment-wear" role="progressbar" aria-label="Usura attrezzatura" aria-valuemin={0} aria-valuemax={100} aria-valuenow={state.equipment.wear}><span style={{ width: `${state.equipment.wear}%` }} /></div>
+            <ProgressBar className="equipment-wear" label="Usura attrezzatura" value={state.equipment.wear} />
             <div className="event-equipment-actions">
               <button className="event-equipment-maintenance" type="button" disabled={!canMaintain} onClick={onMaintainEquipment}>{maintenanceLabel}</button>
               {showSupplier ? <div className="event-equipment-supplier">
@@ -133,14 +133,14 @@ export function EventsView({
             ? Math.max(0, Math.ceil((matching.resolvesAt - now) / 1_000))
             : 0;
           const disabled = Boolean(matching || onCooldown || lacksFunds || lacksAvailableMembers || lacksEquipment);
-          let action = definition.cost === 0 ? "Partecipa gratis" : `Partecipa · ${euro.format(definition.cost)}`;
+          let action = definition.cost === 0 ? "Partecipa gratis" : `Partecipa · ${formatCurrency(definition.cost)}`;
           if (matching) action = "Attività in corso…";
           else if (onCooldown) action = `Di nuovo tra ${Math.ceil(cooldown / 1_000)} s`;
           else if (lacksMembers) action = `Richiede ${memberRequirement(definition.requiredMembers)}`;
           else if (lacksAvailableMembers) action = `Servono ${memberRequirement(definition.requiredMembers)} liberi`;
           else if (needsRepairForEvent) action = `Ripara ${quantityLabel(damagedSwords, "spada", "spade")}`;
           else if (lacksEquipment) action = `Richiede ${definition.requiredSwords} spade`;
-          else if (lacksFunds) action = `Servono ${euro.format(definition.cost)}`;
+          else if (lacksFunds) action = `Servono ${formatCurrency(definition.cost)}`;
 
           return (
             <article className="event-row" key={definition.id}>
@@ -153,16 +153,7 @@ export function EventsView({
                 {matching ? (
                   <div className="event-progress-block">
                     <div className="event-progress-label"><span>Attività in corso</span><strong>{remainingSeconds} s rimanenti · {progress}%</strong></div>
-                    <div
-                      className="event-progress"
-                      role="progressbar"
-                      aria-label={`Avanzamento ${definition.title}`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={progress}
-                    >
-                      <span style={{ width: `${progress}%` }} />
-                    </div>
+                    <ProgressBar className="event-progress" label={`Avanzamento ${definition.title}`} value={progress} />
                   </div>
                 ) : null}
               </div>
@@ -172,7 +163,7 @@ export function EventsView({
         })}
       </section>
       {state.acquisitionEvents.some((event) => event.status === "completed") ? (
-        <section className="event-history"><h2>Attività completate</h2>{state.acquisitionEvents.filter((event) => event.status === "completed").slice().reverse().map((event) => <div key={event.id}><Icon name="flag" /><span><strong>{event.title}</strong><small>{quantityLabel(event.peopleMet ?? 0, "persona", "persone")} · {quantityLabel(event.demonstrationsGiven ?? 0, "prova", "prove")} · {quantityLabel(event.contactReward ?? 0, "contatto", "contatti")}</small></span><time>{new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(event.resolvesAt)}</time></div>)}</section>
+        <section className="event-history"><h2>Attività completate</h2>{state.acquisitionEvents.filter((event) => event.status === "completed").slice().reverse().map((event) => <div key={event.id}><Icon name="flag" /><span><strong>{event.title}</strong><small>{quantityLabel(event.peopleMet ?? 0, "persona", "persone")} · {quantityLabel(event.demonstrationsGiven ?? 0, "prova", "prove")} · {quantityLabel(event.contactReward ?? 0, "contatto", "contatti")}</small></span><time>{formatTime(event.resolvesAt)}</time></div>)}</section>
       ) : null}
     </main>
   );

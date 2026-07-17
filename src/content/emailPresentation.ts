@@ -26,7 +26,7 @@ export const EMAIL_PRESENTATION_LEVELS: Record<
     description: "Una mail breve, simpatica e piena di refusi, errori e italiano creativo.",
   },
   1: {
-    label: "Correzione grammaticale",
+    label: "Controllo ortografico",
     description: "Gli errori spariscono, ma le battute e l'energia della bozza restano.",
   },
   2: {

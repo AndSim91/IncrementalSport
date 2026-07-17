@@ -1,81 +1,74 @@
-import {
-  EMAIL_TEMPLATES,
-  resolveEmailTemplateCopy,
-} from "../content/emailTemplates";
+import { EMAIL_TEMPLATES, resolveEmailTemplateCopy } from "../content/emailTemplates";
 import { getEmailBuildLength } from "../content/emailBuild";
-import {
-  chooseEmailPresentationLevel,
-  getEmailPresentationMix,
-} from "../content/emailPresentation";
 import { getNewAchievements } from "../content/achievements";
-import { getAcquisitionEventDefinition } from "../content/events";
-import {
-  BRANCH_FORM_IDS,
-  FORM_BRANCHES,
-  canTrainForm,
-  getCollaboratorProductivity,
-  getFormDefinition,
-  getInstructorFormCost,
-  getInstructorQualificationCost,
-  getStudentFormCost,
-  isInstructorForm,
-} from "../content/forms";
+import { getCollaboratorProductivity } from "../content/forms";
 import { NARRATIVE_EVENTS } from "../content/narrativeEvents";
 import {
-  COLLABORATOR_MASTERY_ROLE_LABELS,
   COLLABORATOR_MASTERY_XP,
   createInitialCollaboratorMastery,
-  getCollaboratorMasteryDefinition,
-  getCollaboratorMasteryLevel,
 } from "../content/mastery";
-import { createRandomProspect } from "../content/prospectDirectory";
-import { PERSON_RARITIES } from "../content/rarities";
-import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import {
   SHORT_GOALS,
-  createInitialShortGoal,
   createNextShortGoal,
   getShortGoalProgress,
   getShortGoalReward,
 } from "../content/shortGoals";
 import {
-  createInitialUpgradeLevels,
   getUpgradeCost,
   getUpgradeDefinition,
   getUpgradeEffectTotal,
 } from "../content/upgrades";
-import {
-  getSchoolYear,
-  getSchoolYearStartMonth,
-  isSchoolYearDepartureMonth,
-  isSummerBreak,
-} from "./calendar";
 import { GAME_CONFIG } from "./config";
+import { scaleContactGain, scaleCurrencyGain } from "./economy";
+import { collectFees as collectMemberFees } from "./membershipFlow";
+import {
+  resolveAcquisitionEvent as settleAcquisitionEvent,
+  startAcquisitionEvent as beginAcquisitionEvent,
+} from "./eventFlow";
+import {
+  finalizeEmail as completeEmail,
+  resolveEmailOutcome as settleEmailOutcome,
+  startNextCampaign as startEmailCampaign,
+} from "./emailFlow";
+import {
+  addLegendaryEncounters,
+  ANDREA_SIMONAZZI_ID,
+  createAcquiredContacts,
+} from "./contacts";
+import { createInitialState as buildInitialState } from "./initialState";
+import { makeGameId as makeId } from "./ids";
 import {
   applyEquipmentWear,
   applySwordDamage,
-  getAvailableSwords,
   getEquipmentMaintenanceCost,
   synchronizeEquipmentAvailability,
 } from "./equipment";
-import { addInboxMessage } from "./messages";
 import {
-  getEmailBookingChance,
   getEnrollmentChance,
-  getEventFunnelOutcome,
-  getMemberAnnualDepartureChance,
   getWritingPower,
 } from "./formulas";
 import { nextRandom, randomBetween } from "./random";
 import {
+  addCollaboratorMasteryExperience as awardCollaboratorMasteryExperience,
+  addMessage as appendMessage,
+} from "./stateUpdates";
+import {
+  processAutomaticTeaching as teachAutomatically,
+  processAutomation as advanceAutomation,
+  runSocialCampaign as executeSocialCampaign,
+} from "./automationFlow";
+import {
+  assignCollaborator as setCollaboratorAssignment,
+  resolveFormTraining as completeFormTraining,
+  startFormTraining as beginFormTraining,
+  toggleInstructorAutomation as setInstructorAutomation,
+} from "./trainingFlow";
+import { canFoundSchool } from "./progression";
+import {
   selectActiveEmail,
-  selectAvailableEventMembers,
-  selectAvailableInstructor,
   selectIncomePerMonth,
-  selectInstructorTeachingCount,
 } from "./selectors";
 import type {
-  CampaignEmail,
   Contact,
   AcquisitionEvent,
   GameAction,
@@ -89,182 +82,15 @@ import type {
   SchoolFoundationDetails,
   SpecialCollaboratorId,
   LegendaryCollaboratorProgress,
-  FormBranch,
 } from "./types";
+
+export { getLegendaryAppearanceChance } from "./contacts";
+export { canFoundSchool, getPrestigeRequirements } from "./progression";
 
 const euroFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
   currency: "EUR",
 });
-
-function scaleCurrencyGain(amount: number, gainMultiplier: number): number {
-  return Math.round(amount * Math.max(0, gainMultiplier) * 100) / 100;
-}
-
-function scaleContactGain(
-  state: GameState,
-  amount: number,
-  gainMultiplier: number,
-): { state: GameState; amount: number } {
-  if (gainMultiplier >= 1) return { state, amount };
-
-  const total = state.automation.offlineContactBuffer + amount * Math.max(0, gainMultiplier);
-  const scaledAmount = Math.floor(total + Number.EPSILON);
-  return {
-    state: {
-      ...state,
-      automation: {
-        ...state.automation,
-        offlineContactBuffer: total - scaledAmount,
-      },
-    },
-    amount: scaledAmount,
-  };
-}
-
-function makeId(prefix: string, now: number, suffix: number | string): string {
-  return `${prefix}-${now.toString(36)}-${suffix}`;
-}
-
-const ANDREA_SIMONAZZI_ID: SpecialCollaboratorId = "andrea-simonazzi";
-const ANDREA_SIMONAZZI_PROFILE = SPECIAL_COLLABORATORS.find(
-  (profile) => profile.id === ANDREA_SIMONAZZI_ID,
-)!;
-
-function chooseOrdinaryRarity(seed: number) {
-  const [rarityRoll, nextSeed] = nextRandom(seed);
-  const nonLegendaryChance = 1 - PERSON_RARITIES.legendary.queueAppearanceChance;
-  const ultraRareThreshold =
-    PERSON_RARITIES["ultra-rare"].queueAppearanceChance / nonLegendaryChance;
-  const rareThreshold = ultraRareThreshold +
-    PERSON_RARITIES.rare.queueAppearanceChance / nonLegendaryChance;
-  return {
-    rarity: rarityRoll < ultraRareThreshold
-      ? "ultra-rare" as const
-      : rarityRoll < rareThreshold
-        ? "rare" as const
-        : "common" as const,
-    nextSeed,
-  };
-}
-
-export function getLegendaryAppearanceChance(): number {
-  return PERSON_RARITIES.legendary.queueAppearanceChance;
-}
-
-function chooseLegendaryProfile(
-  seed: number,
-  progress: LegendaryCollaboratorProgress,
-) {
-  const [appearanceRoll, seedAfterAppearance] = nextRandom(seed);
-  if (appearanceRoll >= getLegendaryAppearanceChance()) {
-    return { profile: undefined, nextSeed: seedAfterAppearance };
-  }
-  const candidates = SPECIAL_COLLABORATORS.filter((profile) =>
-    !progress.enrolledProfileIds.includes(profile.id),
-  );
-  if (candidates.length === 0) return { profile: undefined, nextSeed: seedAfterAppearance };
-  if (candidates.length === 1) return { profile: candidates[0], nextSeed: seedAfterAppearance };
-  const [profileRoll, nextSeed] = nextRandom(seedAfterAppearance);
-  return {
-    profile: candidates[Math.min(candidates.length - 1, Math.floor(profileRoll * candidates.length))],
-    nextSeed,
-  };
-}
-
-function createContacts(
-  now: number,
-  includeAndrea: boolean,
-  seed: number,
-  existingProgress: LegendaryCollaboratorProgress,
-): { contacts: Contact[]; nextSeed: number; progress: LegendaryCollaboratorProgress } {
-  let nextSeed = seed;
-  let progress = existingProgress;
-  const contacts = Array.from({ length: GAME_CONFIG.initialContacts }, (_, index) => {
-    let legendaryProfile = includeAndrea && index === 8 &&
-      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
-      ? ANDREA_SIMONAZZI_PROFILE
-      : undefined;
-    if (!legendaryProfile) {
-      const selected = chooseLegendaryProfile(nextSeed, progress);
-      legendaryProfile = selected.profile;
-      nextSeed = selected.nextSeed;
-    }
-    if (legendaryProfile) {
-      progress = addLegendaryEncounter(progress, legendaryProfile.id);
-    }
-    const ordinary = legendaryProfile
-      ? undefined
-      : chooseOrdinaryRarity(nextSeed);
-    if (ordinary) nextSeed = ordinary.nextSeed;
-    const generated = createRandomProspect(nextSeed, legendaryProfile);
-    const { firstName, lastName, email } = generated;
-    return {
-      id: makeId("contact", now, index),
-      firstName,
-      lastName,
-      email,
-      source: "tutorial" as const,
-      acquiredAt: now,
-      status: index === 0 ? "writing" as const : "available" as const,
-      rarity: legendaryProfile ? "legendary" as const : ordinary!.rarity,
-      specialProfileId: legendaryProfile?.id,
-      forms: legendaryProfile
-        ? [...(progress.retainedProgress[legendaryProfile.id]?.forms ?? [])]
-        : [],
-      formBranchPreferences: legendaryProfile
-        ? [...(progress.retainedProgress[legendaryProfile.id]?.formBranchPreferences ?? [])]
-        : [],
-      lastFormTrainingYear: legendaryProfile
-        ? progress.retainedProgress[legendaryProfile.id]?.lastFormTrainingYear
-        : undefined,
-    };
-  });
-  return { contacts, nextSeed, progress };
-}
-
-function createCampaign(
-  contact: Contact,
-  campaignIndex: number,
-  now: number,
-  senderName: string,
-  presentationLevel: CampaignEmail["presentationLevel"] = 0,
-  orderName = "Ordine delle Onde",
-  city = "Genova",
-): CampaignEmail {
-  const template = EMAIL_TEMPLATES[campaignIndex % EMAIL_TEMPLATES.length];
-  const copy = resolveEmailTemplateCopy(
-    template,
-    contact.firstName,
-    senderName,
-    presentationLevel,
-    orderName,
-    city,
-  );
-  return {
-    id: makeId("email", now, campaignIndex),
-    contactId: contact.id,
-    templateId: template.id,
-    subject: copy.subject,
-    body: copy.body,
-    revealedCharacters: 0,
-    createdAt: now,
-    presentationLevel,
-    status: "writing",
-  };
-}
-
-function systemMessage(now: number): InboxMessage {
-  return {
-    id: makeId("message", now, "welcome"),
-    sender: "Sistema Oggetto: Nuovi Iscritti",
-    subject: "Benvenuto! Inizia da qui",
-    preview: "Completa il messaggio aperto: ogni tasto inserisce il prossimo carattere.",
-    receivedAt: now,
-    tone: "system",
-    unread: true,
-  };
-}
 
 export function createInitialState(
   now = Date.now(),
@@ -272,163 +98,13 @@ export function createInitialState(
   includeAndrea = true,
   existingLegendaryProgress?: LegendaryCollaboratorProgress,
 ): GameState {
-  const initialSeed = (now ^ 0x5f3759df) | 0;
-  const legendaryProgress = existingLegendaryProgress ?? {
-    encounteredProfileIds: [],
-    enrolledProfileIds: [],
-    enrollmentAttempts: {},
-    retainedProgress: {},
-  };
-  const initialContacts = createContacts(
-    now,
-    includeAndrea,
-    initialSeed,
-    legendaryProgress,
-  );
-  const contacts = initialContacts.contacts;
-  return {
-    version: GAME_CONFIG.version,
-    createdAt: now,
-    lastSavedAt: now,
-    randomSeed: initialContacts.nextSeed,
-    profile: { displayName },
-    school: {
+  return buildInitialState(now, displayName, includeAndrea, existingLegendaryProgress);
+}
+/*
       name: "Ordine delle Onde — Genova",
-      city: "Genova",
-      accentColor: "#0f6cbd",
-      motto: "Ogni onda comincia da un movimento",
-      specialization: "generale",
-      activeMembers: 0,
-      peakActiveMembers: 0,
-      historicMembers: 0,
-      euros: 0,
-      currentMonth: 9,
-      nextFeeAt: now + GAME_CONFIG.gameMonthMs,
-    },
-    player: { writingPower: 1 },
-    network: { reputation: 0, schools: [], prestigeOfferSent: false },
-    contacts,
-    emails: [createCampaign(contacts[0], 0, now, displayName)],
-    pendingEmailOutcomes: [],
-    scheduledTrials: [],
-    messages: [systemMessage(now)],
-    acquisitionEvents: [],
-    achievements: [],
-    narrative: {
-      nextEventAt: now + GAME_CONFIG.narrativeEventMinMs,
-      history: [],
-    },
-    shortGoal: createInitialShortGoal(now),
-    activities: { nextSparringAt: now },
-    equipment: {
-      totalSwords: GAME_CONFIG.initialSwords,
-      availableSwords: GAME_CONFIG.initialSwords,
-      damagedSwords: 0,
-      wear: 0,
-    },
-    legendaryCollaborators: initialContacts.progress,
-    collaborators: [],
-    automation: {
-      lastProcessedAt: now,
-      writingBuffer: 0,
-      socialBuffer: 0,
-      equipmentBuffer: 0,
-      offlineContactBuffer: 0,
-    },
-    statistics: {
-      inputs: 0,
-      emailsSent: 0,
-      trialsBooked: 0,
-      trialsCompleted: 0,
-      contactsLost: 0,
-      membersEnrolled: 0,
-      membersDeparted: 0,
-      eurosEarned: 0,
-      contactsAcquired: 0,
-      peopleMet: 0,
-      demonstrationsGiven: 0,
-      eventsCompleted: 0,
-      maintenanceCompleted: 0,
-      collaboratorsRecruited: 0,
-      automatedCharacters: 0,
-      socialContacts: 0,
-      socialCampaigns: 0,
-      formsCompleted: 0,
-      narrativeEvents: 0,
-    },
-    unlocks: { upgrades: false, collaborators: false, social: false, forms: false },
-    upgrades: createInitialUpgradeLevels(),
-  };
 }
 
-function createAcquiredContacts(
-  state: GameState,
-  count: number,
-  source: "sparring" | "event" | "social" | "collaborator",
-  now: number,
-): { contacts: Contact[]; nextSeed: number } {
-  let nextSeed = state.randomSeed;
-  let progress = state.legendaryCollaborators;
-  const contacts = Array.from({ length: count }, (_, index) => {
-    const sequence = state.statistics.contactsAcquired + index;
-    const queuePosition = state.contacts.length + index + 1;
-    const selected = queuePosition === 9 &&
-      state.network.schools.length === 0 &&
-      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
-      ? { profile: ANDREA_SIMONAZZI_PROFILE, nextSeed }
-      : chooseLegendaryProfile(nextSeed, progress);
-    const specialProfile = selected.profile;
-    nextSeed = selected.nextSeed;
-    if (specialProfile) progress = addLegendaryEncounter(progress, specialProfile.id);
-    const ordinary = specialProfile ? undefined : chooseOrdinaryRarity(nextSeed);
-    if (ordinary) nextSeed = ordinary.nextSeed;
-    const generated = createRandomProspect(nextSeed, specialProfile);
-    const { firstName, lastName, email } = generated;
-    const retained = specialProfile
-      ? progress.retainedProgress[specialProfile.id]
-      : undefined;
-    return {
-      id: makeId("contact", now, `acquired-${sequence}`),
-      firstName,
-      lastName,
-      email,
-      source,
-      acquiredAt: now,
-      status: "available" as const,
-      rarity: specialProfile ? "legendary" as const : ordinary!.rarity,
-      specialProfileId: specialProfile?.id,
-      forms: [...(retained?.forms ?? [])],
-      formBranchPreferences: [...(retained?.formBranchPreferences ?? [])],
-      lastFormTrainingYear: retained?.lastFormTrainingYear,
-    };
-  });
-  return { contacts, nextSeed };
-}
-
-function addLegendaryEncounter(
-  progress: LegendaryCollaboratorProgress,
-  profileId: SpecialCollaboratorId,
-): LegendaryCollaboratorProgress {
-  if (progress.encounteredProfileIds.includes(profileId)) return progress;
-  return {
-    ...progress,
-    encounteredProfileIds: [...progress.encounteredProfileIds, profileId],
-  };
-}
-
-function addLegendaryEncounters(
-  progress: LegendaryCollaboratorProgress,
-  contacts: Contact[],
-): LegendaryCollaboratorProgress {
-  let nextProgress = progress;
-  for (const contact of contacts) {
-    if (contact.specialProfileId) {
-      nextProgress = addLegendaryEncounter(nextProgress, contact.specialProfileId);
-    }
-  }
-  return nextProgress;
-}
-
+*/
 export function getLegendaryEnrollmentChance(state: GameState, profileId: SpecialCollaboratorId) {
   const previousAttempts = state.legendaryCollaborators.enrollmentAttempts[profileId] ?? 0;
   return getEnrollmentChance(state, "legendary", previousAttempts);
@@ -443,6 +119,8 @@ function addMessage(
   category: NonNullable<InboxMessage["category"]> = "focused",
   threadKey?: InboxMessage["threadKey"],
 ): GameState {
+  return appendMessage(state, now, subject, preview, tone, category, threadKey);
+/*
   const message: InboxMessage = {
     id: makeId("message", now, state.messages.length),
     sender: "Ordine delle Onde",
@@ -500,6 +178,16 @@ function addCollaboratorMasteryExperience(
     ),
     nextState,
   );
+*/
+}
+
+function addCollaboratorMasteryExperience(
+  state: GameState,
+  role: CollaboratorAssignment,
+  amount: number,
+  now: number,
+): GameState {
+  return awardCollaboratorMasteryExperience(state, role, amount, now);
 }
 
 function recruitCollaborator(state: GameState, contact: Contact, now: number): GameState {
@@ -549,6 +237,8 @@ function recruitCollaborator(state: GameState, contact: Contact, now: number): G
 }
 
 function startNextCampaign(state: GameState, now: number): GameState {
+  return startEmailCampaign(state, now);
+/*
   if (selectActiveEmail(state)) return state;
   const nextContact = state.contacts.find((contact) => contact.status === "available");
   if (!nextContact) return state;
@@ -713,6 +403,21 @@ function resolveEmailOutcome(
   return nextState;
 }
 
+*/
+}
+
+function finalizeEmail(state: GameState, emailId: string, now: number): GameState {
+  return completeEmail(state, emailId, now);
+}
+
+function resolveEmailOutcome(
+  state: GameState,
+  outcome: PendingEmailOutcome,
+  now: number,
+): GameState {
+  return settleEmailOutcome(state, outcome, now);
+}
+
 function resolveTrial(
   state: GameState,
   trial: ScheduledTrial,
@@ -838,6 +543,11 @@ function resolveTrial(
     : nextState;
 }
 
+function collectFees(state: GameState, now: number, gainMultiplier: number): GameState {
+  return collectMemberFees(state, now, gainMultiplier);
+}
+
+/*
 function processMemberDepartures(
   state: GameState,
   completedSchoolYear: number,
@@ -981,6 +691,26 @@ function collectFees(state: GameState, now: number, gainMultiplier: number): Gam
   return nextState;
 }
 
+*/
+
+function startAcquisitionEvent(
+  state: GameState,
+  definitionId: AcquisitionEvent["definitionId"],
+  now: number,
+): GameState {
+  return beginAcquisitionEvent(state, definitionId, now);
+}
+
+function resolveAcquisitionEvent(
+  state: GameState,
+  event: AcquisitionEvent,
+  now: number,
+  gainMultiplier: number,
+): GameState {
+  return settleAcquisitionEvent(state, event, now, gainMultiplier);
+}
+
+/*
 function startAcquisitionEvent(
   state: GameState,
   definitionId: AcquisitionEvent["definitionId"],
@@ -1115,6 +845,8 @@ function resolveAcquisitionEvent(
   return contacts.length > 0 ? startNextCampaign(nextState, now) : nextState;
 }
 
+*/
+
 function maintainEquipment(state: GameState, now: number): GameState {
   const maintenanceCost = getEquipmentMaintenanceCost(state.equipment);
   if (
@@ -1186,6 +918,7 @@ function markAllMessagesRead(state: GameState): GameState {
   };
 }
 
+/*
 function assignCollaborator(
   state: GameState,
   collaboratorId: string,
@@ -1427,6 +1160,46 @@ function resolveFormTraining(state: GameState, personId: string, now: number): G
   const qualifiedMember = nextState.contacts.find((contact) => contact.id === member.id);
   return qualifiedMember ? recruitCollaborator(nextState, qualifiedMember, now) : nextState;
 }
+*/
+
+function assignCollaborator(
+  state: GameState,
+  collaboratorId: string,
+  assignment: CollaboratorAssignment,
+  now: number,
+): GameState {
+  void now;
+  return setCollaboratorAssignment(state, collaboratorId, assignment);
+}
+
+function toggleInstructorAutomation(
+  state: GameState,
+  collaboratorId: string,
+  enabled: boolean,
+): GameState {
+  return setInstructorAutomation(state, collaboratorId, enabled);
+}
+
+function startFormTraining(
+  state: GameState,
+  personId: string,
+  formId: FormId,
+  now: number,
+): GameState {
+  return beginFormTraining(state, personId, formId, now, {
+    addMessage,
+    addCollaboratorMasteryExperience,
+    recruitCollaborator,
+  });
+}
+
+function resolveFormTraining(state: GameState, personId: string, now: number): GameState {
+  return completeFormTraining(state, personId, now, {
+    addMessage,
+    addCollaboratorMasteryExperience,
+    recruitCollaborator,
+  });
+}
 
 function writeCharacters(
   state: GameState,
@@ -1465,6 +1238,7 @@ function writeCharacters(
   };
 }
 
+/*
 function processAutomation(state: GameState, now: number, gainMultiplier: number): GameState {
   const elapsedMs = Math.min(1_000, Math.max(0, now - state.automation.lastProcessedAt));
   if (elapsedMs <= 0) return state;
@@ -1633,6 +1407,8 @@ function runSocialCampaign(state: GameState, now: number): GameState {
   return startNextCampaign(nextState, now);
 }
 
+*/
+
 function processNarrativeEvent(state: GameState, now: number, gainMultiplier: number): GameState {
   if (now < state.narrative.nextEventAt || state.school.activeMembers <= 0) return state;
   const recentKinds = state.narrative.history.slice(-2).map((record) =>
@@ -1730,24 +1506,6 @@ function processNarrativeEvent(state: GameState, now: number, gainMultiplier: nu
     "narrative",
   );
   return contacts.length > 0 ? startNextCampaign(nextState, now) : nextState;
-}
-
-export function getPrestigeRequirements(state: GameState) {
-  const cycle = state.network.schools.length + 1;
-  return {
-    historicMembers: GAME_CONFIG.prestigeHistoricMembers * cycle,
-    collaborators: GAME_CONFIG.prestigeCollaborators + (cycle - 1) * 2,
-    events: GAME_CONFIG.prestigeEvents * cycle,
-  };
-}
-
-export function canFoundSchool(state: GameState): boolean {
-  const requirements = getPrestigeRequirements(state);
-  return (
-    state.school.historicMembers >= requirements.historicMembers &&
-    state.collaborators.length >= requirements.collaborators &&
-    state.statistics.eventsCompleted >= requirements.events
-  );
 }
 
 function notifyPrestigeOffer(state: GameState, now: number): GameState {
@@ -1913,78 +1671,29 @@ function completeShortGoal(
   );
 }
 
-type AutomaticStudent = Contact | GameState["collaborators"][number];
 
-function getAutomaticFormCandidates(student: AutomaticStudent): FormId[] {
-  const core: FormId[] = ["form-1", "course-x", "form-2", "course-y"];
-  const nextCore = core.find((formId) => !student.forms.includes(formId));
-  if (nextCore) return [nextCore];
-
-  const completedFormFive = (["form-5-long", "form-5-staff", "form-5-double"] as FormId[])
-    .some((formId) => student.forms.includes(formId));
-  if (completedFormFive && !student.forms.includes("form-6")) return ["form-6"];
-  if (completedFormFive && !student.forms.includes("form-7")) return ["form-7"];
-
-  const preferredBranches = student.formBranchPreferences ?? [];
-  const orderedBranches = preferredBranches.slice().sort((left, right) => {
-    const startedLeft = BRANCH_FORM_IDS[left].some((formId) => student.forms.includes(formId));
-    const startedRight = BRANCH_FORM_IDS[right].some((formId) => student.forms.includes(formId));
-    return Number(startedRight) - Number(startedLeft);
+function processAutomation(state: GameState, now: number, gainMultiplier: number): GameState {
+  return advanceAutomation(state, now, gainMultiplier, {
+    addMessage,
+    addCollaboratorMasteryExperience,
+    writeCharacters,
+    startNextCampaign,
+    startFormTraining,
   });
-  return orderedBranches.flatMap((branch) => {
-    const nextForm = BRANCH_FORM_IDS[branch].find((formId) => !student.forms.includes(formId));
-    return nextForm ? [nextForm] : [];
+}
+
+function runSocialCampaign(state: GameState, now: number): GameState {
+  return executeSocialCampaign(state, now, {
+    addMessage,
+    addCollaboratorMasteryExperience,
+    writeCharacters,
+    startNextCampaign,
+    startFormTraining,
   });
 }
 
 function processAutomaticTeaching(state: GameState, now: number): GameState {
-  if (isSummerBreak(state.school.currentMonth)) return state;
-  const currentYear = getSchoolYear(state.school.currentMonth);
-  let nextState = state;
-
-  while (true) {
-    const collaboratorContactIds = new Set(
-      nextState.collaborators.map((collaborator) => collaborator.contactId),
-    );
-    const students: AutomaticStudent[] = [
-      ...nextState.contacts.filter((contact) =>
-        contact.status === "enrolled" &&
-        !collaboratorContactIds.has(contact.id) &&
-        !contact.training &&
-        contact.lastFormTrainingYear !== currentYear
-      ),
-      ...nextState.collaborators.filter((collaborator) =>
-        collaborator.assignment !== "instructor" &&
-        !collaborator.training &&
-        collaborator.lastFormTrainingYear !== currentYear
-      ),
-    ].sort((left, right) =>
-      left.forms.length - right.forms.length ||
-      ("acquiredAt" in left ? left.acquiredAt : left.joinedAt) -
-        ("acquiredAt" in right ? right.acquiredAt : right.joinedAt)
-    );
-
-    let started = false;
-    for (const student of students) {
-      const candidate = getAutomaticFormCandidates(student).find((formId) => {
-        const definition = getFormDefinition(formId);
-        return Boolean(
-          definition &&
-          canTrainForm(student, definition, currentYear) &&
-          selectAvailableInstructor(nextState, formId, student.id) &&
-          nextState.school.euros >= getStudentFormCost(definition.cost),
-        );
-      });
-      if (!candidate) continue;
-      const beforeEuros = nextState.school.euros;
-      nextState = startFormTraining(nextState, student.id, candidate, now);
-      if (nextState.school.euros < beforeEuros) {
-        started = true;
-        break;
-      }
-    }
-    if (!started) return nextState;
-  }
+  return teachAutomatically(state, now, startFormTraining);
 }
 
 function tick(state: GameState, now: number, gainMultiplier: number): GameState {
