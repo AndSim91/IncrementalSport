@@ -192,8 +192,10 @@ export type UpgradeId =
   | "multi-site-coordination"
   | "instructor-versatility"
   | "technical-arena"
+  | "promiscuous-instructor"
   | "extra-form"
-  | "tiamat-instructor";
+  | "tiamat-instructor"
+  | "pagosport";
 
 export type UpgradeLevels = Record<UpgradeId, number>;
 

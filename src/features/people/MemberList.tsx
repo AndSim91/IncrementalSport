@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { getFormTrainingYear, getSchoolYear } from "../../game/calendar";
+import { getAnnualFormTrainingLimit } from "../../content/upgrades";
 import type { Collaborator, Contact, FormId, GameState } from "../../game/types";
 import { FormLogoStrip, PersonName } from "./PersonPresentation";
 import { TrainingControl } from "./TrainingControl";
@@ -75,14 +76,14 @@ export function MemberList({
   const [requestedPage, setRequestedPage] = useState(0);
   const [sort, setSort] = useState<MemberSort | null>(null);
   const currentMonth = state.school.currentMonth;
-  const extraFormLevel = state.upgrades["extra-form"] ?? 0;
+  const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   const immuneContactIds = state.tournaments.immuneContactIds;
   const foundedSchools = state.network.schools.length;
   const currentYear = getSchoolYear(currentMonth);
   const sortContext = useMemo(
     () => ({
       currentTrainingYear: getFormTrainingYear(currentMonth),
-      annualTrainingLimit: 1 + extraFormLevel,
+      annualTrainingLimit,
       immuneContactIds,
       foundedSchools,
       collaboratorsByContactId,
@@ -90,7 +91,7 @@ export function MemberList({
     [
       collaboratorsByContactId,
       currentMonth,
-      extraFormLevel,
+      annualTrainingLimit,
       foundedSchools,
       immuneContactIds,
     ],

@@ -15,6 +15,10 @@ import {
   isAgonistCourse,
 } from "../content/forms";
 import { COLLABORATOR_MASTERY_XP } from "../content/mastery";
+import {
+  getAnnualFormTrainingLimit,
+  hasFreeFormTraining,
+} from "../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "./calendar";
 import { nextRandom } from "./random";
 import { GAME_CONFIG } from "./config";
@@ -22,7 +26,11 @@ import { getMemberAnnualDepartureChance } from "./formulas";
 import { roundCurrency } from "./economy";
 import { cancelAutomatedEventForCollaborator } from "./eventFlow";
 import { processAutomaticEvents } from "./eventAutomationFlow";
-import { selectAvailableInstructor, selectInstructorTeachingCount } from "./selectors";
+import {
+  selectAvailableInstructor,
+  selectInstructorCapacity,
+  selectInstructorTeachingCount,
+} from "./selectors";
 import type {
   CollaboratorAssignment,
   Contact,
@@ -146,7 +154,7 @@ export function startAgonistCourse(
     !collaborator.training
   );
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
-  const capacity = 1 + (state.upgrades["tiamat-instructor"] ?? 0);
+  const capacity = selectInstructorCapacity(state);
   const cost = getAgonistCourseCost(state);
   if (
     !student ||
@@ -198,7 +206,9 @@ export function payInstructorCertificates(
   if (!collaborator || collaborator.assignment !== "instructor") return state;
 
   const missingForms = getMissingInstructorForms(collaborator);
-  const cost = getInstructorConversionCost(collaborator);
+  const cost = hasFreeFormTraining(state.upgrades)
+    ? 0
+    : getInstructorConversionCost(collaborator);
   if (missingForms.length === 0 || state.school.euros < cost) return state;
 
   const missingCompletedForms = missingForms.filter((formId) => collaborator.forms.includes(formId));
@@ -303,9 +313,11 @@ export function startFormTraining(
   const student = collaborator ?? member;
   const definition = getFormDefinition(formId);
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
-  const annualTrainingLimit = 1 + (state.upgrades["extra-form"] ?? 0);
+  const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   if (qualificationOnly && collaborator && definition) {
-    const qualificationCost = getInstructorQualificationCost(definition.cost);
+    const qualificationCost = hasFreeFormTraining(state.upgrades)
+      ? 0
+      : getInstructorQualificationCost(definition.cost);
     if (collaborator.training || state.school.euros < qualificationCost) return state;
     return dependencies.addMessage(
       {
@@ -334,13 +346,15 @@ export function startFormTraining(
     ? selectAvailableInstructor(state, formId, personId)
     : undefined;
   const trainingInstructor = instructor ?? (instructorSelf ? collaborator : undefined);
-  const trainingCost = instructorTrack
-    ? getInstructorFormCost(definition?.cost ?? 0)
-    : collaborator?.assignment === "instructor"
-      ? definition?.cost ?? 0
-      : instructor
-        ? getStudentFormCost(definition?.cost ?? 0)
-        : definition?.cost ?? 0;
+  const trainingCost = hasFreeFormTraining(state.upgrades)
+    ? 0
+    : instructorTrack
+      ? getInstructorFormCost(definition?.cost ?? 0)
+      : collaborator?.assignment === "instructor"
+        ? definition?.cost ?? 0
+        : instructor
+          ? getStudentFormCost(definition?.cost ?? 0)
+          : definition?.cost ?? 0;
   const branchCapacity = collaborator?.assignment === "instructor"
     ? Math.min(3, 1 + (state.upgrades["instructor-versatility"] ?? 0))
     : undefined;

@@ -382,6 +382,23 @@ describe("game engine: progression", () => {
     expect(qualifiedFormOne.school.euros).toBe(350);
     expect(qualifiedFormOne.collaborators[0].instructorForms).toEqual(["form-1"]);
     expect(qualifiedFormOne.messages.some((message) => message.subject === "Qualifica da Istruttore ottenuta")).toBe(true);
+
+    const coveredByPagoSport = {
+      ...assigned,
+      school: { ...assigned.school, euros: 0 },
+      upgrades: { ...assigned.upgrades, pagosport: 3 },
+    };
+    const freeBulkQualification = gameReducer(coveredByPagoSport, {
+      type: "PAY_INSTRUCTOR_CERTIFICATES",
+      collaboratorId: collaborator.id,
+      now: 2_000,
+    });
+    expect(freeBulkQualification.school.euros).toBe(0);
+    expect(freeBulkQualification.collaborators[0].instructorForms).toEqual([
+      "form-1",
+      "course-x",
+      "form-2",
+    ]);
   });
 
   it.each([19, 20])("charges an Instructor 300% total for a new Form and includes its qualification during summer month %i", (currentMonth) => {
@@ -411,6 +428,16 @@ describe("game engine: progression", () => {
       now: 2_000,
     });
     const completed = gameReducer(training, { type: "TICK", now: 32_000 });
+    const freeTraining = gameReducer({
+      ...ready,
+      school: { ...ready.school, euros: 0 },
+      upgrades: { ...ready.upgrades, pagosport: 3 },
+    }, {
+      type: "START_FORM_TRAINING",
+      personId: instructor.id,
+      formId: "form-2",
+      now: 2_000,
+    });
 
     expect(training.school.euros).toBe(100);
     expect(training.collaborators[0].lastFormTrainingYear).toBe(2);
@@ -418,6 +445,8 @@ describe("game engine: progression", () => {
     expect(training.collaborators[0].training?.includesInstructorCertification).toBe(true);
     expect(completed.collaborators[0].forms).toContain("form-2");
     expect(completed.collaborators[0].instructorForms).toContain("form-2");
+    expect(freeTraining.school.euros).toBe(0);
+    expect(freeTraining.collaborators[0].training?.formId).toBe("form-2");
   });
 
   it("counts an Instructor's July course in the upcoming year and Extra Form adds one slot", () => {
@@ -614,23 +643,36 @@ describe("game engine: progression", () => {
     };
     const ready = {
       ...initial,
-      school: { ...initial.school, activeMembers: 6, euros: 100 },
+      school: { ...initial.school, activeMembers: 6, euros: 0 },
       contacts: students,
       collaborators: [instructor],
       unlocks: { ...initial.unlocks, forms: true },
-      upgrades: { ...initial.upgrades, "tiamat-instructor": 5 },
+      upgrades: {
+        ...initial.upgrades,
+        "promiscuous-instructor": 1,
+        "tiamat-instructor": 4,
+        pagosport: 3,
+      },
     };
 
+    const promiscuousOnly = gameReducer({
+      ...ready,
+      upgrades: {
+        ...ready.upgrades,
+        "tiamat-instructor": 0,
+      },
+    }, { type: "TICK", now: 2_000 });
     const teaching = gameReducer(ready, { type: "TICK", now: 2_000 });
+    expect(promiscuousOnly.contacts.filter((contact) => contact.training).length).toBe(2);
     expect(teaching.contacts.filter((contact) => contact.training).length).toBe(6);
-    expect(teaching.school.euros).toBe(62.5);
+    expect(teaching.school.euros).toBe(0);
 
     const paused = gameReducer({
       ...ready,
       collaborators: [{ ...instructor, autoTeachingEnabled: false }],
     }, { type: "TICK", now: 2_000 });
     expect(paused.contacts.every((contact) => !contact.training)).toBe(true);
-    expect(paused.school.euros).toBe(100);
+    expect(paused.school.euros).toBe(0);
   });
 
   it("gives favorite athletes priority for automatic instructor courses", () => {

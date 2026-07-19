@@ -10,6 +10,7 @@ import { Icon, type IconName } from "../../components/common/Icon";
 import {
   UPGRADE_CATEGORIES,
   UPGRADE_DEFINITIONS,
+  getAnnualFormTrainingLimit,
   getFirstIncompleteUpgradePrerequisite,
   getUpgradeCost,
   getUpgradeEffectTotal,
@@ -49,7 +50,7 @@ function getCategorySummary(state: GameState, category: UpgradeCategory) {
     case "organization":
       return `+${Math.round(getUpgradeEffectTotal(state.upgrades, "automationMultiplier") * 100)}% automazione`;
     case "instructors":
-      return `Forme annue ${1 + state.upgrades["extra-form"]}/2 · Polivalenza ${state.upgrades["instructor-versatility"]}/2`;
+      return `Forme annue ${getAnnualFormTrainingLimit(state.upgrades)}/4 · Polivalenza ${state.upgrades["instructor-versatility"]}/2`;
   }
 }
 

@@ -586,7 +586,7 @@ Nomi e numeri sono sufficienti nella prima versione; gli effetti ludici non devo
 Regole:
 
 - ogni iscritto può conoscere più Forme;
-- ogni iscritto o collaboratore può iniziare al massimo una Forma per anno formativo; il potenziamento unico **Extra Forma** porta questo limite a due;
+- ogni iscritto o collaboratore può iniziare al massimo una Forma per anno formativo; **Extra Forma** porta questo limite a due e i primi due livelli di **PagoSport** lo portano progressivamente fino a quattro;
 - gli slot annuali delle Forme si rinnovano a luglio e coprono il periodo luglio–giugno: una Forma iniziata a luglio consuma quindi uno slot valido anche nel settembre immediatamente successivo;
 - Luglio e Agosto sono pausa estiva per gli atleti normali, che pur avendo ricevuto i nuovi slot non possono usarli fino a settembre; gli Istruttori possono invece iniziare in estate una formazione pagata con qualifica inclusa;
 - l'anno scolastico ordinario resta da Settembre ad Agosto;
@@ -614,8 +614,10 @@ Regole:
 - l'automazione dà priorità agli allievi meno avanzati e li porta dalla Forma 1 verso l'alto, rispettando prerequisiti, anno scolastico e compatibilità d'arma;
 - disattivare l'automazione o riassegnare l'Istruttore lascia terminare le lezioni già iniziate, ma non ne avvia altre;
 - **Polivalenza didattica** ha due livelli e permette di apprendere fino a tutti e tre i rami d'arma;
+- **Istruttore Promisquo** è un potenziamento unico e porta da uno a due gli allievi contemporanei di ogni Istruttore;
 - **Extra Forma** è un potenziamento unico del ramo Istruttori e concede a ogni atleta della scuola un secondo slot di formazione nel periodo luglio–giugno;
-- ogni Istruttore parte da un allievo contemporaneo; **Istruttore stile Tiamat** ha cinque livelli molto costosi e porta la capacità massima a sei allievi;
+- **Istruttore Tiamat** ha quattro livelli molto costosi e, dopo Istruttore Promisquo, porta la capacità massima a sei allievi;
+- **PagoSport** segue Istruttore Tiamat: i primi due livelli concedono ciascuno uno slot di formazione annuale aggiuntivo, mentre il terzo rende gratuite tutte le Forme per allievi e collaboratori, comprese le qualifiche da Istruttore;
 - i completamenti automatici confluiscono in una notifica riepilogativa impilata.
 
 ### 9.8 Abbandono degli iscritti ignorati

@@ -7,7 +7,11 @@ import {
   isInstructorForm,
 } from "../content/forms";
 import { COLLABORATOR_MASTERY_XP } from "../content/mastery";
-import { getUpgradeEffectTotal } from "../content/upgrades";
+import {
+  getAnnualFormTrainingLimit,
+  getUpgradeEffectTotal,
+  hasFreeFormTraining,
+} from "../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "./calendar";
 import {
   improveRandomAthletes,
@@ -328,7 +332,7 @@ export function processAutomaticTeaching(
   );
   if (!hasAutomaticInstructor) return state;
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
-  const annualTrainingLimit = 1 + (state.upgrades["extra-form"] ?? 0);
+  const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   let nextState = state;
 
   const collaboratorContactIds = new Set(
@@ -418,19 +422,20 @@ export function processAutomaticTeaching(
           annualTrainingLimit,
         ) &&
         instructor &&
-        nextState.school.euros >= getStudentFormCost(definition.cost)
+        (
+          hasFreeFormTraining(nextState.upgrades) ||
+          nextState.school.euros >= getStudentFormCost(definition.cost)
+        )
       );
     });
     if (!candidate) continue;
 
-    const beforeEuros = nextState.school.euros;
     const startedState = startFormTraining(nextState, student.id, candidate, now);
     nextState = startedState;
-    if (nextState.school.euros >= beforeEuros) continue;
-
     const startedStudent = "acquiredAt" in student
       ? nextState.contacts.find((contact) => contact.id === student.id)
       : nextState.collaborators.find((collaborator) => collaborator.id === student.id);
+    if (!startedStudent?.training) continue;
     const instructorId = startedStudent?.training?.instructorId;
     if (instructorId) {
       instructorLoads.set(instructorId, (instructorLoads.get(instructorId) ?? 0) + 1);

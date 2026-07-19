@@ -11,6 +11,7 @@ export interface UpgradeDefinition {
   effectLabel: string;
   effect: UpgradeEffect;
   effectPerLevel: number;
+  effectLevelCap?: number;
   additionalEffectsPerLevel?: Partial<Record<UpgradeEffect, number>>;
   baseCost: number;
   costGrowth: number;
@@ -88,8 +89,10 @@ const UPGRADE_CATALOG: UpgradeDefinition[] = [
 
   { id: "instructor-versatility", category: "instructors", title: "Polivalenza didattica", description: "Permette agli Istruttori di apprendere rami d'arma oltre le proprie preferenze iniziali.", effectLabel: "+1 ramo d'arma accessibile per livello", effect: "instructorBranchCapacity", effectPerLevel: 1, baseCost: 2_000, costGrowth: 2, levelCosts: [2_000, 4_000], maxLevel: 2, requiredHistoricMembers: 35 },
   { id: "technical-arena", category: "instructors", title: "Arena Tecnica", description: "Sblocca il Corso Agonisti automatico per proteggere gli atleti a rischio di abbandono che non hanno altre Forme da apprendere.", effectLabel: "Livello 1: sblocco · Livello 2: 5 secondi · Livello 3: gratuito", effect: "agonistCourseTier", effectPerLevel: 1, baseCost: 2_000, costGrowth: 1, levelCosts: [2_000, 5_000, 10_000], maxLevel: 3, requiredHistoricMembers: 35 },
+  { id: "promiscuous-instructor", category: "instructors", title: "Istruttore Promisquo", description: "Un'organizzazione più flessibile permette a ogni Istruttore di seguire un allievo aggiuntivo.", effectLabel: "+1 allievo contemporaneo · massimo 2", effect: "instructorStudentCapacity", effectPerLevel: 1, baseCost: 5_000, costGrowth: 1, maxLevel: 1, requiredHistoricMembers: 35 },
   { id: "extra-form", category: "instructors", title: "Extra Forma", description: "Aumenta per tutti gli atleti della scuola il numero di Forme apprendibili nello stesso anno formativo.", effectLabel: "+1 Forma apprendibile per atleta e anno", effect: "annualFormCapacity", effectPerLevel: 1, baseCost: 10_000, costGrowth: 1, maxLevel: 1, requiredHistoricMembers: 35 },
-  { id: "tiamat-instructor", category: "instructors", title: "Istruttore Tiamat", description: "Una metodologia avanzata permette a ogni Istruttore di seguire più allievi nello stesso momento.", effectLabel: "+1 allievo contemporaneo per livello · massimo 6", effect: "instructorStudentCapacity", effectPerLevel: 1, baseCost: 5_000, costGrowth: 1, levelCosts: [5_000, 8_000, 13_000, 21_000, 34_000], maxLevel: 5, requiredHistoricMembers: 35 },
+  { id: "tiamat-instructor", category: "instructors", title: "Istruttore Tiamat", description: "Una metodologia avanzata permette a ogni Istruttore di seguire più allievi nello stesso momento.", effectLabel: "+1 allievo contemporaneo per livello · massimo 6", effect: "instructorStudentCapacity", effectPerLevel: 1, baseCost: 8_000, costGrowth: 1, levelCosts: [8_000, 13_000, 21_000, 34_000], maxLevel: 4, requiredHistoricMembers: 35 },
+  { id: "pagosport", category: "instructors", title: "PagoSport", description: "Amplia il piano formativo annuale e, al livello massimo, copre interamente i costi di tutte le Forme per tutti.", effectLabel: "Livelli 1–2: +1 Forma annua · Livello 3: tutte le Forme gratuite", effect: "annualFormCapacity", effectPerLevel: 1, effectLevelCap: 2, baseCost: 55_000, costGrowth: 1, levelCosts: [55_000, 89_000, 144_000], maxLevel: 3, requiredHistoricMembers: 35 },
 ];
 
 const SHOP_BASE_COSTS: Record<UpgradeId, number> = {
@@ -141,8 +144,10 @@ const SHOP_BASE_COSTS: Record<UpgradeId, number> = {
   "multi-site-coordination": 6_500,
   "instructor-versatility": 2_000,
   "technical-arena": 2_000,
+  "promiscuous-instructor": 5_000,
   "extra-form": 10_000,
-  "tiamat-instructor": 5_000,
+  "tiamat-instructor": 8_000,
+  pagosport: 55_000,
 };
 
 export const UPGRADE_DEFINITIONS: UpgradeDefinition[] = UPGRADE_CATALOG.map(
@@ -193,7 +198,11 @@ export function getUpgradeEffectTotal(levels: UpgradeLevels, effect: UpgradeEffe
     const effectPerLevel =
       (definition.effect === effect ? definition.effectPerLevel : 0) +
       (definition.additionalEffectsPerLevel?.[effect] ?? 0);
-    return total + (levels[definition.id] ?? 0) * effectPerLevel;
+    const effectiveLevel = Math.min(
+      levels[definition.id] ?? 0,
+      definition.effectLevelCap ?? definition.maxLevel,
+    );
+    return total + effectiveLevel * effectPerLevel;
   }, 0);
 }
 
@@ -202,6 +211,17 @@ export function getUpgradeEffectMaximum(effect: UpgradeEffect): number {
     const effectPerLevel =
       (definition.effect === effect ? definition.effectPerLevel : 0) +
       (definition.additionalEffectsPerLevel?.[effect] ?? 0);
-    return total + definition.maxLevel * effectPerLevel;
+    return total + Math.min(
+      definition.maxLevel,
+      definition.effectLevelCap ?? definition.maxLevel,
+    ) * effectPerLevel;
   }, 0);
+}
+
+export function getAnnualFormTrainingLimit(levels: UpgradeLevels): number {
+  return 1 + getUpgradeEffectTotal(levels, "annualFormCapacity");
+}
+
+export function hasFreeFormTraining(levels: UpgradeLevels): boolean {
+  return (levels.pagosport ?? 0) >= 3;
 }

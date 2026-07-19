@@ -14,6 +14,10 @@ import {
   type FormDefinition,
   type FormStudent,
 } from "../../content/forms";
+import {
+  getAnnualFormTrainingLimit,
+  hasFreeFormTraining,
+} from "../../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "../../game/calendar";
 import { useProvidedGameTime } from "../../game/GameTimeContext";
 import {
@@ -107,6 +111,7 @@ function getDisplayedTrainingCost(
   definition: FormDefinition,
   qualification: boolean,
 ): number {
+  if (hasFreeFormTraining(state.upgrades)) return 0;
   if (qualification) return getInstructorQualificationCost(definition.cost);
   if (collaborator?.assignment === "instructor" && isInstructorForm(definition.id)) {
     return getInstructorFormCost(definition.cost);
@@ -185,7 +190,10 @@ export function InstructorPanel({
   const liveNow = useSharedTrainingTime(teaching.length > 0 && providedNow === null);
   const now = providedNow ?? liveNow;
   const enabled = collaborator.autoTeachingEnabled !== false;
-  const instructorCertificatesCost = getInstructorConversionCost(collaborator);
+  const hasMissingInstructorCertificates = getInstructorConversionCost(collaborator) > 0;
+  const instructorCertificatesCost = hasFreeFormTraining(state.upgrades)
+    ? 0
+    : getInstructorConversionCost(collaborator);
 
   return (
     <div className="instructor-panel">
@@ -199,7 +207,7 @@ export function InstructorPanel({
           /> Attive
         </label>
       </div>
-      {instructorCertificatesCost > 0 ? (
+      {hasMissingInstructorCertificates ? (
         <div className="instructor-certification-action">
           <span className="instructor-certification-copy">
             <small>Attestati mancanti</small>
@@ -210,7 +218,7 @@ export function InstructorPanel({
             disabled={state.school.euros < instructorCertificatesCost}
             onClick={() => onPayInstructorCertificates?.(collaborator.id)}
           >
-            Paga attestati
+            {instructorCertificatesCost === 0 ? "Ottieni attestati" : "Paga attestati"}
           </button>
         </div>
       ) : null}
@@ -249,7 +257,7 @@ export function TrainingControl({
   const liveNow = useSharedTrainingTime(Boolean(student.training) && providedNow === null);
   const now = providedNow ?? liveNow;
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
-  const annualTrainingLimit = 1 + (state.upgrades["extra-form"] ?? 0);
+  const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   const annualTrainingAvailable =
     getFormTrainingCount(student, trainingYear) < annualTrainingLimit;
   const collaborator = collaboratorsById.get(personId);
@@ -355,7 +363,9 @@ export function TrainingControl({
       ? `Servono ${formatCurrency(selectedCost)}`
       : selectedIsQualification
         ? "Ottieni qualifica"
-        : `Paga e avvia · ${formatCurrency(selectedCost)}`;
+        : selectedCost === 0
+          ? "Avvia gratuitamente"
+          : `Paga e avvia · ${formatCurrency(selectedCost)}`;
 
   return (
     <div className="training-control">

@@ -38,7 +38,7 @@ Il gioco non invia email e non accede a servizi esterni: destinatari, messaggi e
 - conversione contatto → prova → iscritto → quote;
 - collaboratori, assegnazioni automatiche, Social e percorso delle Forme;
 - maestria dei collaboratori per ruolo, con cinque gradi e notifiche di avanzamento;
-- attrezzatura, manutenzione, 47 potenziamenti e 100 modelli email;
+- attrezzatura, manutenzione, 52 potenziamenti e 100 modelli email;
 - traguardi, eventi narrativi e protezione dalle serie sfortunate;
 - pausa completa del gioco durante la chiusura, senza avanzamento offline;
 - tornei automatici con classifiche Arena e Stile, qualificazioni e premi;

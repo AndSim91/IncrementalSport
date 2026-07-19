@@ -12,7 +12,7 @@ describe("Form training save migration", () => {
 
     const migrated = migrate(legacy) as ReturnType<typeof createInitialState>;
 
-    expect(migrated.version).toBe(40);
+    expect(migrated.version).toBe(41);
     expect(migrated.upgrades["extra-form"]).toBe(0);
     expect(migrated.upgrades["technical-arena"]).toBe(0);
     expect(migrated.automation.agonistCoursesEnabled).toBe(false);
@@ -31,9 +31,24 @@ describe("Form training save migration", () => {
 
     const migrated = migrate(legacy) as ReturnType<typeof createInitialState>;
 
-    expect(migrated.version).toBe(40);
+    expect(migrated.version).toBe(41);
     expect(migrated.automation.lessonBuffer).toBe(0);
     expect(migrated.automation.lastImprovedAthlete).toBeUndefined();
     expect(migrated.statistics.socialTrials).toBe(0);
+  });
+
+  it("moves the first legacy Tiamat level to Istruttore Promisquo", () => {
+    const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
+    legacy.version = 40;
+    legacy.upgrades["tiamat-instructor"] = 5;
+    delete legacy.upgrades["promiscuous-instructor"];
+    delete legacy.upgrades.pagosport;
+
+    const migrated = migrate(legacy) as ReturnType<typeof createInitialState>;
+
+    expect(migrated.version).toBe(41);
+    expect(migrated.upgrades["promiscuous-instructor"]).toBe(1);
+    expect(migrated.upgrades["tiamat-instructor"]).toBe(4);
+    expect(migrated.upgrades.pagosport).toBe(0);
   });
 });

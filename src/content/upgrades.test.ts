@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   UPGRADE_DEFINITIONS,
   createInitialUpgradeLevels,
+  getAnnualFormTrainingLimit,
   getUpgradeCost,
   getUpgradeEffectTotal,
+  hasFreeFormTraining,
 } from "./upgrades";
 import type { UpgradeId } from "../game/types";
 
@@ -65,8 +67,10 @@ describe("instructor branch", () => {
     expect(instructors.map((definition) => definition.id)).toEqual([
       "instructor-versatility",
       "technical-arena",
+      "promiscuous-instructor",
       "extra-form",
       "tiamat-instructor",
+      "pagosport",
     ]);
     expect(instructors.every((definition) => definition.requiredHistoricMembers === 35)).toBe(true);
     expect(instructors.map((definition) =>
@@ -76,8 +80,22 @@ describe("instructor branch", () => {
     )).toEqual([
       [2_000, 4_000],
       [2_000, 5_000, 10_000],
+      [5_000],
       [10_000],
-      [5_000, 8_000, 13_000, 21_000, 34_000],
+      [8_000, 13_000, 21_000, 34_000],
+      [55_000, 89_000, 144_000],
     ]);
+  });
+
+  it("caps PagoSport's annual slots at two and makes level three free", () => {
+    const levels = {
+      ...createInitialUpgradeLevels(),
+      "extra-form": 1,
+      pagosport: 3,
+    };
+
+    expect(getUpgradeEffectTotal(levels, "annualFormCapacity")).toBe(3);
+    expect(getAnnualFormTrainingLimit(levels)).toBe(4);
+    expect(hasFreeFormTraining(levels)).toBe(true);
   });
 });

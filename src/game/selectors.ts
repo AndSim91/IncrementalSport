@@ -51,7 +51,12 @@ export function selectBusyInstructorIds(state: GameState): Set<string> {
 }
 
 export function selectInstructorCapacity(state: GameState): number {
-  return Math.min(6, 1 + (state.upgrades["tiamat-instructor"] ?? 0));
+  return Math.min(
+    6,
+    1 +
+      (state.upgrades["promiscuous-instructor"] ?? 0) +
+      (state.upgrades["tiamat-instructor"] ?? 0),
+  );
 }
 
 export function selectInstructorTeachingCount(state: GameState, instructorId: string): number {

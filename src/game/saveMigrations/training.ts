@@ -99,5 +99,23 @@ export function migrateTrainingState(state: MigratableState): MigratableState {
     };
   }
 
+  if (migrated.version === 40) {
+    const previousTiamatLevel = Math.max(
+      0,
+      Math.min(5, Math.floor(migrated.upgrades?.["tiamat-instructor"] ?? 0)),
+    );
+    migrated = {
+      ...migrated,
+      version: 41,
+      upgrades: {
+        ...createInitialUpgradeLevels(),
+        ...(migrated.upgrades ?? {}),
+        "promiscuous-instructor": previousTiamatLevel > 0 ? 1 : 0,
+        "tiamat-instructor": Math.max(0, previousTiamatLevel - 1),
+        pagosport: 0,
+      },
+    };
+  }
+
   return migrated;
 }
