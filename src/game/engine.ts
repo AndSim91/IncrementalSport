@@ -19,6 +19,7 @@ import {
 import { resolveAcquisitionEvent } from "./eventFlow";
 import { createInitialState as buildInitialState } from "./initialState";
 import { collectFees } from "./membershipFlow";
+import { compactGameHistory } from "./historyArchive";
 import { notifyPrestigeOffer, processNarrativeEvent } from "./narrativeFlow";
 import {
   completeShortGoal,
@@ -147,16 +148,38 @@ const ACTION_HANDLERS = createGameActionHandlers({
   startFormTraining,
 });
 
+function compactChangedHistory(
+  previous: GameState,
+  next: GameState,
+  action: GameAction,
+): GameState {
+  const terminalHistoryChanged =
+    previous.statistics.contactsLost !== next.statistics.contactsLost ||
+    previous.statistics.membersDeparted !== next.statistics.membersDeparted ||
+    previous.statistics.trialsCompleted !== next.statistics.trialsCompleted ||
+    previous.statistics.eventsCompleted !== next.statistics.eventsCompleted;
+  const adminRemovedMembers = action.type === "ADMIN_ADD_MEMBERS" && action.amount < 0;
+  return terminalHistoryChanged || adminRemovedMembers || action.type === "REPLACE_STATE"
+    ? compactGameHistory(next)
+    : next;
+}
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   const nextState = dispatchGameAction(state, action, ACTION_HANDLERS);
   const now = "now" in action ? action.now : state.lastSavedAt;
   const reconciledState = recruitEnrolledLegendaryCollaborators(nextState, now);
-  if (action.type === "OFFLINE_PASSIVE_PROGRESS") return reconciledState;
+  if (action.type === "OFFLINE_PASSIVE_PROGRESS") {
+    return compactChangedHistory(state, reconciledState, action);
+  }
 
   const gainMultiplier = action.type === "TICK" ? (action.gainMultiplier ?? 1) : 1;
-  return completeShortGoal(
-    grantAchievements(reconciledState, now, gainMultiplier),
-    now,
-    gainMultiplier,
+  return compactChangedHistory(
+    state,
+    completeShortGoal(
+      grantAchievements(reconciledState, now, gainMultiplier),
+      now,
+      gainMultiplier,
+    ),
+    action,
   );
 }

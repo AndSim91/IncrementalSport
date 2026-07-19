@@ -30,7 +30,7 @@ export function startNextCampaign(state: GameState, now: number): GameState {
   }
   const email = createCampaign(
     nextContact,
-    state.emails.length,
+    state.historyArchive.emails.count + state.emails.length,
     now,
     state.profile.displayName,
     presentationLevel,
@@ -75,7 +75,7 @@ export function finalizeEmail(state: GameState, emailId: string, now: number): G
       ? "trialBooked"
       : "lost";
   const outcome: PendingEmailOutcome = {
-    id: makeGameId("outcome", now, state.pendingEmailOutcomes.length),
+    id: makeGameId("outcome", now, state.statistics.emailsSent),
     emailId: email.id,
     contactId: email.contactId,
     resolvesAt: now + outcomeDelay,
@@ -156,7 +156,11 @@ export function resolveEmailOutcome(
   const [resultSeed, nextSeed] = nextRandom(seedAfterWait);
   const startsAt = now + trialWait;
   const trial: ScheduledTrial = {
-    id: makeGameId("trial", now, nextState.scheduledTrials.length),
+    id: makeGameId(
+      "trial",
+      now,
+      nextState.historyArchive.completedTrials + nextState.scheduledTrials.length,
+    ),
     contactId: outcome.contactId,
     startsAt,
     resolvesAt: startsAt + GAME_CONFIG.trialDurationMs,

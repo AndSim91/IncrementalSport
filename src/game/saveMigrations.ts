@@ -3,6 +3,7 @@ import { migrateCoreState } from "./saveMigrations/core";
 import { normalizeLegacySave } from "./saveMigrations/normalize";
 import { migratePeopleState } from "./saveMigrations/people";
 import { migrateProgressionState } from "./saveMigrations/progression";
+import { migrateScalabilityState } from "./saveMigrations/scalability";
 import type { MigratableState, SaveMigrationStage } from "./saveMigrations/types";
 
 const SAVE_MIGRATION_STAGES: SaveMigrationStage[] = [
@@ -10,6 +11,7 @@ const SAVE_MIGRATION_STAGES: SaveMigrationStage[] = [
   migratePeopleState,
   migrateProgressionState,
   migrateContentState,
+  migrateScalabilityState,
 ];
 
 export function migrate(value: unknown): unknown {

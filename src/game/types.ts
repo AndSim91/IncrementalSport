@@ -338,6 +338,21 @@ export interface Statistics {
   narrativeEvents: number;
 }
 
+export interface HistorySourceSummary {
+  total: number;
+  enrolled: number;
+}
+
+export interface HistoryArchive {
+  contactsBySource: Record<Contact["source"], HistorySourceSummary>;
+  emails: {
+    count: number;
+    totalWritingMs: number;
+  };
+  completedTrials: number;
+  completedEventsByDefinition: Partial<Record<AcquisitionEventId, number>>;
+}
+
 export interface GameState {
   version: number;
   createdAt: number;
@@ -398,6 +413,7 @@ export interface GameState {
   };
   shortGoal: ShortGoalProgress;
   statistics: Statistics;
+  historyArchive: HistoryArchive;
   unlocks: {
     upgrades: boolean;
     collaborators: boolean;

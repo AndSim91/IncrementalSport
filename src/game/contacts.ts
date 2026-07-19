@@ -3,6 +3,7 @@ import { PERSON_RARITIES } from "../content/rarities";
 import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import { GAME_CONFIG } from "./config";
 import { makeGameId } from "./ids";
+import { getCurrentSchoolContactCount } from "./historyArchive";
 import { nextRandom } from "./random";
 import type {
   Contact,
@@ -161,8 +162,9 @@ export function createAcquiredContacts(
   let progress = state.legendaryCollaborators;
   const contactIds = new Set(state.contacts.map((contact) => contact.id));
   let nextSequence = state.statistics.contactsAcquired;
+  const currentSchoolContactCount = getCurrentSchoolContactCount(state);
   const contacts = Array.from({ length: count }, (_, index) => {
-    const queuePosition = state.contacts.length + index + 1;
+    const queuePosition = currentSchoolContactCount + index + 1;
     const isInitialSchool = state.network.schools.length === 0;
     const advancedRaritiesUnlocked =
       !isInitialSchool || queuePosition > GAME_CONFIG.guaranteedAndreaContactPosition;

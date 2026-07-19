@@ -1,5 +1,6 @@
 import { createInitialCollaboratorMastery } from "../content/mastery";
 import { makeGameId } from "./ids";
+import { getEnrolledLegendaryContacts } from "./runtimeIndexes";
 import { addMessage } from "./stateUpdates";
 import type { Contact, GameState } from "./types";
 
@@ -62,14 +63,11 @@ export function recruitEnrolledLegendaryCollaborators(
   const collaboratorContactIds = new Set(
     state.collaborators.map((collaborator) => collaborator.contactId),
   );
-  return state.contacts
-    .filter((contact) =>
-      contact.status === "enrolled" &&
-      contact.rarity === "legendary" &&
-      !collaboratorContactIds.has(contact.id)
-    )
-    .reduce(
-      (nextState, contact) => recruitCollaborator(nextState, contact, now),
-      state,
-    );
+  let nextState = state;
+  for (const contact of getEnrolledLegendaryContacts(state.contacts)) {
+    if (!collaboratorContactIds.has(contact.id)) {
+      nextState = recruitCollaborator(nextState, contact, now);
+    }
+  }
+  return nextState;
 }

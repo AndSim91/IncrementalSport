@@ -1,6 +1,11 @@
 import type { GameState } from "./types";
 
+const MAX_CENT_SAFE_EUROS = Number.MAX_SAFE_INTEGER / 100;
+
 export function roundCurrency(amount: number): number {
+  if (!Number.isFinite(amount) || Math.abs(amount) > MAX_CENT_SAFE_EUROS) {
+    return amount;
+  }
   return Math.round(amount * 100) / 100;
 }
 

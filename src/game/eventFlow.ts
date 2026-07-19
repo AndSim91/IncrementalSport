@@ -14,6 +14,7 @@ import { nextRandom } from "./random";
 import { addCollaboratorMasteryExperience, addMessage } from "./stateUpdates";
 import { selectAvailableEventMembers } from "./selectors";
 import { startNextCampaign } from "./emailFlow";
+import { getArchivedCompletedEventCount } from "./historyArchive";
 import type { AcquisitionEvent, GameState } from "./types";
 
 export function startAcquisitionEvent(
@@ -36,7 +37,11 @@ export function startAcquisitionEvent(
   const outcome = getEventFunnelOutcome(state, definition, attendanceVariance);
 
   const event: AcquisitionEvent = {
-    id: makeGameId("activity", now, state.acquisitionEvents.length),
+    id: makeGameId(
+      "activity",
+      now,
+      getArchivedCompletedEventCount(state.historyArchive) + state.acquisitionEvents.length,
+    ),
     definitionId,
     title: definition.title,
     location: definition.location,

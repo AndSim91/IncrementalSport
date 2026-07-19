@@ -7,6 +7,7 @@ import {
   COLLABORATOR_ASSIGNMENT_LABELS,
 } from "../../content/collaboratorRoles";
 import { GAME_CONFIG } from "../../game/config";
+import { getAverageWritingSeconds, getSourceSummaries } from "../../game/historyArchive";
 import { getSocialUnlockRequirementLabel } from "../../game/unlocks";
 import type { GameState } from "../../game/types";
 import { formatCurrency, formatTime } from "../../shared/formatters";
@@ -47,30 +48,15 @@ export function ActivitiesView({
     : state.school.euros < GAME_CONFIG.socialCampaignCost
       ? `Servono ${formatCurrency(GAME_CONFIG.socialCampaignCost)}`
       : `Avvia campagna · ${formatCurrency(GAME_CONFIG.socialCampaignCost)}`;
-  const averageWritingSeconds = useMemo(() => {
-    let count = 0;
-    let totalMs = 0;
-    for (const email of state.emails) {
-      if (typeof email.sentAt !== "number") continue;
-      count += 1;
-      totalMs += email.sentAt - email.createdAt;
-    }
-    return count === 0 ? 0 : Math.round(totalMs / count / 1_000);
-  }, [state.emails]);
+  const averageWritingSeconds = useMemo(
+    () => getAverageWritingSeconds(state.emails, state.historyArchive.emails),
+    [state.emails, state.historyArchive.emails],
+  );
   const campaignHours = Math.max(1 / 60, (state.automation.lastProcessedAt - state.createdAt) / 3_600_000);
-  const sourceSummaries = useMemo(() => {
-    const summaries = new Map<GameState["contacts"][number]["source"], {
-      total: number;
-      enrolled: number;
-    }>();
-    for (const contact of state.contacts) {
-      const current = summaries.get(contact.source) ?? { total: 0, enrolled: 0 };
-      current.total += 1;
-      if (contact.status === "enrolled") current.enrolled += 1;
-      summaries.set(contact.source, current);
-    }
-    return summaries;
-  }, [state.contacts]);
+  const sourceSummaries = useMemo(
+    () => getSourceSummaries(state.contacts, state.historyArchive.contactsBySource),
+    [state.contacts, state.historyArchive.contactsBySource],
+  );
   const showCollaborators = state.unlocks.collaborators || state.collaborators.length > 0;
   const earnedAchievements = ACHIEVEMENTS.filter((achievement) =>
     state.achievements.includes(achievement.id),
@@ -115,7 +101,7 @@ export function ActivitiesView({
         <ReportRow label="Rendimento collaboratori" value={state.statistics.automatedCharacters} conversion={`${state.collaborators.length ? Math.round(state.statistics.automatedCharacters / state.collaborators.length) : 0} caratteri/persona`} />
         <ReportRow label="Andamento iscritti" value={`${(state.statistics.membersEnrolled / campaignHours).toFixed(1)}/h`} conversion={`${Math.round(campaignHours * 10) / 10} h osservate`} />
         {CONTACT_SOURCES.map(([source, label]) => {
-          const summary = sourceSummaries.get(source) ?? { total: 0, enrolled: 0 };
+          const summary = sourceSummaries[source];
           return <ReportRow key={source} label={`Conversione · ${label}`} value={summary.enrolled} conversion={percentage(summary.enrolled, summary.total)} />;
         })}
       </section>

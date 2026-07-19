@@ -2,6 +2,38 @@ import { COLLABORATOR_MASTERY_ROLES } from "../content/mastery";
 import { GAME_CONFIG } from "./config";
 import type { GameState } from "./types";
 
+const CONTACT_SOURCES: GameState["contacts"][number]["source"][] = [
+  "tutorial",
+  "sparring",
+  "event",
+  "social",
+  "collaborator",
+];
+
+function isNonNegativeSafeInteger(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+function hasValidHistoryArchive(state: Partial<GameState>): boolean {
+  const archive = state.historyArchive;
+  return Boolean(
+    archive &&
+    CONTACT_SOURCES.every((source) => {
+      const summary = archive.contactsBySource?.[source];
+      return isNonNegativeSafeInteger(summary?.total) &&
+        isNonNegativeSafeInteger(summary?.enrolled) &&
+        summary.enrolled <= summary.total;
+    }) &&
+    isNonNegativeSafeInteger(archive.emails?.count) &&
+    Number.isFinite(archive.emails?.totalWritingMs) &&
+    archive.emails.totalWritingMs >= 0 &&
+    isNonNegativeSafeInteger(archive.completedTrials) &&
+    Object.values(archive.completedEventsByDefinition ?? {}).every(
+      isNonNegativeSafeInteger,
+    )
+  );
+}
+
 export function isValidGameState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -30,7 +62,9 @@ export function isValidGameState(value: unknown): value is GameState {
     typeof state.statistics?.peopleMet === "number" &&
     typeof state.statistics?.demonstrationsGiven === "number" &&
     typeof state.statistics?.maintenanceCompleted === "number" &&
-    typeof state.school?.peakActiveMembers === "number" &&
+    isNonNegativeSafeInteger(state.school?.activeMembers) &&
+    isNonNegativeSafeInteger(state.school?.peakActiveMembers) &&
+    isNonNegativeSafeInteger(state.school?.historicMembers) &&
     typeof state.equipment?.totalSwords === "number" &&
     typeof state.equipment?.availableSwords === "number" &&
     typeof state.equipment?.damagedSwords === "number" &&
@@ -62,6 +96,7 @@ export function isValidGameState(value: unknown): value is GameState {
     typeof state.statistics?.formsCompleted === "number" &&
     typeof state.statistics?.membersDeparted === "number" &&
     typeof state.statistics?.narrativeEvents === "number" &&
+    hasValidHistoryArchive(state) &&
     typeof state.unlocks?.collaborators === "boolean" &&
     typeof state.unlocks?.forms === "boolean" &&
     Array.isArray(state.achievements) &&
@@ -74,7 +109,8 @@ export function isValidGameState(value: unknown): value is GameState {
     typeof state.shortGoal?.completedCount === "number" &&
     typeof state.randomSeed === "number" &&
     typeof state.profile?.displayName === "string" &&
-    typeof state.school?.euros === "number" &&
+    Number.isFinite(state.school?.euros) &&
+    (state.school?.euros ?? -1) >= 0 &&
     typeof state.school?.currentMonth === "number" &&
     typeof state.school?.city === "string" &&
     typeof state.school?.accentColor === "string" &&

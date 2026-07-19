@@ -4,6 +4,7 @@ import { GAME_CONFIG } from "./config";
 import { createCampaign, createWelcomeMessage } from "./campaignContent";
 import { createInitialContacts } from "./contacts";
 import type { GameState, LegendaryCollaboratorProgress } from "./types";
+import { createEmptyHistoryArchive } from "./historyArchive";
 
 export function createInitialState(
   now = Date.now(),
@@ -96,6 +97,7 @@ export function createInitialState(
       formsCompleted: 0,
       narrativeEvents: 0,
     },
+    historyArchive: createEmptyHistoryArchive(),
     unlocks: { upgrades: false, collaborators: false, social: false, forms: false },
     upgrades: createInitialUpgradeLevels(),
   };

@@ -277,8 +277,14 @@ export function processAutomaticTeaching(
   now: number,
   startFormTraining: AutomationFlowDependencies["startFormTraining"],
 ): GameState {
-  if (isSummerBreak(state.school.currentMonth)) return state;
+  if (!state.unlocks.forms || isSummerBreak(state.school.currentMonth)) return state;
   if (wasAutomaticTeachingNoOp(state)) return state;
+  const hasAutomaticInstructor = state.collaborators.some((collaborator) =>
+    collaborator.assignment === "instructor" &&
+    collaborator.autoTeachingEnabled !== false &&
+    !collaborator.training
+  );
+  if (!hasAutomaticInstructor) return state;
   const currentYear = getSchoolYear(state.school.currentMonth);
   let nextState = state;
 

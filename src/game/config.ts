@@ -1,5 +1,5 @@
 export const GAME_CONFIG = {
-  version: 35,
+  version: 36,
   initialContacts: 5,
   initialSwords: 6,
   profileNameMaxLength: 80,
@@ -52,4 +52,8 @@ export const GAME_CONFIG = {
   prestigeBonusPerSchool: 0.25,
   networkIncomePerSchool: 5,
   saveIntervalMs: 10_000,
+  recentTerminalContactsLimit: 500,
+  recentEmailsLimit: 500,
+  recentCompletedTrialsLimit: 500,
+  recentCompletedEventsLimit: 200,
 } as const;
