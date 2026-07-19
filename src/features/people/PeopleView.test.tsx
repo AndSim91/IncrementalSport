@@ -346,7 +346,7 @@ describe("PeopleView", () => {
       onStartTraining={() => undefined}
     />);
 
-    expect(screen.getByText("Hai già completato la formazione quest'anno")).toBeVisible();
+    expect(screen.getByText("Hai raggiunto il limite di Forme per quest'anno")).toBeVisible();
     expect(screen.queryByText("Percorso completato alla Forma 7")).not.toBeInTheDocument();
   });
 

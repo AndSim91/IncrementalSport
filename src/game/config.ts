@@ -1,9 +1,11 @@
+export const INITIAL_SAVE_COMPATIBILITY_VERSION = 1;
+
 export const GAME_CONFIG = {
   version: 38,
   // Increment this only when a change cannot preserve the meaning of an old save.
   // A different value forces a fresh game instead of weakening the game design
   // to keep an incompatible save alive.
-  saveCompatibilityVersion: 1,
+  saveCompatibilityVersion: INITIAL_SAVE_COMPATIBILITY_VERSION,
   initialContacts: 5,
   initialSwords: 6,
   profileNameMaxLength: 80,

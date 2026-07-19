@@ -101,6 +101,44 @@ describe("local save", () => {
     expect(state.contacts).toHaveLength(5);
   });
 
+  it("forces a fresh game and discards incompatible saves", () => {
+    const state = createInitialState(1_000, "Andrea Ungaro");
+    const incompatible = {
+      ...state,
+      saveCompatibilityVersion: GAME_CONFIG.saveCompatibilityVersion + 1,
+      school: { ...state.school, euros: 999 },
+    };
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(incompatible));
+    localStorage.setItem("oggetto-nuovi-iscritti.save.backup", JSON.stringify(incompatible));
+
+    const restarted = loadGame(5_000);
+
+    expect(restarted.createdAt).toBe(5_000);
+    expect(restarted.school.euros).toBe(0);
+    expect(localStorage.getItem("oggetto-nuovi-iscritti.save")).toBeNull();
+    expect(localStorage.getItem("oggetto-nuovi-iscritti.save.backup")).toBeNull();
+  });
+
+  it("keeps legacy saves in the first compatibility family", () => {
+    const state = createInitialState(1_000);
+    const legacy = JSON.parse(JSON.stringify(state));
+    delete legacy.saveCompatibilityVersion;
+    localStorage.setItem("oggetto-nuovi-iscritti.save", JSON.stringify(legacy));
+
+    expect(loadGame(1_000).saveCompatibilityVersion)
+      .toBe(GAME_CONFIG.saveCompatibilityVersion);
+  });
+
+  it("rejects incompatible imported saves", () => {
+    const state = createInitialState(1_000);
+    const incompatible = JSON.stringify({
+      ...state,
+      saveCompatibilityVersion: GAME_CONFIG.saveCompatibilityVersion + 1,
+    });
+
+    expect(importGame(incompatible)).toBeNull();
+  });
+
   it("updates legacy prospect providers without resetting the save", () => {
     const state = createInitialState(1_000);
     const legacy = {

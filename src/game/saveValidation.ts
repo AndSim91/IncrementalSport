@@ -1,5 +1,8 @@
 import { COLLABORATOR_MASTERY_ROLES } from "../content/mastery";
-import { GAME_CONFIG } from "./config";
+import {
+  GAME_CONFIG,
+  INITIAL_SAVE_COMPATIBILITY_VERSION,
+} from "./config";
 import type { GameState } from "./types";
 
 const CONTACT_SOURCES: GameState["contacts"][number]["source"][] = [
@@ -13,6 +16,24 @@ const CONTACT_SOURCES: GameState["contacts"][number]["source"][] = [
 
 function isNonNegativeSafeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) >= 0;
+}
+
+export function getSaveCompatibilityVersion(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+  const compatibilityVersion = (value as {
+    saveCompatibilityVersion?: unknown;
+  }).saveCompatibilityVersion;
+  return compatibilityVersion === undefined
+    ? INITIAL_SAVE_COMPATIBILITY_VERSION
+    : typeof compatibilityVersion === "number" &&
+        Number.isSafeInteger(compatibilityVersion) &&
+        compatibilityVersion >= 1
+      ? compatibilityVersion
+      : null;
+}
+
+export function isSaveCompatible(value: unknown): boolean {
+  return getSaveCompatibilityVersion(value) === GAME_CONFIG.saveCompatibilityVersion;
 }
 
 function hasValidHistoryArchive(state: Partial<GameState>): boolean {
@@ -40,6 +61,7 @@ export function isValidGameState(value: unknown): value is GameState {
   const state = value as Partial<GameState>;
   return (
     state.version === GAME_CONFIG.version &&
+    state.saveCompatibilityVersion === GAME_CONFIG.saveCompatibilityVersion &&
     Array.isArray(state.contacts) &&
     state.contacts.every((contact) =>
       (

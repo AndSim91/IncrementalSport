@@ -1,3 +1,4 @@
+import { INITIAL_SAVE_COMPATIBILITY_VERSION } from "./config";
 import { migrateContentState } from "./saveMigrations/content";
 import { migrateCoreState } from "./saveMigrations/core";
 import { normalizeLegacySave } from "./saveMigrations/normalize";
@@ -29,6 +30,9 @@ export function migrate(value: unknown): unknown {
   // Saves created before the compatibility gate are part of the first
   // compatibility family and can continue through the explicit migrations.
   return normalized.saveCompatibilityVersion === undefined
-    ? { ...normalized, saveCompatibilityVersion: 1 }
+    ? {
+        ...normalized,
+        saveCompatibilityVersion: INITIAL_SAVE_COMPATIBILITY_VERSION,
+      }
     : normalized;
 }

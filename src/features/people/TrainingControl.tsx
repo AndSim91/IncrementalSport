@@ -389,7 +389,7 @@ export function TrainingControl({
             </select>
           </label>
         ) : (
-          <span className="training-form-label">Prossima formazione · anno scolastico {currentYear}</span>
+          <span className="training-form-label">Prossima formazione · anno formativo {trainingYear}</span>
         )}
         {selected ? <TrainingFormPreview definition={selected} /> : null}
       </div>
