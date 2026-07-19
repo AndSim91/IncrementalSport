@@ -60,16 +60,21 @@ function chooseLegendaryProfile(
 ) {
   const [appearanceRoll, seedAfterAppearance] = nextRandom(seed);
   if (appearanceRoll >= getLegendaryAppearanceChance()) {
-    return { profile: undefined, nextSeed: seedAfterAppearance };
+    return { profile: undefined, legendaryRolled: false, nextSeed: seedAfterAppearance };
   }
   const candidates = SPECIAL_COLLABORATORS.filter(
     (profile) => !progress.enrolledProfileIds.includes(profile.id),
   );
-  if (candidates.length === 0) return { profile: undefined, nextSeed: seedAfterAppearance };
-  if (candidates.length === 1) return { profile: candidates[0], nextSeed: seedAfterAppearance };
+  if (candidates.length === 0) {
+    return { profile: undefined, legendaryRolled: true, nextSeed: seedAfterAppearance };
+  }
+  if (candidates.length === 1) {
+    return { profile: candidates[0], legendaryRolled: true, nextSeed: seedAfterAppearance };
+  }
   const [profileRoll, nextSeed] = nextRandom(seedAfterAppearance);
   return {
     profile: candidates[Math.min(candidates.length - 1, Math.floor(profileRoll * candidates.length))],
+    legendaryRolled: true,
     nextSeed,
   };
 }
@@ -110,6 +115,8 @@ export function createInitialContacts(
     const queuePosition = index + 1;
     const advancedRaritiesUnlocked =
       !includeAndrea || queuePosition > GAME_CONFIG.guaranteedAndreaContactPosition;
+    let legendaryRolled = includeAndrea &&
+      queuePosition === GAME_CONFIG.guaranteedAndreaContactPosition;
     let legendaryProfile = includeAndrea &&
       queuePosition === GAME_CONFIG.guaranteedAndreaContactPosition &&
       !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
@@ -118,6 +125,7 @@ export function createInitialContacts(
     if (!legendaryProfile && advancedRaritiesUnlocked) {
       const selected = chooseLegendaryProfile(nextSeed, progress);
       legendaryProfile = selected.profile;
+      legendaryRolled = selected.legendaryRolled;
       nextSeed = selected.nextSeed;
     }
     if (legendaryProfile) {
@@ -125,6 +133,8 @@ export function createInitialContacts(
     }
     const ordinary = legendaryProfile
       ? undefined
+      : legendaryRolled
+        ? { rarity: "ultra-rare" as const, nextSeed }
       : advancedRaritiesUnlocked
         ? chooseOrdinaryRarity(nextSeed)
         : chooseEarlyRarity(nextSeed);
@@ -168,18 +178,26 @@ export function createAcquiredContacts(
     const isInitialSchool = state.network.schools.length === 0;
     const advancedRaritiesUnlocked =
       !isInitialSchool || queuePosition > GAME_CONFIG.guaranteedAndreaContactPosition;
-    const selected = queuePosition === GAME_CONFIG.guaranteedAndreaContactPosition &&
-      isInitialSchool &&
-      !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
-      ? { profile: ANDREA_SIMONAZZI_PROFILE, nextSeed }
+    const isGuaranteedAndreaPosition = queuePosition ===
+      GAME_CONFIG.guaranteedAndreaContactPosition && isInitialSchool;
+    const selected = isGuaranteedAndreaPosition
+      ? {
+          profile: !progress.enrolledProfileIds.includes(ANDREA_SIMONAZZI_ID)
+            ? ANDREA_SIMONAZZI_PROFILE
+            : undefined,
+          legendaryRolled: true,
+          nextSeed,
+        }
       : advancedRaritiesUnlocked
         ? chooseLegendaryProfile(nextSeed, progress)
-        : { profile: undefined, nextSeed };
+        : { profile: undefined, legendaryRolled: false, nextSeed };
     const specialProfile = selected.profile;
     nextSeed = selected.nextSeed;
     if (specialProfile) progress = addLegendaryEncounter(progress, specialProfile.id);
     const ordinary = specialProfile
       ? undefined
+      : selected.legendaryRolled
+        ? { rarity: "ultra-rare" as const, nextSeed }
       : advancedRaritiesUnlocked
         ? chooseOrdinaryRarity(nextSeed)
         : chooseEarlyRarity(nextSeed);

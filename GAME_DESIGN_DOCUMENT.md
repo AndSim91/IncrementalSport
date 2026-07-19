@@ -522,6 +522,7 @@ Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 - la probabilità annuale di abbandono di tutti i Leggendari è sempre 0%, indipendentemente dalla formazione e dal numero di scuole fondate;
 - l'unico modo previsto per perdere un Leggendario sarà un evento narrativo dedicato, non ancora implementato; finché l'evento non esiste, un Leggendario iscritto resta nella scuola per sempre;
 - la probabilità di comparsa del pool Leggendario è 2% per ogni nuovo contatto idoneo: dal decimo nella scuola iniziale e fin dal primo nelle scuole successive;
+- uno stesso profilo Leggendario può comparire più volte tra i contatti finché non si iscrive; mentre è iscritto viene escluso dal pool e, se tutti i profili sono iscritti, un successivo roll Leggendario genera invece un contatto Ultra Raro;
 - con il prestigio tutti i profili Leggendari tornano disponibili nel pool della nuova scuola;
 - dopo l'eventuale abbandono causato dall'evento dedicato tornano disponibili per incontri futuri;
 - una nuova iscrizione successiva all'evento dedicato ripristina integralmente Forme, attestati da Istruttore, anzianità e storico formativo; l'incarico operativo torna invece non assegnato.

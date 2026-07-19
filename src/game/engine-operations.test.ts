@@ -303,7 +303,7 @@ describe("game engine: operations", () => {
     );
   });
 
-  it("can reencounter the same Legendary before enrollment but never after it", () => {
+  it("can reencounter a Legendary before enrollment and falls back once all are enrolled", () => {
     const initial = createInitialState(1_000, "", false);
     const evaProfile = SPECIAL_COLLABORATORS.find((profile) => profile.id === "eva-parodi")!;
     const previousEncounter = {
@@ -364,7 +364,10 @@ describe("game engine: operations", () => {
     expect(reencountered.contacts.filter((contact) =>
       contact.specialProfileId === "eva-parodi",
     )).toHaveLength(2);
-    expect(afterEnrollment.contacts.at(-1)?.specialProfileId).toBeUndefined();
+    expect(afterEnrollment.contacts.at(-1)).toMatchObject({
+      rarity: "ultra-rare",
+      specialProfileId: undefined,
+    });
   });
 
   it("restores a returning Legendary's Forms and Instructor certificates", () => {
