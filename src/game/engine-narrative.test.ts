@@ -129,7 +129,7 @@ describe("game engine: narrative", () => {
     }));
     const eligible = {
       ...initial,
-      school: { ...initial.school, activeMembers: 80, historicMembers: 1_000, euros: 500 },
+      school: { ...initial.school, activeMembers: 80, historicMembers: 150, euros: 500 },
       contacts: initial.contacts.map((contact, index) => index === 0
         ? {
             ...contact,
@@ -148,7 +148,7 @@ describe("game engine: narrative", () => {
         encounteredProfileIds: ["eva-parodi" as const],
         enrolledProfileIds: ["eva-parodi" as const],
       },
-      statistics: { ...initial.statistics, eventsCompleted: 50, emailsSent: 30 },
+      statistics: { ...initial.statistics, eventsCompleted: 25, emailsSent: 30 },
       upgrades: { ...initial.upgrades, "comfortable-keyboard": 2 },
       tournaments: {
         ...initial.tournaments,
@@ -170,7 +170,7 @@ describe("game engine: narrative", () => {
     expect(founded.school.name).toBe("Ordine del Faro");
     expect(founded.school.city).toBe("Trieste");
     expect(founded.school.activeMembers).toBe(0);
-    expect(founded.school.historicMembers).toBe(1_000);
+    expect(founded.school.historicMembers).toBe(150);
     expect(founded.collaborators).toEqual([]);
     expect(founded.contacts).toHaveLength(5);
     expect(founded.legendaryCollaborators.enrolledProfileIds).toEqual([]);
@@ -188,7 +188,7 @@ describe("game engine: narrative", () => {
     expect(founded.network.schools[0].membersAtTransfer).toBe(80);
     expect(founded.player.writingPower).toBeCloseTo(1.375);
     expect(selectIncomePerMonth(founded)).toBeCloseTo(6.25);
-    expect(getPrestigeRequirements(founded)).toEqual({ historicMembers: 2_000, collaborators: 10, events: 100 });
+    expect(getPrestigeRequirements(founded)).toEqual({ historicMembers: 300, collaborators: 10, events: 50 });
 
     const postPrestigeEvent = {
       id: "post-prestige-contacts",

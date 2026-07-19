@@ -91,6 +91,10 @@ describe("long-term automated balance simulation", () => {
     state = {
       ...state,
       school: { ...state.school, historicMembers: requirements.historicMembers },
+      tournaments: {
+        ...state.tournaments,
+        championsVictoryCurrentSchool: true,
+      },
     };
     const ready = gameReducer(state, { type: "TICK", now: startedAt + 1_000 });
     expect(canFoundSchool(ready)).toBe(true);

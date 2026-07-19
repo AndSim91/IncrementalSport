@@ -16,13 +16,35 @@ function createStateWithForms() {
   };
 }
 
+function createCompletedTournamentState() {
+  const state = createStateWithForms();
+  const simulation = simulateTournament(
+    state,
+    "school",
+    1,
+    181_000,
+    getEligibleSchoolContacts(state),
+  );
+  return {
+    state: {
+      ...state,
+      tournaments: {
+        ...state.tournaments,
+        results: [simulation.result],
+      },
+    },
+    result: simulation.result,
+  };
+}
+
 describe("TournamentsView", () => {
-  it("shows school readiness and hides stats before Course X", () => {
+  it("shows the tournament overview and hides official stats before Course X", () => {
     const state = createStateWithForms();
     const { container } = render(<TournamentsView state={state} />);
     const view = within(container);
-    expect(view.getByText("6/6")).toBeVisible();
 
+    expect(view.getByText("Calendario della stagione")).toBeVisible();
+    expect(view.getAllByText("6/6").length).toBeGreaterThan(0);
     fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
     expect(view.getAllByText("???").length).toBeGreaterThan(0);
   });
@@ -47,16 +69,15 @@ describe("TournamentsView", () => {
 
     fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
     const athleteName = view.getByText(`${target.firstName} ${target.lastName}`);
-    const athleteCard = within(athleteName.closest("article")!);
-    const arena = athleteCard.getByText("143.000");
-    const style = athleteCard.getByText("71.500");
+    const athleteRow = within(athleteName.closest("tr")!);
+    const arena = athleteRow.getByText("143.000");
+    const style = athleteRow.getByText("71.500");
 
     expect(arena).toHaveClass("official-stat-value");
     expect(arena).toHaveStyle({ color: "rgb(176, 128, 0)" });
     expect(style).toHaveClass("official-stat-value");
     expect(style).toHaveStyle({ color: "rgb(16, 53, 35)" });
-    expect(athleteCard.getByText("10", { exact: true })).toBeVisible();
-    expect(athleteCard.queryByText(/%/)).not.toBeInTheDocument();
+    expect(athleteRow.getByText("10", { exact: true })).toBeVisible();
   });
 
   it("colors Arena and Style red when their prepared value exceeds 150", () => {
@@ -78,9 +99,8 @@ describe("TournamentsView", () => {
     const view = within(container);
 
     fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
-    const athleteName = view.getByText(`${target.firstName} ${target.lastName}`);
-    const athleteCard = within(athleteName.closest("article")!);
-    const preparedStats = athleteCard.getAllByText("176.000");
+    const athleteRow = within(view.getByText(`${target.firstName} ${target.lastName}`).closest("tr")!);
+    const preparedStats = athleteRow.getAllByText("176.000");
 
     expect(preparedStats).toHaveLength(2);
     preparedStats.forEach((stat) => {
@@ -88,62 +108,74 @@ describe("TournamentsView", () => {
     });
   });
 
-  it("renders the two podiums and qualifiers of a completed tournament", () => {
-    const state = createStateWithForms();
-    const simulation = simulateTournament(
-      state,
-      "school",
-      1,
-      181_000,
-      getEligibleSchoolContacts(state),
-    );
-    const completed = {
-      ...state,
-      tournaments: {
-        ...state.tournaments,
-        results: [simulation.result],
-      },
-    };
-    const { container } = render(<TournamentsView state={completed} />);
+  it("opens a completed tournament directly from the calendar", () => {
+    const { state, result } = createCompletedTournamentState();
+    const { container } = render(<TournamentsView state={state} />);
     const view = within(container);
-    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
-    expect(view.getByText("Podio Arena")).toBeVisible();
-    expect(view.getByText("Podio Stile")).toBeVisible();
-    expect(view.getByText("Sei qualificati complessivi")).toBeVisible();
+
+    fireEvent.click(view.getByRole("button", {
+      name: `Apri i risultati di Torneo Scolastico, stagione ${result.season}`,
+    }));
+
+    expect(view.getByRole("tab", { name: "Risultati" })).toHaveAttribute("aria-selected", "true");
+    expect(view.getByText("Gironi")).toBeVisible();
+    expect(view.getByText("Eliminazione diretta")).toBeVisible();
+    expect(view.getByText("Podio e qualificazioni")).toBeVisible();
   });
 
-  it("highlights school athletes in the podium and qualifier list", () => {
-    const state = createStateWithForms();
-    const simulation = simulateTournament(
-      state,
-      "school",
-      1,
-      181_000,
-      getEligibleSchoolContacts(state),
-    );
-    const ownedParticipant = simulation.result.participants.find((participant) => participant.ownedContactId)!;
-    const completed = {
-      ...state,
+  it("renders real group standings, bracket and podiums", () => {
+    const { state } = createCompletedTournamentState();
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+
+    expect(view.getByRole("table", { name: "" })).toBeVisible();
+    expect(view.getByRole("heading", { name: "Eliminazione diretta" })).toBeVisible();
+    expect(container.querySelectorAll(".bracket-match").length).toBeGreaterThan(0);
+    expect(view.getByText("Arena", { selector: ".results-podium-list > strong" })).toBeVisible();
+    expect(view.getByText("Stile", { selector: ".results-podium-list > strong" })).toBeVisible();
+  });
+
+  it("filters athletes and opens qualified athletes from results", () => {
+    const { state: completed, result } = createCompletedTournamentState();
+    const qualifiedContactIds = completed.contacts
+      .filter((contact) => contact.status === "enrolled")
+      .slice(0, 2)
+      .map((contact) => contact.id);
+    const state = {
+      ...completed,
       tournaments: {
-        ...state.tournaments,
-        results: [{
-          ...simulation.result,
-          arenaPodium: [{ ...simulation.result.arenaPodium[0], participantId: ownedParticipant.id }],
-          qualifiers: [{
-            ...simulation.result.qualifiers[0],
-            participantId: ownedParticipant.id,
-            ownedContactId: ownedParticipant.ownedContactId,
-          }],
-        }],
+        ...completed.tournaments,
+        qualification: {
+          level: "academy" as const,
+          season: result.season,
+          contactIds: qualifiedContactIds,
+        },
+        immuneContactIds: qualifiedContactIds,
       },
     };
-    const { container } = render(<TournamentsView state={completed} />);
+    const { container } = render(<TournamentsView state={state} />);
     const view = within(container);
-    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
-    const ownedName = `${ownedParticipant.firstName} ${ownedParticipant.lastName}`;
-    const nameNodes = view.getAllByText(ownedName);
 
-    expect(nameNodes.some((node) => node.closest(".tournament-podium > div")?.classList.contains("owned-athlete"))).toBe(true);
-    expect(nameNodes.some((node) => node.closest(".tournament-qualifiers > div > span")?.classList.contains("owned-athlete"))).toBe(true);
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+    fireEvent.click(view.getByRole("button", { name: "Vedi qualificati" }));
+
+    expect(view.getByRole("tab", { name: "Atleti" })).toHaveAttribute("aria-selected", "true");
+    expect(view.getByRole("combobox", { name: "Qualificazione" })).toHaveValue("qualified");
+    expect(container.querySelectorAll(".athlete-table tbody tr")).toHaveLength(2);
+  });
+
+  it("highlights school athletes in the podium and group table", () => {
+    const { state, result } = createCompletedTournamentState();
+    const ownedParticipant = result.participants.find((participant) => participant.ownedContactId)!;
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+
+    expect(view.getAllByText(`${ownedParticipant.firstName} ${ownedParticipant.lastName}`).length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".group-table tr.is-owned").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".results-podium-list span.is-owned").length).toBeGreaterThan(0);
   });
 });

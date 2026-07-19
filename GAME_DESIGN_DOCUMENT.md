@@ -769,7 +769,7 @@ L'interfaccia non mostra tutti i sistemi dall'inizio. Una prima sequenza consigl
 | 10 iscritti | Social |
 | 20 iscritti | Attrezzatura e usura narrativa |
 | 50 iscritti | Forme dei collaboratori |
-| Circa 100 iscritti | procedura per fondare una nuova scuola |
+| 150 iscritti | procedura per fondare una nuova scuola |
 
 Le soglie sono configurabili e andranno calibrate per raggiungere il primo prestigio dopo circa 3–4 ore.
 
@@ -1139,7 +1139,7 @@ L'offerta di fondare una nuova scuola arriva tramite una comunicazione di sistem
 - disponibilità di attrezzatura;
 - reputazione sufficiente.
 
-Soglia provvisoria del primo ciclo: 100 iscritti, 8 collaboratori e 12 eventi, da bilanciare sulla durata obiettivo.
+Soglia del primo ciclo: 150 iscritti, 8 collaboratori, 25 eventi completati e almeno una vittoria alla Champion's Arena.
 
 Il prestigio è una scelta volontaria. A differenza del gioco di riferimento, il primo prestigio deve concedere immediatamente un bonus permanente chiaramente percepibile; non deve richiedere più reset prima di diventare utile.
 
