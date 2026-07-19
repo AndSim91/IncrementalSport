@@ -3,6 +3,7 @@ import { ProgressBar } from "../../components/common/ProgressBar";
 import {
   getAvailableForms,
   getFormDefinition,
+  getInstructorConversionCost,
   getInstructorFormCost,
   getInstructorQualificationCost,
   getStudentFormCost,
@@ -151,12 +152,14 @@ export function InstructorPanel({
   collaborator,
   state,
   onStartTraining,
+  onPayInstructorCertificates,
   onToggle,
   collaboratorsById,
 }: {
   collaborator: Collaborator;
   state: GameState;
   onStartTraining: (personId: string, formId: FormId) => void;
+  onPayInstructorCertificates?: (collaboratorId: string) => void;
   onToggle?: (collaboratorId: string, enabled: boolean) => void;
   collaboratorsById: Map<string, Collaborator>;
 }) {
@@ -174,6 +177,7 @@ export function InstructorPanel({
   const liveNow = useSharedTrainingTime(teaching.length > 0 && providedNow === null);
   const now = providedNow ?? liveNow;
   const enabled = collaborator.autoTeachingEnabled !== false;
+  const instructorCertificatesCost = getInstructorConversionCost(collaborator);
 
   return (
     <div className="instructor-panel">
@@ -187,6 +191,21 @@ export function InstructorPanel({
           /> Attive
         </label>
       </div>
+      {instructorCertificatesCost > 0 ? (
+        <div className="instructor-certification-action">
+          <span className="instructor-certification-copy">
+            <small>Attestati mancanti</small>
+            <strong>{formatCurrency(instructorCertificatesCost)}</strong>
+          </span>
+          <button
+            type="button"
+            disabled={state.school.euros < instructorCertificatesCost}
+            onClick={() => onPayInstructorCertificates?.(collaborator.id)}
+          >
+            Paga attestati
+          </button>
+        </div>
+      ) : null}
       {teaching.length > 0
         ? <InstructorTeachingSummary entries={teaching} now={now} />
         : <small>{enabled ? "In attesa del prossimo allievo compatibile." : "Pausa: non verranno avviate nuove lezioni."}</small>}
@@ -250,7 +269,9 @@ export function TrainingControl({
       </div>
     );
   }
-  if (isSummerBreak(state.school.currentMonth)) {
+  const summerInstructorTraining = isSummerBreak(state.school.currentMonth) &&
+    collaborator?.assignment === "instructor";
+  if (isSummerBreak(state.school.currentMonth) && !summerInstructorTraining) {
     return <div className="training-locked"><span>Pausa estiva</span><strong>Le Forme riprendono a settembre</strong></div>;
   }
 
@@ -283,7 +304,9 @@ export function TrainingControl({
         !collaborator?.formBranchPreferences?.length ||
         collaborator.formBranchPreferences.includes(definition.branch)
       );
-  const academicallyAvailable = [...qualificationDefinitions, ...newForms];
+  const academicallyAvailable = summerInstructorTraining
+    ? [...qualificationDefinitions, ...newForms.filter((definition) => isInstructorForm(definition.id))]
+    : [...qualificationDefinitions, ...newForms];
   const available = academicallyAvailable.filter((definition) => {
     if (qualificationDefinitions.some((candidate) => candidate.id === definition.id)) return true;
     return collaborator?.assignment !== "instructor" ||

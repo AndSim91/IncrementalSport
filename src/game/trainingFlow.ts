@@ -4,8 +4,10 @@ import {
   canTrainForm,
   getCollaboratorProductivity,
   getFormDefinition,
+  getInstructorConversionCost,
   getInstructorFormCost,
   getInstructorQualificationCost,
+  getMissingInstructorForms,
   getStudentFormCost,
   isInstructorForm,
 } from "../content/forms";
@@ -79,6 +81,43 @@ export function toggleInstructorAutomation(
   };
 }
 
+export function payInstructorCertificates(
+  state: GameState,
+  collaboratorId: string,
+): GameState {
+  const collaborator = state.collaborators.find((candidate) => candidate.id === collaboratorId);
+  if (!collaborator || collaborator.assignment !== "instructor") return state;
+
+  const missingForms = getMissingInstructorForms(collaborator);
+  const cost = getInstructorConversionCost(collaborator);
+  if (missingForms.length === 0 || state.school.euros < cost) return state;
+
+  const missingCompletedForms = missingForms.filter((formId) => collaborator.forms.includes(formId));
+  const hasPendingTrainingCertification = Boolean(
+    collaborator.training &&
+    isInstructorForm(collaborator.training.formId) &&
+    !collaborator.training.includesInstructorCertification &&
+    !collaborator.forms.includes(collaborator.training.formId),
+  );
+  return {
+    ...state,
+    school: {
+      ...state.school,
+      euros: roundCurrency(state.school.euros - cost),
+    },
+    collaborators: state.collaborators.map((candidate) => {
+      if (candidate.id !== collaboratorId) return candidate;
+      return {
+        ...candidate,
+        instructorForms: [...new Set([...candidate.instructorForms, ...missingCompletedForms])],
+        training: hasPendingTrainingCertification && candidate.training
+          ? { ...candidate.training, includesInstructorCertification: true }
+          : candidate.training,
+      };
+    }),
+  };
+}
+
 export function startFormTraining(
   state: GameState,
   personId: string,
@@ -87,8 +126,17 @@ export function startFormTraining(
   dependencies: TrainingFlowDependencies,
 ): GameState {
   if (!state.unlocks.forms) return state;
-  if (isSummerBreak(state.school.currentMonth)) return state;
   const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
+  const qualificationOnly = Boolean(
+    collaborator?.assignment === "instructor" &&
+    collaborator.forms.includes(formId) &&
+    isInstructorForm(formId) &&
+    !collaborator.instructorForms.includes(formId),
+  );
+  const canTrainAsInstructorInSummer = Boolean(
+    collaborator?.assignment === "instructor" && isInstructorForm(formId),
+  );
+  if (isSummerBreak(state.school.currentMonth) && !canTrainAsInstructorInSummer) return state;
   const member = state.contacts.find((candidate) =>
     candidate.id === personId &&
     candidate.status === "enrolled" &&
@@ -97,12 +145,6 @@ export function startFormTraining(
   const student = collaborator ?? member;
   const definition = getFormDefinition(formId);
   const currentYear = getSchoolYear(state.school.currentMonth);
-  const qualificationOnly = Boolean(
-    collaborator?.assignment === "instructor" &&
-    collaborator.forms.includes(formId) &&
-    isInstructorForm(formId) &&
-    !collaborator.instructorForms.includes(formId),
-  );
   if (qualificationOnly && collaborator && definition) {
     const qualificationCost = getInstructorQualificationCost(definition.cost);
     if (collaborator.training || state.school.euros < qualificationCost) return state;

@@ -18,11 +18,13 @@ export function PeopleView({
   state,
   onAssign,
   onStartTraining,
+  onPayInstructorCertificates,
   onToggleInstructorAutomation,
 }: {
   state: GameState;
   onAssign: (collaboratorId: string, assignment: CollaboratorAssignment) => void;
   onStartTraining: (personId: string, formId: FormId) => void;
+  onPayInstructorCertificates?: (collaboratorId: string) => void;
   onToggleInstructorAutomation?: (collaboratorId: string, enabled: boolean) => void;
 }) {
   const [tab, setTab] = useState<PeopleTab>("members");
@@ -69,6 +71,7 @@ export function PeopleView({
           state={state}
           onAssign={onAssign}
           onStartTraining={onStartTraining}
+          onPayInstructorCertificates={onPayInstructorCertificates}
           onToggleInstructorAutomation={onToggleInstructorAutomation}
           collaboratorsById={collaboratorsById}
         />

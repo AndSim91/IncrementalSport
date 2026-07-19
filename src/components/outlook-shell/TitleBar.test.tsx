@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GAME_CONFIG } from "../../game/config";
 import { TitleBar } from "./TitleBar";
 import { formatCompactCurrency, formatExactCurrency } from "./resourceFormatting";
+
+afterEach(cleanup);
 
 describe("TitleBar", () => {
   it("shows the month, school year, and progress toward the next month", () => {

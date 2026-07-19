@@ -27,6 +27,36 @@ describe("TournamentsView", () => {
     expect(view.getAllByText("???").length).toBeGreaterThan(0);
   });
 
+  it("shows only the colored official Arena and Style values for athletes", () => {
+    const initial = createStateWithForms();
+    const target = initial.contacts.find((contact) => contact.status === "enrolled")!;
+    const state = {
+      ...initial,
+      contacts: initial.contacts.map((contact) => contact.id === target.id
+        ? {
+            ...contact,
+            forms: ["form-1" as const, "course-x" as const],
+            arenaBase: 100,
+            styleBase: 50,
+          }
+        : contact),
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
+    const athleteName = view.getByText(`${target.firstName} ${target.lastName}`);
+    const athleteCard = within(athleteName.closest("article")!);
+    const arena = athleteCard.getByText("110.000");
+    const style = athleteCard.getByText("55.000");
+
+    expect(arena).toHaveClass("official-stat-value");
+    expect(arena).toHaveStyle({ color: "rgb(176, 128, 0)" });
+    expect(style).toHaveClass("official-stat-value");
+    expect(style).toHaveStyle({ color: "rgb(23, 23, 23)" });
+    expect(athleteCard.queryByText(/→/)).not.toBeInTheDocument();
+  });
+
   it("renders the two podiums and qualifiers of a completed tournament", () => {
     const state = createStateWithForms();
     const simulation = simulateTournament(
@@ -49,5 +79,40 @@ describe("TournamentsView", () => {
     expect(view.getByText("Podio Arena")).toBeVisible();
     expect(view.getByText("Podio Stile")).toBeVisible();
     expect(view.getByText("Sei qualificati complessivi")).toBeVisible();
+  });
+
+  it("highlights school athletes in the podium and qualifier list", () => {
+    const state = createStateWithForms();
+    const simulation = simulateTournament(
+      state,
+      "school",
+      1,
+      181_000,
+      getEligibleSchoolContacts(state),
+    );
+    const ownedParticipant = simulation.result.participants.find((participant) => participant.ownedContactId)!;
+    const completed = {
+      ...state,
+      tournaments: {
+        ...state.tournaments,
+        results: [{
+          ...simulation.result,
+          arenaPodium: [{ ...simulation.result.arenaPodium[0], participantId: ownedParticipant.id }],
+          qualifiers: [{
+            ...simulation.result.qualifiers[0],
+            participantId: ownedParticipant.id,
+            ownedContactId: ownedParticipant.ownedContactId,
+          }],
+        }],
+      },
+    };
+    const { container } = render(<TournamentsView state={completed} />);
+    const view = within(container);
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+    const ownedName = `${ownedParticipant.firstName} ${ownedParticipant.lastName}`;
+    const nameNodes = view.getAllByText(ownedName);
+
+    expect(nameNodes.some((node) => node.closest(".tournament-podium > div")?.classList.contains("owned-athlete"))).toBe(true);
+    expect(nameNodes.some((node) => node.closest(".tournament-qualifiers > div > span")?.classList.contains("owned-athlete"))).toBe(true);
   });
 });

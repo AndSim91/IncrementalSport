@@ -3,7 +3,6 @@ import { Icon } from "../../components/common/Icon";
 import { TabButton } from "../../components/common/TabButton";
 import { TOURNAMENT_DEFINITIONS, TOURNAMENT_LEVEL_ORDER } from "../../content/tournaments";
 import {
-  getContactBaseStats,
   getContactPreparation,
   getContactTournamentExperience,
   hasCompletedCourseX,
@@ -16,6 +15,7 @@ import type {
   TournamentParticipant,
   TournamentResult,
 } from "../../game/types";
+import { getOfficialStatColor } from "../../shared/officialStatColor";
 
 type TournamentTab = "season" | "athletes" | "results" | "hall";
 
@@ -54,7 +54,10 @@ function ResultSummary({ result }: { result: TournamentResult }) {
       {podium.map((entry) => {
         const participant = participants.get(entry.participantId);
         return (
-          <div key={`${entry.discipline}-${entry.position}`}>
+          <div
+            key={`${entry.discipline}-${entry.position}`}
+            className={participant?.ownedContactId ? "owned-athlete" : undefined}
+          >
             <b>{entry.position}°</b>
             <span className={participant?.rarity === "secret-legendary" ? "secret-legendary" : ""}>
               <strong>{participantName(participant)}</strong>
@@ -78,7 +81,10 @@ function ResultSummary({ result }: { result: TournamentResult }) {
           {result.qualifiers.map((qualifier) => {
             const participant = participants.get(qualifier.participantId);
             return (
-              <span key={qualifier.participantId}>
+              <span
+                key={qualifier.participantId}
+                className={participant?.ownedContactId || qualifier.ownedContactId ? "owned-athlete" : undefined}
+              >
                 <strong>{participantName(participant)}</strong>
                 <small>{qualifier.source === "arena" ? "Arena" : "Stile"}{qualifier.repechage ? " · ripescaggio" : ""}</small>
               </span>
@@ -179,15 +185,34 @@ export function TournamentsView({ state }: { state: GameState }) {
           {eligible.map((contact) => {
             const forms = collaboratorsByContactId.get(contact.id)?.forms ?? contact.forms;
             const visible = hasCompletedCourseX(forms);
-            const stats = getContactBaseStats(contact);
             const preparation = getContactPreparation(contact, forms);
             const immune = state.tournaments.immuneContactIds.includes(contact.id);
             return (
               <article key={contact.id} className={contact.secretLegendaryId ? "secret-card" : ""}>
                 <div><strong>{contact.firstName} {contact.lastName}</strong><small>{immune ? "Qualificato · immune" : "Disponibile allo Scolastico"}</small></div>
                 <dl>
-                  <div><dt>Arena</dt><dd>{visible ? `${stats.arena} → ${preparation.arena.toFixed(3)}` : "???"}</dd></div>
-                  <div><dt>Stile</dt><dd>{visible ? `${stats.style} → ${preparation.style.toFixed(3)}` : "???"}</dd></div>
+                  <div>
+                    <dt>Arena</dt>
+                    <dd>{visible ? (
+                      <strong
+                        className="official-stat-value"
+                        style={{ color: getOfficialStatColor(preparation.arena) }}
+                      >
+                        {preparation.arena.toFixed(3)}
+                      </strong>
+                    ) : "???"}</dd>
+                  </div>
+                  <div>
+                    <dt>Stile</dt>
+                    <dd>{visible ? (
+                      <strong
+                        className="official-stat-value"
+                        style={{ color: getOfficialStatColor(preparation.style) }}
+                      >
+                        {preparation.style.toFixed(3)}
+                      </strong>
+                    ) : "???"}</dd>
+                  </div>
                   <div><dt>Esperienza</dt><dd>{getContactTournamentExperience(contact)} · +{Math.min(60, getContactTournamentExperience(contact) * 3)}%</dd></div>
                 </dl>
               </article>

@@ -33,6 +33,7 @@
 .tournament-podium-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .tournament-podium { padding: 16px; }
 .tournament-podium > div { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.tournament-podium > div.owned-athlete { padding: 8px; border: 1px solid var(--blue-600); background: var(--blue-100); }
 .tournament-podium span { display: flex; flex-direction: column; }
 .tournament-podium small { color: var(--ink-muted); }
 .tournament-podium em { color: var(--blue-700); font-style: normal; font-weight: 700; }
@@ -40,6 +41,7 @@
 .tournament-qualifiers, .tournament-matches, .tournament-conditions { margin-top: 12px; padding: 16px; }
 .tournament-qualifiers > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .tournament-qualifiers span { display: flex; flex-direction: column; padding: 8px; background: var(--surface-muted); }
+.tournament-qualifiers span.owned-athlete { border: 1px solid var(--blue-600); background: var(--blue-100); }
 .tournament-qualifiers small { color: var(--ink-muted); }
 .tournament-matches summary, .tournament-conditions summary { cursor: pointer; font-weight: 600; }
 .tournament-matches article { display: grid; grid-template-columns: 1fr 48px 1fr; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }

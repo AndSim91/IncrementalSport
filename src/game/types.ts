@@ -569,6 +569,11 @@ export type GameAction =
       enabled: boolean;
       now: number;
     }
+  | {
+      type: "PAY_INSTRUCTOR_CERTIFICATES";
+      collaboratorId: string;
+      now: number;
+    }
   | { type: "RUN_SOCIAL_CAMPAIGN"; now: number }
   | {
       type: "START_FORM_TRAINING";

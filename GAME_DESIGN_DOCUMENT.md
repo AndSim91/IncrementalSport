@@ -587,7 +587,7 @@ Regole:
 
 - ogni iscritto può conoscere più Forme;
 - ogni iscritto o collaboratore può iniziare al massimo una Forma per anno scolastico;
-- le Forme possono essere insegnate da Settembre a Giugno; Luglio e Agosto sono pausa estiva;
+- le Forme possono essere insegnate da Settembre a Giugno; Luglio e Agosto sono pausa estiva, salvo le formazioni da Istruttore pagate con qualifica inclusa;
 - l'anno scolastico va da Settembre ad Agosto, a Settembre torna disponibile una nuova formazione;
 - completare un solo ramo fino alla Forma 5 è sufficiente per accedere alla Forma 6;
 - durante Corso Y ogni allievo sviluppa automaticamente da una a tre preferenze fra Spada Lunga, Staffa e Doppia spada corta;
@@ -604,8 +604,8 @@ Un Collaboratore delle Onde può essere assegnato al ruolo di **Istruttore**. No
 Regole:
 
 - l'assegnazione al ruolo è gratuita e non converte automaticamente le Forme pregresse;
-- un Istruttore può insegnare soltanto le Forme già completate e qualificate; **Corso X è l'unica eccezione** e non richiede qualifica;
-- Corso Y richiede una qualifica esattamente come le Forme;
+- un Istruttore può insegnare soltanto le Forme già completate e qualificate; ogni Forma, inclusi Corso X e Corso Y, richiede la relativa qualifica;
+- una nuova Forma o un nuovo Corso appreso da Istruttore include sempre la relativa qualifica;
 - una qualifica pregressa viene acquistata esplicitamente dal comando di formazione e costa il **200% del costo base**;
 - una nuova Forma appresa mentre si è Istruttore costa il **300% totale del costo base** e comprende la qualifica;
 - con un Istruttore disponibile l'allievo paga automaticamente il **25% del costo base**; senza Istruttore il level up manuale usa il costo base;

@@ -10,7 +10,7 @@ import { GAME_CONFIG } from "./config";
 import { gameReducer } from "./engine";
 import { freezeGameState } from "./offline";
 import { loadGame, saveGame } from "./save";
-import { createSaveScheduler } from "./saveScheduler";
+import { createSaveScheduler, type SaveScheduler } from "./saveScheduler";
 import type { GameAction } from "./types";
 
 export function useGameEngine() {
@@ -18,25 +18,23 @@ export function useGameEngine() {
   const stateRef = useRef(state);
   const observedStateRef = useRef(state);
   const pausedAtRef = useRef<number | null>(null);
+  const saveSchedulerRef = useRef<SaveScheduler | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [saveScheduler] = useState(() => createSaveScheduler(
-    state,
-    (currentState, now = Date.now()) => {
-      const pausedAt = pausedAtRef.current;
-      const stateToSave = pausedAt === null
-        ? currentState
-        : freezeGameState(currentState, now, now - pausedAt);
-      return saveGame(stateToSave, now);
-    },
-  ));
+  const savePausedGame = useCallback((currentState: typeof state, now = Date.now()) => {
+    const pausedAt = pausedAtRef.current;
+    const stateToSave = pausedAt === null
+      ? currentState
+      : freezeGameState(currentState, now, now - pausedAt);
+    return saveGame(stateToSave, now);
+  }, []);
 
   useLayoutEffect(() => {
     stateRef.current = state;
     if (observedStateRef.current !== state) {
       observedStateRef.current = state;
-      saveScheduler.markDirty(state);
+      saveSchedulerRef.current?.markDirty(state);
     }
-  }, [saveScheduler, state]);
+  }, [state]);
 
   useEffect(() => {
     const tickId = window.setInterval(() => {
@@ -51,14 +49,17 @@ export function useGameEngine() {
   }, []);
 
   useEffect(() => {
-    return saveScheduler.start(GAME_CONFIG.saveIntervalMs);
-  }, [saveScheduler]);
-
-  useEffect(() => {
+    const saveScheduler = createSaveScheduler(stateRef.current, savePausedGame);
+    saveSchedulerRef.current = saveScheduler;
+    const stopScheduler = saveScheduler.start(GAME_CONFIG.saveIntervalMs);
     const saveOnExit = () => saveScheduler.flush();
     window.addEventListener("beforeunload", saveOnExit);
-    return () => window.removeEventListener("beforeunload", saveOnExit);
-  }, [saveScheduler]);
+    return () => {
+      stopScheduler();
+      window.removeEventListener("beforeunload", saveOnExit);
+      saveSchedulerRef.current = null;
+    };
+  }, [savePausedGame]);
 
   const dispatchAction = useCallback((action: GameAction) => {
     if (action.type === "REPLACE_STATE" && pausedAtRef.current !== null) {

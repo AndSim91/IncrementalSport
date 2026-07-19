@@ -20,7 +20,7 @@ import { EventsView } from "../features/events/EventsView";
 import { PeopleView } from "../features/people/PeopleView";
 import { TournamentsView } from "../features/tournaments/TournamentsView";
 import { UpgradesView } from "../features/upgrades/UpgradesView";
-import { GameTimeProvider } from "../game/GameTimeContext";
+import { GameTimeProvider } from "../game/GameTimeProvider";
 import { useGameEngine } from "../game/useGameEngine";
 import { isGameAreaUnlocked } from "../game/progression";
 import { exportGame, importGame, resetGame, saveGame } from "../game/save";
@@ -228,6 +228,13 @@ export function App() {
                 type: "TOGGLE_INSTRUCTOR_AUTOMATION",
                 collaboratorId,
                 enabled,
+                now: getGameNow(),
+              })
+            }
+            onPayInstructorCertificates={(collaboratorId) =>
+              dispatch({
+                type: "PAY_INSTRUCTOR_CERTIFICATES",
+                collaboratorId,
                 now: getGameNow(),
               })
             }

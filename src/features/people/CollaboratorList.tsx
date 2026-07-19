@@ -18,12 +18,14 @@ export function CollaboratorList({
   state,
   onAssign,
   onStartTraining,
+  onPayInstructorCertificates,
   onToggleInstructorAutomation,
   collaboratorsById,
 }: {
   state: GameState;
   onAssign: (collaboratorId: string, assignment: CollaboratorAssignment) => void;
   onStartTraining: (personId: string, formId: FormId) => void;
+  onPayInstructorCertificates?: (collaboratorId: string) => void;
   onToggleInstructorAutomation?: (collaboratorId: string, enabled: boolean) => void;
   collaboratorsById: Map<string, GameState["collaborators"][number]>;
 }) {
@@ -109,6 +111,7 @@ export function CollaboratorList({
                     collaborator={collaborator}
                     state={state}
                     onStartTraining={onStartTraining}
+                    onPayInstructorCertificates={onPayInstructorCertificates}
                     onToggle={onToggleInstructorAutomation}
                     collaboratorsById={collaboratorsById}
                   />

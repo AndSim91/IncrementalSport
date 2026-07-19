@@ -295,7 +295,7 @@ describe("game engine: progression", () => {
     };
     const ready = {
       ...initial,
-      school: { ...initial.school, euros: 300 },
+      school: { ...initial.school, euros: 400 },
       collaborators: [collaborator],
       unlocks: { ...initial.unlocks, forms: true },
     };
@@ -313,16 +313,24 @@ describe("game engine: progression", () => {
       now: 2_000,
     });
 
-    expect(assigned.school.euros).toBe(300);
+    expect(assigned.school.euros).toBe(400);
     expect(assigned.collaborators[0].assignment).toBe("instructor");
     expect(assigned.collaborators[0].instructorForms).toEqual([]);
-    expect(qualifiedFormOne.school.euros).toBe(250);
+
+    const bulkQualified = gameReducer(assigned, {
+      type: "PAY_INSTRUCTOR_CERTIFICATES",
+      collaboratorId: collaborator.id,
+      now: 2_000,
+    });
+
+    expect(bulkQualified.school.euros).toBe(50);
+    expect(bulkQualified.collaborators[0].instructorForms).toEqual(["form-1", "course-x", "form-2"]);
+    expect(qualifiedFormOne.school.euros).toBe(350);
     expect(qualifiedFormOne.collaborators[0].instructorForms).toEqual(["form-1"]);
-    expect(qualifiedFormOne.collaborators[0].instructorForms).not.toContain("course-x");
     expect(qualifiedFormOne.messages.some((message) => message.subject === "Qualifica da Istruttore ottenuta")).toBe(true);
   });
 
-  it("charges an Instructor 300% total for a new Form and includes its qualification", () => {
+  it.each([19, 20])("charges an Instructor 300% total for a new Form and includes its qualification during summer month %i", (currentMonth) => {
     const initial = createInitialState(1_000);
     const instructor = {
       id: "instructor-training",
@@ -333,11 +341,11 @@ describe("game engine: progression", () => {
       instructorForms: ["form-1" as const],
       assignment: "instructor" as const,
       rarity: "legendary" as const,
-      lastFormTrainingYear: 1,
+      lastFormTrainingYear: 0,
     };
     const ready = {
       ...initial,
-      school: { ...initial.school, currentMonth: 21, euros: 400 },
+      school: { ...initial.school, currentMonth, euros: 400 },
       collaborators: [instructor],
       unlocks: { ...initial.unlocks, forms: true },
     };

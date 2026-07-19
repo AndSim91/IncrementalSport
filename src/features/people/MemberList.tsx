@@ -12,7 +12,7 @@ import {
   getContactTournamentExperience,
   hasCompletedCourseX,
 } from "../../game/athleteStats";
-import { getOfficialStatColor } from "./officialStatColor";
+import { getOfficialStatColor } from "../../shared/officialStatColor";
 
 const CONTACT_STATUS_LABELS: Record<Contact["status"], string> = {
   available: "Disponibile",

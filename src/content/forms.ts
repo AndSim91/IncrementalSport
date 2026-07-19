@@ -71,7 +71,7 @@ export function getFormDefinition(id: FormId) {
 }
 
 export function isInstructorForm(formId: FormId): boolean {
-  return formId !== "course-x";
+  return FORM_DEFINITIONS.some((definition) => definition.id === formId);
 }
 
 export function getInstructorFormCost(cost: number): number {
@@ -86,21 +86,28 @@ export function getStudentFormCost(cost: number): number {
   return Math.round(cost * 0.25 * 100) / 100;
 }
 
-export function getInstructorConversionCost(collaborator: Collaborator): number {
+export function getMissingInstructorForms(collaborator: Collaborator): FormId[] {
   const certified = new Set(collaborator.instructorForms);
-  let cost = collaborator.forms.reduce((total, formId) => {
-    if (!isInstructorForm(formId) || certified.has(formId)) return total;
-    return total + getInstructorQualificationCost(getFormDefinition(formId)?.cost ?? 0);
-  }, 0);
+  const missing = collaborator.forms.filter((formId) =>
+    isInstructorForm(formId) && !certified.has(formId),
+  );
+  const trainingFormId = collaborator.training?.formId;
   if (
-    collaborator.training &&
-    isInstructorForm(collaborator.training.formId) &&
-    !collaborator.training.includesInstructorCertification
+    trainingFormId &&
+    isInstructorForm(trainingFormId) &&
+    !collaborator.training?.includesInstructorCertification &&
+    !missing.includes(trainingFormId)
   ) {
-    cost += getInstructorQualificationCost(
-      getFormDefinition(collaborator.training.formId)?.cost ?? 0,
-    );
+    missing.push(trainingFormId);
   }
+  return missing;
+}
+
+export function getInstructorConversionCost(collaborator: Collaborator): number {
+  const cost = getMissingInstructorForms(collaborator).reduce(
+    (total, formId) => total + getInstructorQualificationCost(getFormDefinition(formId)?.cost ?? 0),
+    0,
+  );
   return Math.round(cost * 100) / 100;
 }
 

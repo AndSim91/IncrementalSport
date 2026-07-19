@@ -8,6 +8,7 @@ import { updateProfileName } from "./profileFlow";
 import { foundSchool } from "./schoolProgressionFlow";
 import {
   assignCollaborator,
+  payInstructorCertificates,
   toggleInstructorAutomation,
 } from "./trainingFlow";
 import type { FormId, GameAction, GameState } from "./types";
@@ -76,6 +77,10 @@ export function createGameActionHandlers(
       state,
       action.collaboratorId,
       action.enabled,
+    ),
+    PAY_INSTRUCTOR_CERTIFICATES: (state, action) => payInstructorCertificates(
+      state,
+      action.collaboratorId,
     ),
     RUN_SOCIAL_CAMPAIGN: (state, action) => dependencies.runSocialCampaign(state, action.now),
     START_FORM_TRAINING: (state, action) => dependencies.startFormTraining(

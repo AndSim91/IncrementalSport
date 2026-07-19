@@ -173,8 +173,8 @@
 }
 
 .upgrade-tree-legend i.completed {
-  border-color: var(--blue-700);
-  background: var(--blue-700);
+  border-color: var(--success);
+  background: var(--success);
 }
 
 .upgrade-tree-scroll {
@@ -382,9 +382,9 @@
 }
 
 .upgrade-node.completed .upgrade-node-icon {
-  border-color: var(--blue-700);
+  border-color: var(--success);
   color: white;
-  background: var(--blue-700);
+  background: var(--success);
 }
 
 .upgrade-node.selected .upgrade-node-icon {

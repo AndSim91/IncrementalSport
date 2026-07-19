@@ -197,6 +197,42 @@ describe("PeopleView", () => {
     expect(within(region).getByRole("progressbar", { name: `Formazione di ${student.firstName} ${student.lastName}` })).toHaveAttribute("aria-valuenow", "100");
   });
 
+  it("shows the total and pays all missing instructor certificates at once", () => {
+    const initial = createInitialState(1_000);
+    const collaborator = {
+      id: "collaborator-instructor",
+      contactId: initial.contacts[0].id,
+      displayName: "Andrea Simonazzi",
+      joinedAt: 1_000,
+      forms: ["form-1", "course-x", "form-2", "course-y"] as FormId[],
+      instructorForms: [],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+      specialProfileId: "andrea-simonazzi" as const,
+    };
+    const onPayInstructorCertificates = vi.fn();
+    render(
+      <PeopleView
+        state={{
+          ...initial,
+          school: { ...initial.school, euros: 1_000 },
+          collaborators: [collaborator],
+          unlocks: { ...initial.unlocks, collaborators: true, forms: true },
+        }}
+        onAssign={() => undefined}
+        onStartTraining={() => undefined}
+        onPayInstructorCertificates={onPayInstructorCertificates}
+      />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: /Collaboratori/ }));
+
+    const region = screen.getByRole("region", { name: "Collaboratori delle Onde" });
+    expect(within(region).getByText(/850,00/)).toBeVisible();
+    fireEvent.click(within(region).getByRole("button", { name: "Paga attestati" }));
+
+    expect(onPayInstructorCertificates).toHaveBeenCalledWith(collaborator.id);
+  });
+
   it("shows a collaborator's learned path in the members tab", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const, forms: [] as FormId[] };
@@ -404,5 +440,39 @@ describe("PeopleView", () => {
     expect(screen.getByText("Pausa estiva")).toBeVisible();
     expect(screen.getByText("Le Forme riprendono a settembre")).toBeVisible();
     expect(screen.queryByRole("combobox", { name: /Formazione per/ })).not.toBeInTheDocument();
+  });
+
+  it("allows an instructor to start a form course during summer with the qualification included", () => {
+    const initial = createInitialState(1_000);
+    const instructor = {
+      id: "summer-instructor",
+      contactId: initial.contacts[0].id,
+      displayName: "Istruttore Estivo",
+      joinedAt: 1_000,
+      forms: ["form-1"] as FormId[],
+      instructorForms: ["form-1"] as FormId[],
+      assignment: "instructor" as const,
+      rarity: "legendary" as const,
+      lastFormTrainingYear: 0,
+    };
+    const onStartTraining = vi.fn();
+    render(<PeopleView
+      state={{
+        ...initial,
+        school: { ...initial.school, currentMonth: 7, euros: 400 },
+        collaborators: [instructor],
+        unlocks: { ...initial.unlocks, collaborators: true, forms: true },
+      }}
+      onAssign={() => undefined}
+      onStartTraining={onStartTraining}
+    />);
+    fireEvent.click(screen.getByRole("tab", { name: /Collaboratori/ }));
+
+    const region = screen.getByRole("region", { name: "Collaboratori delle Onde" });
+    expect(within(region).getByRole("img", { name: /Corso X/ })).toBeVisible();
+    expect(within(region).getByRole("button", { name: /Paga e avvia/ })).toBeEnabled();
+    fireEvent.click(within(region).getByRole("button", { name: /Paga e avvia/ }));
+
+    expect(onStartTraining).toHaveBeenCalledWith(instructor.id, "course-x");
   });
 });
