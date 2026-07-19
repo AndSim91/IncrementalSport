@@ -11,7 +11,7 @@ import { getUpgradeEffectTotal } from "../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "./calendar";
 import {
   improveRandomAthletes,
-  scheduleSocialTrials,
+  resolveSocialAutomationCycles,
 } from "./collaboratorAutomationOutcomes";
 import { GAME_CONFIG } from "./config";
 import {
@@ -153,12 +153,12 @@ export function processAutomation(
   const lessonImprovements = Math.floor(lessonTotal);
   const socialTotal =
     state.automation.socialBuffer +
-    (elapsedMs / GAME_CONFIG.socialTrialIntervalMs) *
+    (elapsedMs / GAME_CONFIG.socialAutomationIntervalMs) *
       socialProductivity *
       socialMultiplier *
       automationMultiplier *
       Math.max(0, gainMultiplier);
-  const socialTrials = Math.floor(socialTotal);
+  const socialCycles = Math.floor(socialTotal);
   const equipmentTotal = state.equipment.wear > 0
     ? state.automation.equipmentBuffer +
       (elapsedMs / GAME_CONFIG.equipmentRepairIntervalMs) *
@@ -174,7 +174,7 @@ export function processAutomation(
       lastProcessedAt: now,
       writingBuffer: writingTotal - automatedCharacters,
       lessonBuffer: lessonTotal - lessonImprovements,
-      socialBuffer: socialTotal - socialTrials,
+      socialBuffer: socialTotal - socialCycles,
       equipmentBuffer: state.equipment.wear > repairedWear
         ? equipmentTotal - repairedWear
         : 0,
@@ -219,15 +219,22 @@ export function processAutomation(
     }
   }
 
-  if (socialTrials > 0) {
-    nextState = scheduleSocialTrials(nextState, socialTrials, now);
+  if (socialCycles > 0) {
+    const outcome = resolveSocialAutomationCycles(nextState, socialCycles, now);
+    nextState = outcome.state;
     nextState = dependencies.addMessage(
       nextState,
       now,
-      socialTrials === 1 ? "Nuova prova dai Social" : "Nuove prove dai Social",
-      socialTrials === 1
-        ? "Una persona arrivata dai Social sta svolgendo la prova in palestra."
-        : `${socialTrials} persone arrivate dai Social stanno svolgendo la prova in palestra.`,
+      "Rendimento pubblicitario Social",
+      [
+        `${outcome.cycles === 1 ? "Un ciclo" : `${outcome.cycles} cicli`} di promozione ha generato €${outcome.eurosEarned} grazie a ${state.school.activeMembers} iscritti attivi.`,
+        outcome.trialsBooked > 0
+          ? `${outcome.trialsBooked} ${outcome.trialsBooked === 1 ? "nuova prova" : "nuove prove"} in palestra.`
+          : "Nessuna nuova prova in questo ciclo.",
+        outcome.contactsAcquired > 0
+          ? `${outcome.contactsAcquired} ${outcome.contactsAcquired === 1 ? "nuovo contatto" : "nuovi contatti"}.`
+          : "Nessun nuovo contatto in questo ciclo.",
+      ].join(" "),
       "positive",
       "other",
       "contacts",
@@ -235,9 +242,12 @@ export function processAutomation(
     nextState = dependencies.addCollaboratorMasteryExperience(
       nextState,
       "social",
-      socialTrials * COLLABORATOR_MASTERY_XP.socialContact,
+      socialCycles * COLLABORATOR_MASTERY_XP.socialContact,
       now,
     );
+    if (outcome.contactsAcquired > 0) {
+      nextState = dependencies.startNextCampaign(nextState, now);
+    }
   }
 
   return nextState;

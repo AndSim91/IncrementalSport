@@ -83,8 +83,8 @@ export function ActivitiesView({
       </section> : null}
 
       {state.unlocks.social ? <section className="social-panel" aria-label="Campagne Social">
-        <div><Icon name="contact" /><span><strong>Social</strong><small>{state.statistics.socialTrials} prove portate direttamente in palestra</small></span></div>
-        <><div className="social-progress-label"><span>Prossima prova dai Social</span><strong>{socialProgress}%</strong></div><ProgressBar className="social-progress" label="Progresso prossima prova Social" value={socialProgress} /></>
+        <div><Icon name="contact" /><span><strong>Social</strong><small>Ciclo base 60 s · {formatCurrency(GAME_CONFIG.socialIncomePerMember)} per iscritto · 10% prova · 20% contatto</small></span></div>
+        <><div className="social-progress-label"><span>Prossimo rendimento · {formatCurrency(state.school.activeMembers * GAME_CONFIG.socialIncomePerMember)}</span><strong>{socialProgress}%</strong></div><ProgressBar className="social-progress" label="Progresso ciclo pubblicitario Social" value={socialProgress} /></>
         <button type="button" disabled={!canRunSocial} onClick={onRunSocialCampaign}>{socialAction}</button>
       </section> : null}
 

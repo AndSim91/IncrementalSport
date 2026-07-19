@@ -12,8 +12,10 @@ import type {
   GameState,
 } from "../../game/types";
 import { getSocialUnlockRequirementLabel } from "../../game/unlocks";
+import { GAME_CONFIG } from "../../game/config";
 import { useProvidedGameTime } from "../../game/GameTimeContext";
 import { selectActiveEmail } from "../../game/selectors";
+import { formatCurrency } from "../../shared/formatters";
 import { useCurrentTime } from "../../shared/useCurrentTime";
 import { CollaboratorMasterySummary } from "./CollaboratorMasterySummary";
 import { FormLogoStrip, PersonName } from "./PersonPresentation";
@@ -92,12 +94,13 @@ function CollaboratorAutomationProgress({
     const progress = Math.min(100, Math.floor(state.automation.socialBuffer * 100));
     return (
       <div className="collaborator-automation-progress">
-        <span>Prossima prova in palestra</span><strong>{progress}%</strong>
+        <span>Prossimo rendimento · {formatCurrency(state.school.activeMembers * GAME_CONFIG.socialIncomePerMember)}</span><strong>{progress}%</strong>
         <ProgressBar
           className="collaborator-progress-bar"
-          label="Progresso prossima prova Social"
+          label="Progresso ciclo pubblicitario Social"
           value={progress}
         />
+        <small className="collaborator-last-result">Ciclo base 60 s · 10% prova · 20% nuovo contatto</small>
       </div>
     );
   }

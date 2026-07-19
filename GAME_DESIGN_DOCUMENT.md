@@ -458,7 +458,7 @@ Ipotesi iniziali:
 
 La **lezione di prova in palestra** non genera nuovi indirizzi: consuma una prenotazione ottenuta tramite email e produce il possibile iscritto finale. Per lo scopo del gioco, ogni persona partecipa a una sola lezione.
 
-I **Social** generano passivamente contatti email e possono ricevere campagne pagate in Euro. Le piattaforme sono inventate e i loro contatti seguono lo stesso percorso degli altri: email → prova in palestra → possibile iscrizione. Un evento virale può generare un picco casuale di contatti.
+I **Social** sviluppano le capacità pubblicitarie della scuola. Ogni ciclo base di 60 secondi dei collaboratori assegnati accredita **€5 per iscritto attivo**; nello stesso ciclo esistono inoltre due possibilità indipendenti: **10%** di ottenere una prova diretta in palestra e **20%** di ottenere un nuovo contatto email. Le campagne pagate in Euro restano disponibili, usano piattaforme inventate e possono diventare casualmente virali.
 
 Lo **sparring esterno** è sempre disponibile come attività di sicurezza quando mancano contatti o denaro. Costa poco o nulla, ma produce soltanto pochi indirizzi.
 
@@ -534,7 +534,7 @@ Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 | Redazione | scrive caratteri automaticamente |
 | Eventi | aumenta persone incontrate e contatti ottenuti |
 | Lezioni in palestra | aumenta la probabilità di iscrizione finale |
-| Social | genera interesse e contatti nel tempo |
+| Social | genera ricavi pubblicitari e, occasionalmente, prove o contatti |
 | Attrezzatura | controlla e ripristina le spade |
 | Istruttore | insegna le Forme già attestate agli iscritti, una persona alla volta |
 | Coordinamento | funzione futura, non inclusa nell'MVP |
@@ -703,7 +703,7 @@ Influenza caratteri per pressione e automazione.
 
 ### 10.5 Social
 
-Genera passivamente contatti email anche senza eventi. Le campagne social consumano Euro, usano piattaforme inventate e possono diventare casualmente virali.
+L'automazione dei collaboratori Social completa un ciclo base ogni 60 secondi. Ogni ciclo genera €5 per iscritto attivo, ha il 10% di probabilità di portare una prova diretta in palestra e, con un tiro indipendente, il 20% di probabilità di aggiungere un contatto. Produttività, Forme, Maestria e potenziamenti accelerano il completamento dei cicli. Le campagne social manuali continuano a consumare Euro, usano piattaforme inventate e possono diventare casualmente virali.
 
 | Potenziamento | Effetto indicativo |
 |---|---|
@@ -1710,7 +1710,7 @@ L'uso pubblico di un'interfaccia quasi identica a Outlook richiede attenzione a 
 - Gli eventi usano luoghi reali; meteo e giorno della settimana non influenzano i risultati.
 - I contatti possono esaurirsi.
 - Lo sparring esterno rimane una fonte gratuita o economica di pochi contatti.
-- I Social generano contatti passivamente e possono ricevere campagne pagate in Euro.
+- I collaboratori assegnati ai Social generano ogni 60 secondi base €5 per iscritto, con il 10% di probabilità di una prova e il 20% di probabilità indipendente di un contatto; restano disponibili campagne pagate in Euro.
 - Le piattaforme social sono inventate e possono produrre eventi virali.
 - Gli Ultra Rari diventano Collaboratori delle Onde dopo il Corso Y; i Leggendari dall'iscrizione.
 - I collaboratori possono scrivere, partecipare agli eventi, gestire lezioni, social e spade.

@@ -1,6 +1,6 @@
 import { getCollaboratorProductivity } from "../content/forms";
 import { COLLABORATOR_MASTERY_XP } from "../content/mastery";
-import { scheduleSocialTrials } from "./collaboratorAutomationOutcomes";
+import { resolveSocialAutomationCycles } from "./collaboratorAutomationOutcomes";
 import { GAME_CONFIG } from "./config";
 import { roundCurrency } from "./economy";
 import { getUpgradeEffectTotal } from "../content/upgrades";
@@ -22,12 +22,12 @@ export function processOfflinePassiveProgress(
         .reduce((total, collaborator) => total + getCollaboratorProductivity(collaborator), 0)
     : 0;
   const socialTotal = state.automation.socialBuffer +
-    (elapsedMs / GAME_CONFIG.socialTrialIntervalMs) *
+    (elapsedMs / GAME_CONFIG.socialAutomationIntervalMs) *
       socialProductivity *
       socialMultiplier *
       automationMultiplier *
       GAME_CONFIG.offlineGainMultiplier;
-  const socialTrials = Math.floor(socialTotal);
+  const socialCycles = Math.floor(socialTotal);
   const eurosEarned = roundCurrency(
     selectIncomePerMonth(state) *
       (elapsedMs / GAME_CONFIG.gameMonthMs) *
@@ -76,20 +76,20 @@ export function processOfflinePassiveProgress(
     automation: {
       ...state.automation,
       lastProcessedAt: now,
-      socialBuffer: socialTotal - socialTrials,
+      socialBuffer: socialTotal - socialCycles,
     },
     statistics: {
       ...state.statistics,
       eurosEarned: state.statistics.eurosEarned + eurosEarned,
     },
   };
-  if (socialTrials <= 0) return nextState;
+  if (socialCycles <= 0) return nextState;
 
-  nextState = scheduleSocialTrials(nextState, socialTrials, now);
+  nextState = resolveSocialAutomationCycles(nextState, socialCycles, now).state;
   return addCollaboratorMasteryExperience(
     nextState,
     "social",
-    socialTrials * COLLABORATOR_MASTERY_XP.socialContact,
+    socialCycles * COLLABORATOR_MASTERY_XP.socialContact,
     now,
   );
 }

@@ -341,7 +341,8 @@ describe("PeopleView", () => {
     expect(screen.getByText(initial.emails[0].subject)).toBeVisible();
     expect(screen.getByText("Lezioni all'aperto")).toBeVisible();
     expect(screen.getByText("Ultimo atleta migliorato: Mario Rossi")).toBeVisible();
-    expect(screen.getByText("Prossima prova in palestra")).toBeVisible();
+    expect(screen.getByText("Prossimo rendimento · 0,00 €")).toBeVisible();
+    expect(screen.getByText("Ciclo base 60 s · 10% prova · 20% nuovo contatto")).toBeVisible();
     expect(screen.getByText("Usura attrezzatura: 42%")).toBeVisible();
     expect(screen.getAllByRole("progressbar")).toHaveLength(5);
     fireEvent.click(screen.getByRole("checkbox", { name: "Attivo" }));

@@ -17,8 +17,9 @@ describe("ActivitiesView", () => {
       statistics: { ...initial.statistics, socialTrials: 3 },
     }} onRunSocialCampaign={onRunSocialCampaign} />);
 
-    expect(screen.getByText("3 prove portate direttamente in palestra")).toBeVisible();
-    expect(screen.getByRole("progressbar", { name: "Progresso prossima prova Social" }))
+    expect(screen.getByText("Ciclo base 60 s · 5,00 € per iscritto · 10% prova · 20% contatto"))
+      .toBeVisible();
+    expect(screen.getByRole("progressbar", { name: "Progresso ciclo pubblicitario Social" }))
       .toHaveAttribute("aria-valuenow", "50");
     fireEvent.click(screen.getByRole("button", { name: /Avvia campagna/ }));
     expect(onRunSocialCampaign).toHaveBeenCalledOnce();

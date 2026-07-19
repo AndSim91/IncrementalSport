@@ -166,7 +166,7 @@ describe("game engine: progression", () => {
     expect(automated.statistics.automatedCharacters).toBe(5);
   });
 
-  it("generates direct Social trials and reduces equipment wear through assignments", () => {
+  it("turns Social cycles into scaled income with independent trial and contact chances", () => {
     const initial = createInitialState(1_000);
     const socialCollaborator = {
       id: "collaborator-social",
@@ -186,6 +186,8 @@ describe("game engine: progression", () => {
     const automated = gameReducer(
       {
         ...initial,
+        randomSeed: 7,
+        school: { ...initial.school, activeMembers: 12 },
         collaborators: [socialCollaborator, equipmentCollaborator],
         unlocks: { ...initial.unlocks, collaborators: true, social: true },
         equipment: { ...initial.equipment, wear: 5 },
@@ -198,12 +200,20 @@ describe("game engine: progression", () => {
       { type: "TICK", now: 2_000 },
     );
 
-    expect(automated.statistics.socialContacts).toBe(0);
+    expect(automated.school.euros).toBe(60);
+    expect(automated.statistics.eurosEarned).toBe(60);
+    expect(automated.statistics.socialContacts).toBe(1);
     expect(automated.statistics.socialTrials).toBe(1);
     expect(automated.automation.socialBuffer).toBeCloseTo(0.99 + 1 / 60 - 1);
-    expect(automated.contacts).toHaveLength(initial.contacts.length + 1);
-    expect(automated.contacts.at(-1)?.source).toBe("social");
-    expect(automated.contacts.at(-1)?.status).toBe("trialScheduled");
+    expect(automated.contacts).toHaveLength(initial.contacts.length + 2);
+    expect(automated.contacts.filter((contact) => contact.source === "social"))
+      .toHaveLength(2);
+    expect(automated.contacts.some((contact) =>
+      contact.source === "social" && contact.status === "available"
+    )).toBe(true);
+    expect(automated.contacts.some((contact) =>
+      contact.source === "social" && contact.status === "trialScheduled"
+    )).toBe(true);
     expect(automated.scheduledTrials).toHaveLength(1);
     expect(automated.emails).toHaveLength(initial.emails.length);
     expect(automated.equipment.wear).toBe(4);

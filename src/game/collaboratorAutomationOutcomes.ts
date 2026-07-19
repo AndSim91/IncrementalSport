@@ -87,3 +87,77 @@ export function scheduleSocialTrials(
     },
   };
 }
+
+export interface SocialAutomationOutcome {
+  state: GameState;
+  cycles: number;
+  eurosEarned: number;
+  trialsBooked: number;
+  contactsAcquired: number;
+}
+
+export function resolveSocialAutomationCycles(
+  state: GameState,
+  cycleCount: number,
+  now: number,
+): SocialAutomationOutcome {
+  const cycles = Math.max(0, Math.floor(cycleCount));
+  if (cycles === 0) {
+    return {
+      state,
+      cycles: 0,
+      eurosEarned: 0,
+      trialsBooked: 0,
+      contactsAcquired: 0,
+    };
+  }
+
+  let nextSeed = state.randomSeed;
+  let trialsBooked = 0;
+  let contactsAcquired = 0;
+  for (let index = 0; index < cycles; index += 1) {
+    const [trialRoll, seedAfterTrial] = nextRandom(nextSeed);
+    const [contactRoll, seedAfterContact] = nextRandom(seedAfterTrial);
+    nextSeed = seedAfterContact;
+    if (trialRoll < GAME_CONFIG.socialTrialChance) trialsBooked += 1;
+    if (contactRoll < GAME_CONFIG.socialContactChance) contactsAcquired += 1;
+  }
+
+  const eurosEarned = cycles * state.school.activeMembers * GAME_CONFIG.socialIncomePerMember;
+  let nextState: GameState = {
+    ...state,
+    randomSeed: nextSeed,
+    school: {
+      ...state.school,
+      euros: state.school.euros + eurosEarned,
+    },
+    statistics: {
+      ...state.statistics,
+      eurosEarned: state.statistics.eurosEarned + eurosEarned,
+    },
+  };
+
+  if (contactsAcquired > 0) {
+    const acquired = createAcquiredContacts(nextState, contactsAcquired, "social", now);
+    nextState = {
+      ...nextState,
+      randomSeed: acquired.nextSeed,
+      legendaryCollaborators: addLegendaryEncounters(
+        nextState.legendaryCollaborators,
+        acquired.contacts,
+      ),
+      contacts: [...nextState.contacts, ...acquired.contacts],
+      statistics: {
+        ...nextState.statistics,
+        contactsAcquired: nextState.statistics.contactsAcquired + contactsAcquired,
+        socialContacts: nextState.statistics.socialContacts + contactsAcquired,
+      },
+    };
+  }
+
+  if (trialsBooked > 0) {
+    nextState = scheduleSocialTrials(nextState, trialsBooked, now);
+  }
+
+  return { state: nextState, cycles, eurosEarned, trialsBooked, contactsAcquired };
+}
