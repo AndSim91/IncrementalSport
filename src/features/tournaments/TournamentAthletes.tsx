@@ -13,6 +13,7 @@ import { getOfficialStatColor } from "../../shared/officialStatColor";
 import {
   findUpcomingTournament,
   formatTournamentCountdown,
+  getUpcomingDelegationContactIds,
 } from "./tournamentPresentation";
 
 type QualificationFilter = "all" | "qualified" | "available";
@@ -60,9 +61,10 @@ export function TournamentAthletes({
   const [sortBy, setSortBy] = useState<AthleteSort>("preparation");
   const eligible = useMemo(() => getEligibleSchoolContacts(state), [state]);
   const upcoming = findUpcomingTournament(state);
+  const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);
   const qualifiedIds = useMemo(
-    () => new Set(state.tournaments.qualification?.contactIds ?? []),
-    [state.tournaments.qualification?.contactIds],
+    () => new Set(delegationContactIds),
+    [delegationContactIds],
   );
   const collaboratorsByContactId = useMemo(
     () => new Map(state.collaborators.map((entry) => [entry.contactId, entry])),

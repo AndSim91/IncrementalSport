@@ -381,6 +381,11 @@
   background: var(--blue-600);
 }
 
+.upgrade-node.available.unaffordable .upgrade-node-icon {
+  border-color: #a4262c;
+  background: #a4262c;
+}
+
 .upgrade-node.completed .upgrade-node-icon {
   border-color: var(--success);
   color: white;

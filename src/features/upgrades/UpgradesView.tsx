@@ -86,15 +86,21 @@ function UpgradeNode({
   const level = state.upgrades[definition.id];
   const status = getUpgradeStatus(state, definition);
   const lockReason = getUpgradeLockReason(state, definition);
+  const cost = getUpgradeCost(definition, level, state.network.schools.length);
+  const unaffordable = status === "available" && state.school.euros < cost;
   const stateLabel = status === "locked"
     ? `bloccato, ${lockReason?.toLocaleLowerCase("it")}`
-    : status === "completed" ? "completato" : "disponibile";
+    : status === "completed"
+      ? "completato"
+      : unaffordable
+        ? "disponibile, saldo insufficiente"
+        : "disponibile";
 
   return (
     <li className="upgrade-node-item">
       <button
         type="button"
-        className={`upgrade-node ${status}${selected ? " selected" : ""}`}
+        className={`upgrade-node ${status}${unaffordable ? " unaffordable" : ""}${selected ? " selected" : ""}`}
         onClick={(event) => onSelect(event.currentTarget)}
         aria-label={`Apri dettagli ${definition.title}: livello ${level} di ${definition.maxLevel}, ${stateLabel}`}
         aria-pressed={selected}

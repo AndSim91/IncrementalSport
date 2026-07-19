@@ -6,12 +6,12 @@ import {
   hasCompletedCourseX,
 } from "../../game/athleteStats";
 import { GAME_CONFIG } from "../../game/config";
-import { getEligibleSchoolContacts } from "../../game/tournamentSimulation";
 import type { GameState, TournamentResult } from "../../game/types";
 import {
   findUpcomingTournament,
   formatTournamentCountdown,
   getLatestResultForLevel,
+  getUpcomingDelegationContactIds,
   monthShortLabel,
 } from "./tournamentPresentation";
 
@@ -21,22 +21,23 @@ interface TournamentOverviewProps {
 }
 
 export function TournamentOverview({ state, onOpenResult }: TournamentOverviewProps) {
-  const eligible = useMemo(() => getEligibleSchoolContacts(state), [state]);
   const upcoming = findUpcomingTournament(state);
   const upcomingDefinition = upcoming ? TOURNAMENT_DEFINITIONS[upcoming.level] : undefined;
   const qualification = state.tournaments.qualification;
+  const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);
   const qualifiedIds = useMemo(
-    () => new Set(qualification?.contactIds ?? []),
-    [qualification?.contactIds],
+    () => new Set(delegationContactIds),
+    [delegationContactIds],
   );
   const collaboratorsByContactId = useMemo(
     () => new Map(state.collaborators.map((entry) => [entry.contactId, entry])),
     [state.collaborators],
   );
   const delegation = useMemo(() => {
-    const source = qualification
-      ? state.contacts.filter((contact) => qualifiedIds.has(contact.id))
-      : eligible.slice(0, GAME_CONFIG.tournamentMinimumMembers);
+    const contactsById = new Map(state.contacts.map((contact) => [contact.id, contact]));
+    const source = delegationContactIds
+      .map((contactId) => contactsById.get(contactId))
+      .filter((contact) => contact !== undefined);
     return source.map((contact) => {
       const forms = collaboratorsByContactId.get(contact.id)?.forms ?? contact.forms;
       const preparation = getContactPreparation(contact, forms);
@@ -47,7 +48,7 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
         : 100;
       return { contact, preparation, readiness, visible };
     });
-  }, [collaboratorsByContactId, eligible, qualification, qualifiedIds, state.contacts, upcomingDefinition]);
+  }, [collaboratorsByContactId, delegationContactIds, state.contacts, upcomingDefinition]);
   const required = GAME_CONFIG.tournamentMinimumMembers;
   const isReady = delegation.length >= required;
 

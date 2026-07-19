@@ -38,6 +38,7 @@ describe("UpgradesView", () => {
     expect(screen.getByText("+15% produzione Social per livello")).toBeVisible();
     expect(screen.getByText("Servono 10 iscritti storici")).toBeVisible();
     expect(screen.getByRole("button", { name: "Potenzia" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Apri dettagli Pagina aggiornata/ })).not.toHaveClass("unaffordable");
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -92,5 +93,32 @@ describe("UpgradesView", () => {
 
     expect(onBuyUpgrade).toHaveBeenCalledOnce();
     expect(onBuyUpgrade).toHaveBeenCalledWith("prepared-presentation");
+  });
+
+  it("marks an unlocked unaffordable upgrade node until enough funds are available", () => {
+    const initial = createInitialState(1_000);
+    const state = {
+      ...initial,
+      school: { ...initial.school, euros: 0 },
+    };
+    const { rerender } = render(
+      <UpgradesView state={state} onBuyUpgrade={() => undefined} />,
+    );
+
+    const upgradeNode = screen.getByRole("button", {
+      name: /Apri dettagli Presentazione preparata/,
+    });
+    expect(upgradeNode).toHaveClass("available", "unaffordable");
+    expect(upgradeNode.querySelector(".upgrade-node-icon")).toBeVisible();
+
+    rerender(
+      <UpgradesView
+        state={{ ...state, school: { ...state.school, euros: 50 } }}
+        onBuyUpgrade={() => undefined}
+      />,
+    );
+
+    expect(upgradeNode).toHaveClass("available");
+    expect(upgradeNode).not.toHaveClass("unaffordable");
   });
 });

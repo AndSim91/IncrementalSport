@@ -5,9 +5,9 @@ import { createInitialState } from "../../game/engine";
 import { getEligibleSchoolContacts, simulateTournament } from "../../game/tournamentSimulation";
 import { TournamentsView } from "./TournamentsView";
 
-function createStateWithForms() {
+function createStateWithForms(memberCount = 6) {
   const initial = createInitialState(1_000, "Manager");
-  const enrolled = addAdminMembers(initial, 6);
+  const enrolled = addAdminMembers(initial, memberCount);
   return {
     ...enrolled,
     contacts: enrolled.contacts.map((contact) => contact.status === "enrolled"
@@ -135,6 +135,86 @@ describe("TournamentsView", () => {
     expect(container.querySelectorAll(".bracket-match").length).toBeGreaterThan(0);
     expect(view.getByText("Arena", { selector: ".results-podium-list > strong" })).toBeVisible();
     expect(view.getByText("Stile", { selector: ".results-podium-list > strong" })).toBeVisible();
+  });
+
+  it("shows the third-place match below the final and opens its detail", () => {
+    const { state, result } = createCompletedTournamentState();
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+    const bronzeMatch = result.matches.find((match) => match.stage === "bronze")!;
+    const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
+    const a = participantById.get(bronzeMatch.participantAId)!;
+    const b = participantById.get(bronzeMatch.participantBId)!;
+    const matchLabel = `${a.firstName} ${a.lastName} ${bronzeMatch.arenaScoreA} a ${bronzeMatch.arenaScoreB} ${b.firstName} ${b.lastName}`;
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+    const bronzeButton = view.getByRole("button", { name: matchLabel });
+    fireEvent.click(bronzeButton);
+
+    expect(view.getByRole("heading", { name: "3° / 4° posto" })).toBeVisible();
+    expect(bronzeButton).toHaveClass("bronze-bracket-match", "selected");
+    const detail = container.querySelector<HTMLElement>(".selected-match-detail")!;
+    expect(within(detail).getByText(`${a.firstName} ${a.lastName}`)).toBeVisible();
+    expect(within(detail).getByText(`${b.firstName} ${b.lastName}`)).toBeVisible();
+  });
+
+  it("orders knockout matches by the branch they feed and draws complete connectors", () => {
+    const { state, result } = createCompletedTournamentState();
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+    const finalMatch = result.matches.find((match) => match.stage === "final")!;
+    const semifinalMatches = result.matches.filter((match) => match.stage === "semifinal");
+    const expectedSemifinalOrder = [finalMatch.participantAId, finalMatch.participantBId]
+      .map((participantId) => semifinalMatches.find((match) => match.winnerId === participantId)!);
+    const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
+    const expectedLabels = expectedSemifinalOrder.map((match) => {
+      const a = participantById.get(match.participantAId)!;
+      const b = participantById.get(match.participantBId)!;
+      return `${a.firstName} ${a.lastName} ${match.arenaScoreA} a ${match.arenaScoreB} ${b.firstName} ${b.lastName}`;
+    });
+    const renderedLabels = [...container.querySelectorAll(".stage-semifinal .bracket-match")]
+      .map((match) => match.getAttribute("aria-label"));
+
+    expect(renderedLabels).toEqual(expectedLabels);
+    expect(container.querySelectorAll(".bracket-connectors path").length).toBeGreaterThan(0);
+  });
+
+  it("shows every knockout round and includes all group qualifiers in the round of 32", () => {
+    const initial = createStateWithForms(64);
+    const simulation = simulateTournament(
+      initial,
+      "academy",
+      1,
+      181_000,
+      getEligibleSchoolContacts(initial),
+    );
+    const state = {
+      ...initial,
+      tournaments: { ...initial.tournaments, results: [simulation.result] },
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+    const qualifiedIds = new Set(
+      simulation.result.groupStandings
+        .filter((standing) => standing.qualified)
+        .map((standing) => standing.participantId),
+    );
+    const roundOf32ParticipantIds = new Set(
+      simulation.result.matches
+        .filter((match) => match.stage === "round32")
+        .flatMap((match) => [match.participantAId, match.participantBId]),
+    );
+
+    expect(qualifiedIds.size).toBe(32);
+    expect(roundOf32ParticipantIds).toEqual(qualifiedIds);
+    expect(container.querySelector(".stage-round32")).toBeVisible();
+    expect(container.querySelector(".stage-round16")).toBeVisible();
+    expect(view.getByRole("heading", { name: "Sedicesimi" })).toBeVisible();
+    expect(view.getByRole("heading", { name: "Ottavi" })).toBeVisible();
   });
 
   it("filters athletes and opens qualified athletes from results", () => {

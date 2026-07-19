@@ -1,6 +1,7 @@
 import { TOURNAMENT_DEFINITIONS, TOURNAMENT_LEVEL_ORDER } from "../../content/tournaments";
 import { GAME_CONFIG } from "../../game/config";
 import { getTournamentSeason } from "../../game/tournamentFlow";
+import { getEligibleSchoolContacts } from "../../game/tournamentSimulation";
 import type {
   GameState,
   TournamentLevel,
@@ -78,6 +79,21 @@ export function findUpcomingTournament(state: GameState): UpcomingTournament | u
     };
   }
   return undefined;
+}
+
+export function getUpcomingDelegationContactIds(
+  state: GameState,
+  upcoming = findUpcomingTournament(state),
+): string[] {
+  if (!upcoming) return [];
+  if (upcoming.level === "school") {
+    return getEligibleSchoolContacts(state)
+      .slice(0, GAME_CONFIG.tournamentMinimumMembers)
+      .map((contact) => contact.id);
+  }
+  const qualification = state.tournaments.qualification;
+  if (qualification?.level !== upcoming.level || qualification.season !== upcoming.season) return [];
+  return qualification.contactIds;
 }
 
 export function formatTournamentCountdown(remainingMs: number): string {

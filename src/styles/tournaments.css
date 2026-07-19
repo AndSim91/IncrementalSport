@@ -791,8 +791,10 @@
 }
 
 .results-workspace {
+  --results-panel-height: 498px;
   display: grid;
   grid-template-columns: minmax(480px, .78fr) minmax(660px, 1.12fr);
+  align-items: start;
   gap: 14px;
   margin-top: 14px;
 }
@@ -800,7 +802,15 @@
 .group-stage,
 .knockout-stage {
   min-width: 0;
-  min-height: 456px;
+  min-height: var(--results-panel-height);
+}
+
+.knockout-stage {
+  display: flex;
+  height: var(--results-panel-height);
+  max-height: var(--results-panel-height);
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .group-stage > h2,
@@ -927,12 +937,43 @@
 }
 
 .tournament-bracket {
+  --bracket-gap: 42px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
-  gap: 42px;
+  gap: var(--bracket-gap);
   min-height: 390px;
   padding: 0 18px 44px;
+}
+
+.tournament-bracket-scroll {
+  min-height: 0;
+  max-width: 100%;
+  flex: 1;
+  overflow: auto;
+  padding-bottom: 6px;
+  scrollbar-color: var(--line-strong) #f3f6f8;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.tournament-bracket-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.tournament-bracket-scroll::-webkit-scrollbar-track {
+  background: #f3f6f8;
+}
+
+.tournament-bracket-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid #f3f6f8;
+  border-radius: 8px;
+  background: var(--line-strong);
+}
+
+.tournament-bracket-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
 }
 
 .tournament-bracket.rounds-2 {
@@ -960,21 +1001,20 @@
   text-transform: uppercase;
 }
 
-.bracket-round > div {
-  display: flex;
+.bracket-round-matches {
+  position: relative;
   min-height: 320px;
   flex: 1;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 10px;
 }
 
 .bracket-match {
-  position: relative;
+  position: absolute;
+  left: 0;
   display: block;
   width: 100%;
   min-width: 0;
   overflow: visible;
+  transform: translateY(-50%);
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
@@ -983,18 +1023,23 @@
   text-align: left;
 }
 
-.bracket-match::after {
+.bracket-connectors {
   position: absolute;
-  top: 50%;
+  z-index: 0;
+  top: 0;
   left: 100%;
-  width: 43px;
-  height: 1px;
-  background: var(--line-strong);
-  content: "";
+  width: var(--bracket-gap);
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.bracket-round:last-of-type .bracket-match::after {
-  display: none;
+.bracket-connectors path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-linecap: square;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
 .bracket-match:hover,
@@ -1045,10 +1090,28 @@
   text-align: right;
 }
 
+.bronze-match-label {
+  position: absolute;
+  top: calc(50% + 50px);
+  left: 0;
+  width: 100%;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.bronze-bracket-match {
+  border-style: dashed;
+}
+
 .arena-champion {
   position: absolute;
   right: 18px;
-  bottom: 10px;
+  top: calc(50% + 172px);
   display: flex;
   gap: 7px;
   margin: 0;
@@ -1295,10 +1358,6 @@
 
   .tournament-bracket {
     min-width: 740px;
-  }
-
-  .knockout-stage {
-    overflow-x: auto;
   }
 
   .podium-qualification-rail > div {

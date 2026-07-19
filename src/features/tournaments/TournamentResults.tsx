@@ -61,13 +61,19 @@ function MatchCompetitor({
 }
 
 function BracketMatch({
+  className,
   match,
   participantById,
+  position,
+  positionOffset = 0,
   selected,
   onSelect,
 }: {
+  className?: string;
   match: TournamentMatch;
   participantById: ReadonlyMap<string, TournamentParticipant>;
+  position: number;
+  positionOffset?: number;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -76,13 +82,85 @@ function BracketMatch({
   return (
     <button
       type="button"
-      className={selected ? "bracket-match selected" : "bracket-match"}
+      className={["bracket-match", className, selected ? "selected" : ""].filter(Boolean).join(" ")}
+      style={{ top: positionOffset === 0 ? `${position}%` : `calc(${position}% + ${positionOffset}px)` }}
       onClick={onSelect}
       aria-label={`${participantName(a)} ${match.arenaScoreA} a ${match.arenaScoreB} ${participantName(b)}`}
     >
       <MatchCompetitor participant={a} score={match.arenaScoreA} styleScore={match.styleScoreA} winner={match.winnerId === a?.id} />
       <MatchCompetitor participant={b} score={match.arenaScoreB} styleScore={match.styleScoreB} winner={match.winnerId === b?.id} />
     </button>
+  );
+}
+
+function orderKnockoutRounds(
+  matches: readonly TournamentMatch[],
+  stages: readonly TournamentMatch["stage"][],
+): TournamentMatch[][] {
+  const orderedRounds = new Map<TournamentMatch["stage"], TournamentMatch[]>();
+  let nextRound: TournamentMatch[] | undefined;
+
+  for (let stageIndex = stages.length - 1; stageIndex >= 0; stageIndex -= 1) {
+    const stage = stages[stageIndex];
+    const stageMatches = matches.filter((match) => match.stage === stage);
+    if (nextRound) {
+      const matchByWinnerId = new Map(stageMatches.map((match) => [match.winnerId, match]));
+      const usedMatchIds = new Set<string>();
+      const connectedMatches: TournamentMatch[] = [];
+      for (const parentMatch of nextRound) {
+        for (const participantId of [parentMatch.participantAId, parentMatch.participantBId]) {
+          const sourceMatch = matchByWinnerId.get(participantId);
+          if (sourceMatch && !usedMatchIds.has(sourceMatch.id)) {
+            connectedMatches.push(sourceMatch);
+            usedMatchIds.add(sourceMatch.id);
+          }
+        }
+      }
+      for (const match of stageMatches) {
+        if (!usedMatchIds.has(match.id)) connectedMatches.push(match);
+      }
+      orderedRounds.set(stage, connectedMatches);
+      nextRound = connectedMatches;
+    } else {
+      orderedRounds.set(stage, stageMatches);
+      nextRound = stageMatches;
+    }
+  }
+
+  return stages.map((stage) => orderedRounds.get(stage) ?? []);
+}
+
+function BracketConnectors({
+  matches,
+  nextMatches,
+}: {
+  matches: readonly TournamentMatch[];
+  nextMatches: readonly TournamentMatch[];
+}) {
+  const sourceIndexByWinnerId = new Map(matches.map((match, index) => [match.winnerId, index]));
+  return (
+    <svg className="bracket-connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {nextMatches.map((parentMatch, parentIndex) => {
+        const sourceIndices = [parentMatch.participantAId, parentMatch.participantBId]
+          .map((participantId) => sourceIndexByWinnerId.get(participantId))
+          .filter((index) => index !== undefined);
+        if (sourceIndices.length === 0) return null;
+        const targetY = ((parentIndex + 0.5) / nextMatches.length) * 100;
+        if (sourceIndices.length === 1) {
+          const sourceY = ((sourceIndices[0] + 0.5) / matches.length) * 100;
+          return <path key={parentMatch.id} d={`M 0 ${sourceY} H 50 V ${targetY} H 100`} />;
+        }
+        const firstY = ((sourceIndices[0] + 0.5) / matches.length) * 100;
+        const secondY = ((sourceIndices[1] + 0.5) / matches.length) * 100;
+        const joinY = (firstY + secondY) / 2;
+        return (
+          <path
+            key={parentMatch.id}
+            d={`M 0 ${firstY} H 50 V ${secondY} H 0 M 50 ${joinY} V ${targetY} H 100`}
+          />
+        );
+      })}
+    </svg>
   );
 }
 
@@ -138,15 +216,27 @@ export function TournamentResults({
   const groupMatches = result.matches.filter(
     (match) => match.stage === "group" && match.groupIndex === activeGroupIndex,
   );
-  const knockoutStages = KNOCKOUT_STAGE_ORDER.filter(
-    (stage) => result.matches.some((match) => match.stage === stage),
-  ).slice(-3);
+  const knockoutRounds = useMemo(() => {
+    const stages = KNOCKOUT_STAGE_ORDER.filter(
+      (stage) => result.matches.some((match) => match.stage === stage),
+    );
+    const orderedMatches = orderKnockoutRounds(result.matches, stages);
+    return stages.map((stage, index) => ({ stage, matches: orderedMatches[index] }));
+  }, [result.matches]);
+  const bracketRoundCount = knockoutRounds.length;
+  const firstRoundMatchCount = knockoutRounds[0]?.matches.length ?? 0;
+  const bracketStyle = bracketRoundCount > 0 ? {
+    gridTemplateColumns: `repeat(${bracketRoundCount}, minmax(200px, 1fr))`,
+    minWidth: `${bracketRoundCount * 220 + Math.max(0, bracketRoundCount - 1) * 42}px`,
+    minHeight: `${Math.max(390, firstRoundMatchCount * 76 + 70)}px`,
+  } : undefined;
   const defaultMatch = groupMatches.find((match) =>
     participantById.get(match.participantAId)?.ownedContactId ||
     participantById.get(match.participantBId)?.ownedContactId
   ) ?? groupMatches[0] ?? result.matches.find((match) => match.stage === "final");
   const selectedMatch = result.matches.find((match) => match.id === selectedMatchId) ?? defaultMatch;
   const finalMatch = result.matches.find((match) => match.stage === "final");
+  const bronzeMatch = result.matches.find((match) => match.stage === "bronze");
   const champion = finalMatch ? participantById.get(finalMatch.winnerId) : undefined;
   const nextLevel = getNextTournamentLevel(result.level);
 
@@ -210,20 +300,46 @@ export function TournamentResults({
 
         <section className="knockout-stage" aria-labelledby="knockout-stage-title">
           <h2 id="knockout-stage-title">Eliminazione diretta</h2>
-          {knockoutStages.length > 0 ? (
-            <div className={`tournament-bracket rounds-${knockoutStages.length}`}>
-              {knockoutStages.map((stage) => {
-                const matches = result.matches.filter((match) => match.stage === stage);
-                return (
-                  <div key={stage} className={`bracket-round stage-${stage}`}>
-                    <h3>{knockoutStageLabel[stage]}</h3>
-                    <div>
-                      {matches.map((match) => <BracketMatch key={match.id} match={match} participantById={participantById} selected={selectedMatch?.id === match.id} onSelect={() => { setSelectedMatchId(match.id); setShowMatchDetail(false); }} />)}
+          {knockoutRounds.length > 0 ? (
+            <div className="tournament-bracket-scroll">
+              <div className={`tournament-bracket rounds-${knockoutRounds.length}`} style={bracketStyle}>
+                {knockoutRounds.map(({ stage, matches }, roundIndex) => {
+                  const nextMatches = knockoutRounds[roundIndex + 1]?.matches;
+                  return (
+                    <div key={stage} className={`bracket-round stage-${stage}`}>
+                      <h3>{knockoutStageLabel[stage]}</h3>
+                      <div className="bracket-round-matches">
+                        {matches.map((match, matchIndex) => (
+                          <BracketMatch
+                            key={match.id}
+                            match={match}
+                            participantById={participantById}
+                            position={((matchIndex + 0.5) / matches.length) * 100}
+                            selected={selectedMatch?.id === match.id}
+                            onSelect={() => { setSelectedMatchId(match.id); setShowMatchDetail(false); }}
+                          />
+                        ))}
+                        {nextMatches ? <BracketConnectors matches={matches} nextMatches={nextMatches} /> : null}
+                        {!nextMatches && bronzeMatch ? (
+                          <>
+                            <h4 className="bronze-match-label">3° / 4° posto</h4>
+                            <BracketMatch
+                              className="bronze-bracket-match"
+                              match={bronzeMatch}
+                              participantById={participantById}
+                              position={50}
+                              positionOffset={108}
+                              selected={selectedMatch?.id === bronzeMatch.id}
+                              onSelect={() => { setSelectedMatchId(bronzeMatch.id); setShowMatchDetail(false); }}
+                            />
+                          </>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              {champion ? <p className="arena-champion"><strong>{participantName(champion)}</strong><span>Campione Arena</span></p> : null}
+                  );
+                })}
+                {champion ? <p className="arena-champion"><strong>{participantName(champion)}</strong><span>Campione Arena</span></p> : null}
+              </div>
             </div>
           ) : <p className="empty-tournaments">Nessuna fase a eliminazione diretta disponibile.</p>}
         </section>
