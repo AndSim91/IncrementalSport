@@ -1,4 +1,5 @@
 import { Icon } from "../common/Icon";
+import { ProgressBar } from "../common/ProgressBar";
 import { getGameMonthName, getSchoolYear } from "../../game/calendar";
 import { GAME_CONFIG } from "../../game/config";
 import { useGameTime } from "../../game/GameTimeContext";
@@ -30,7 +31,7 @@ export function TitleBar({
   isPaused: boolean;
   onTogglePause: () => void;
 }) {
-  const liveNow = useGameTime(providedNow === undefined, 1_000);
+  const liveNow = useGameTime(providedNow === undefined, GAME_CONFIG.gameTickMs);
   const now = providedNow ?? liveNow;
   const monthName = getGameMonthName(currentMonth);
   const currentSchoolYear = getSchoolYear(currentMonth);
@@ -86,16 +87,12 @@ export function TitleBar({
           <strong>{monthName}</strong>
           <small>Anno scolastico {currentSchoolYear}</small>
         </span>
-        <span
+        <ProgressBar
           className="month-progress"
-          role="progressbar"
-          aria-label={`Avanzamento di ${monthName}, anno scolastico ${currentSchoolYear}`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={monthProgress}
-        >
-          <i style={{ width: `${monthProgress}%` }} />
-        </span>
+          label={`Avanzamento di ${monthName}, anno scolastico ${currentSchoolYear}`}
+          value={monthProgress}
+          durationMs={GAME_CONFIG.gameMonthMs}
+        />
       </span>
       <div className="window-controls" aria-hidden="true">
         <span>—</span><span>□</span><span>×</span>

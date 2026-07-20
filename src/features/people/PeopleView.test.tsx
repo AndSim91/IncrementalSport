@@ -348,6 +348,75 @@ describe("PeopleView", () => {
     expect(within(roster).queryByText("Collaboratore Scalabile 0")).not.toBeInTheDocument();
   });
 
+  it("filters collaborators by the values shown in their table columns", () => {
+    const initial = createInitialState(1_000);
+    const collaborators = [
+      {
+        id: "writer",
+        contactId: initial.contacts[0].id,
+        displayName: "Alba Autrice",
+        joinedAt: 1_000,
+        forms: [] as FormId[],
+        instructorForms: [] as FormId[],
+        assignment: "writing" as const,
+        rarity: "legendary" as const,
+        mastery: { writing: 120, events: 0, lessons: 0, social: 0, equipment: 0, instructor: 0 },
+      },
+      {
+        id: "event-manager",
+        contactId: initial.contacts[1].id,
+        displayName: "Bruno Eventi",
+        joinedAt: 1_000,
+        forms: ["course-x" as const],
+        instructorForms: [] as FormId[],
+        assignment: "events" as const,
+        rarity: "ultra-rare" as const,
+      },
+      {
+        id: "unassigned",
+        contactId: initial.contacts[2].id,
+        displayName: "Carla Libera",
+        joinedAt: 1_000,
+        forms: [] as FormId[],
+        instructorForms: [] as FormId[],
+        assignment: null,
+        rarity: "ultra-rare" as const,
+      },
+    ];
+    render(
+      <PeopleView
+        state={{
+          ...initial,
+          collaborators,
+          unlocks: { ...initial.unlocks, collaborators: true },
+        }}
+        onAssign={() => undefined}
+        onStartTraining={() => undefined}
+      />,
+    );
+
+    const roster = screen.getByRole("region", { name: "Collaboratori delle Onde" });
+    fireEvent.change(within(roster).getByPlaceholderText("Nome o email"), {
+      target: { value: "Bruno" },
+    });
+    expect(within(roster).getByText("Bruno Eventi")).toBeVisible();
+    expect(within(roster).queryByText("Alba Autrice")).not.toBeInTheDocument();
+
+    fireEvent.click(within(roster).getByRole("button", { name: "Azzera" }));
+    fireEvent.change(within(roster).getByRole("combobox", { name: "Filtra per livello" }), {
+      target: { value: "1" },
+    });
+    expect(within(roster).getByText("Alba Autrice")).toBeVisible();
+    expect(within(roster).queryByText("Bruno Eventi")).not.toBeInTheDocument();
+
+    fireEvent.click(within(roster).getByRole("button", { name: "Azzera" }));
+    fireEvent.change(within(roster).getByRole("combobox", { name: "Filtra per statistiche" }), {
+      target: { value: "visible" },
+    });
+    expect(within(roster).getByText("Bruno Eventi")).toBeVisible();
+    expect(within(roster).queryByText("Carla Libera")).not.toBeInTheDocument();
+  });
+
   it("shows Arena Tecnica toggle and every collaborator automation progress", () => {
     const initial = createInitialState(1_000);
     const assignments = ["writing", "events", "lessons", "social", "equipment"] as const;
@@ -411,7 +480,8 @@ describe("PeopleView", () => {
     expect(screen.getByText("Prossimo rendimento · 0,00 €")).toBeVisible();
     expect(screen.getByText("Ciclo base 120 s · 0,01% prova · 0,1% nuovo contatto")).toBeVisible();
     expect(screen.getByText("Usura attrezzatura: 42%")).toBeVisible();
-    expect(screen.getAllByRole("progressbar")).toHaveLength(5);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(10);
+    expect(screen.getAllByRole("progressbar", { name: "Progresso verso Iniziato" })).toHaveLength(5);
     fireEvent.click(screen.getByRole("checkbox", { name: "Attivo" }));
     expect(onToggleAgonistCourses).toHaveBeenCalledWith(false);
   });
@@ -453,11 +523,11 @@ describe("PeopleView", () => {
 
     const region = screen.getByRole("region", { name: "Collaboratori delle Onde" });
     expect(within(region).getByText(`${student.firstName} ${student.lastName}`)).toBeVisible();
-    expect(
-      within(region).getByRole("progressbar", {
-        name: `Formazione di ${student.firstName} ${student.lastName}`,
-      }),
-    ).toHaveAttribute("aria-valuenow", "100");
+    const fastProgress = within(region).getByRole("progressbar", {
+      name: `Formazione di ${student.firstName} ${student.lastName}`,
+    });
+    expect(fastProgress).toHaveClass("is-indeterminate");
+    expect(fastProgress).not.toHaveAttribute("aria-valuenow");
   });
 
   it("shows the total and pays all missing instructor certificates at once", () => {

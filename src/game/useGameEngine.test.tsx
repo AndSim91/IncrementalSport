@@ -1,9 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GAME_CONFIG } from "./config";
 import { createInitialState } from "./engine";
 import { needsAutomationHeartbeat } from "./gameScheduler";
 import { loadGame, saveGame } from "./save";
 import { useGameEngine } from "./useGameEngine";
+import { STORAGE_KEYS } from "../shared/storageKeys";
 
 describe("useGameEngine pause", () => {
   beforeEach(() => {
@@ -35,7 +37,7 @@ describe("useGameEngine pause", () => {
     }));
     expect(result.current.state.acquisitionEvents[0].resolvesAt - pausedAt).toBe(15_000);
 
-    act(() => vi.advanceTimersByTime(30_000));
+    act(() => vi.advanceTimersByTime(GAME_CONFIG.saveIntervalMs));
 
     expect(result.current.getGameNow()).toBe(pausedAt);
     expect(result.current.state.automation.lastProcessedAt).toBe(pausedAt);
@@ -73,6 +75,60 @@ describe("useGameEngine pause", () => {
     expect(result.current.state.school.currentMonth).toBe(
       initialState.school.currentMonth + 1,
     );
+  });
+
+  it("autosaves the latest game state every minute", () => {
+    const { result } = renderHook(() => useGameEngine());
+
+    expect(result.current.saveStatus.phase).toBe("saved");
+
+    act(() => result.current.dispatch({
+      type: "UPDATE_PROFILE_NAME",
+      displayName: "Legend",
+    }));
+    expect(result.current.saveStatus.phase).toBe("pending");
+
+    act(() => vi.advanceTimersByTime(59_999));
+    const beforeInterval = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.gameSave)!,
+    );
+    expect(beforeInterval.profile.displayName).toBe("Andrea Ungaro");
+    expect(beforeInterval.lastSavedAt).toBe(1_000);
+
+    act(() => vi.advanceTimersByTime(1));
+    const afterInterval = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.gameSave)!,
+    );
+    expect(afterInterval.profile.displayName).toBe("Legend");
+    expect(afterInterval.lastSavedAt).toBe(61_000);
+    expect(result.current.saveStatus).toMatchObject({
+      phase: "saved",
+      lastSavedAt: 61_000,
+    });
+  });
+
+  it("saves immediately on request and when the page is hidden", () => {
+    const { result } = renderHook(() => useGameEngine());
+
+    act(() => result.current.dispatch({
+      type: "UPDATE_PROFILE_NAME",
+      displayName: "Salvataggio manuale",
+    }));
+    act(() => result.current.saveNow());
+
+    let stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.gameSave)!);
+    expect(stored.profile.displayName).toBe("Salvataggio manuale");
+    expect(result.current.saveStatus.phase).toBe("saved");
+
+    act(() => result.current.dispatch({
+      type: "UPDATE_PROFILE_NAME",
+      displayName: "Salvataggio in uscita",
+    }));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide")));
+
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.gameSave)!);
+    expect(stored.profile.displayName).toBe("Salvataggio in uscita");
+    expect(result.current.saveStatus.phase).toBe("saved");
   });
 
   it("uses a one-second heartbeat while continuous automation is active", () => {

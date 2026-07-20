@@ -39,12 +39,31 @@ describe("local save", () => {
     vi.advanceTimersByTime(GAME_CONFIG.saveIntervalMs);
 
     expect(persist).toHaveBeenCalledTimes(1);
-    expect(persist).toHaveBeenCalledWith(state, 20_000);
+    expect(persist).toHaveBeenCalledWith(
+      state,
+      10_000 + GAME_CONFIG.saveIntervalMs,
+    );
     expect(scheduler.isDirty()).toBe(false);
 
     vi.advanceTimersByTime(GAME_CONFIG.saveIntervalMs);
-    expect(persist).toHaveBeenCalledTimes(1);
+    expect(persist).toHaveBeenCalledTimes(2);
+    expect(persist).toHaveBeenLastCalledWith(
+      state,
+      10_000 + (GAME_CONFIG.saveIntervalMs * 2),
+    );
     stop();
+  });
+
+  it("writes an immediate snapshot even when the state is already clean", () => {
+    const state = createInitialState(1_000);
+    const persist = vi.fn(() => true);
+    const scheduler = createSaveScheduler(state, persist);
+
+    expect(scheduler.flush(2_000)).toBe(true);
+    expect(scheduler.flush(3_000)).toBe(false);
+    expect(scheduler.saveNow(4_000)).toBe(true);
+    expect(persist).toHaveBeenLastCalledWith(state, 4_000);
+    expect(persist).toHaveBeenCalledTimes(2);
   });
 
   it("keeps a failed revision dirty so a later flush can retry it", () => {

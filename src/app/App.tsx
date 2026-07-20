@@ -46,6 +46,8 @@ export function App() {
     getGameNow,
     isPaused,
     togglePause,
+    saveStatus,
+    saveNow,
   } = useGameEngine();
   const [view, setView] = useState<AppView>("mail");
   const [mailFolder, setMailFolder] = useState<MailFolder>("inbox");
@@ -122,6 +124,12 @@ export function App() {
   };
   const updateProfileName = (displayName: string) => {
     dispatch({ type: "UPDATE_PROFILE_NAME", displayName });
+  };
+  const forceGameUpdate = () => {
+    saveNow();
+    const updateUrl = new URL(window.location.href);
+    updateUrl.searchParams.set("refresh", Date.now().toString());
+    window.location.replace(updateUrl);
   };
 
   if (!state.profile.displayName.trim()) {
@@ -250,7 +258,7 @@ export function App() {
             }
           />
         ) : activeView === "tournaments" ? (
-          <TournamentsView state={state} />
+          <TournamentsView state={state} onOpenAthletes={() => setView("contacts")} />
         ) : activeView === "admin" ? (
           <AdminEmailView
             totalContacts={state.contacts.length}
@@ -268,6 +276,9 @@ export function App() {
             onExport={exportSave}
             onImport={importSave}
             onReset={resetSave}
+            onForceUpdate={forceGameUpdate}
+            saveStatus={saveStatus}
+            onSaveNow={saveNow}
             onUpdateProfileName={updateProfileName}
             onFoundSchool={(details) => dispatch({
               type: "FOUND_SCHOOL",

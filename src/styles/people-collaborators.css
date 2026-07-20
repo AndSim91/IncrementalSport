@@ -39,9 +39,52 @@
 }
 
 .collaborator-table-head,
+.collaborator-table-filters,
 .collaborator-row {
   display: grid;
   grid-template-columns: var(--collaborator-grid);
+}
+
+.collaborator-table-filters {
+  min-height: 48px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.collaborator-table-filters > label,
+.collaborator-table-filters > button {
+  min-width: 0;
+  margin: 0 8px;
+}
+
+.collaborator-table-filters input,
+.collaborator-table-filters select,
+.collaborator-table-filters button {
+  width: calc(100% - 16px);
+  min-height: 30px;
+  margin: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 9px;
+}
+
+.collaborator-table-filters input {
+  padding: 0 8px;
+}
+
+.collaborator-table-filters button {
+  color: var(--blue-700);
+  font-weight: 600;
+}
+
+.collaborator-filter-empty {
+  padding: 28px 18px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  text-align: center;
 }
 
 .collaborator-table-head {
@@ -197,7 +240,8 @@
   white-space: nowrap;
 }
 
-.collaborator-current-role > small {
+.collaborator-current-role > small,
+.collaborator-mastery-level > small {
   display: -webkit-box;
   overflow: hidden;
   color: var(--ink-muted);
@@ -205,6 +249,17 @@
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.collaborator-mastery-level {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.collaborator-mastery-level > small {
+  min-width: 0;
 }
 
 .collaborator-activity-title {
@@ -700,6 +755,21 @@
     display: none;
   }
 
+  .collaborator-table-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .collaborator-table-filters > label,
+  .collaborator-table-filters > button,
+  .collaborator-table-filters input,
+  .collaborator-table-filters select,
+  .collaborator-table-filters button {
+    width: 100%;
+    margin: 0;
+  }
+
   .people-view .collaborator-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-height: 0;
@@ -741,6 +811,10 @@
 }
 
 @media (max-width: 720px) {
+  .collaborator-table-filters {
+    grid-template-columns: 1fr;
+  }
+
   .people-view .collaborator-row {
     grid-template-columns: 1fr;
     padding: 12px;

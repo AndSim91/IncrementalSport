@@ -1,16 +1,18 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Icon } from "../../components/common/Icon";
 import { OfficialStatValue } from "../../components/common/OfficialStatValue";
 import { ProgressBar } from "../../components/common/ProgressBar";
 import { COLLABORATOR_ASSIGNMENT_LABELS } from "../../content/collaboratorRoles";
 import {
+  COLLABORATOR_MASTERY_LEVELS,
   COLLABORATOR_MASTERY_ROLE_LABELS,
   createInitialCollaboratorMastery,
   getCollaboratorMasteryProgress,
 } from "../../content/mastery";
 import { getContactPreparation, hasCompletedCourseX } from "../../game/athleteStats";
+import { GAME_CONFIG } from "../../game/config";
 import { useGameTime } from "../../game/GameTimeContext";
-import { selectActiveEmail } from "../../game/selectors";
+import { selectActiveEmail, selectInstructorTeachingCount } from "../../game/selectors";
 import type {
   CollaboratorAssignment,
   Contact,
@@ -28,6 +30,9 @@ import {
 } from "./TrainingControl";
 
 const COLLABORATORS_PER_PAGE = 25;
+type CollaboratorFilter = "all" | "unassigned" | Exclude<CollaboratorAssignment, null>;
+type ActivityFilter = "all" | "active" | "waiting";
+type StatsFilter = "all" | "visible" | "locked";
 
 export function CollaboratorList({
   state,
@@ -48,6 +53,12 @@ export function CollaboratorList({
 }) {
   const [requestedPage, setRequestedPage] = useState(0);
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [assignmentFilter, setAssignmentFilter] = useState<CollaboratorFilter>("all");
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
+  const [statsFilter, setStatsFilter] = useState<StatsFilter>("all");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const deferredSearch = useDeferredValue(search);
   const contactsById = useMemo(
     () => new Map<string, Contact>(state.contacts.map((contact) => [contact.id, contact])),
     [state.contacts],
@@ -56,13 +67,63 @@ export function CollaboratorList({
   const hasTimedAutomation = state.acquisitionEvents.some((event) =>
     event.status === "running" && event.collaboratorId !== undefined
   );
-  const now = useGameTime(hasTimedAutomation, 1_000);
+  const now = useGameTime(hasTimedAutomation, GAME_CONFIG.gameTickMs);
+  const filteredCollaborators = useMemo(() => {
+    const normalizedSearch = deferredSearch.trim().toLocaleLowerCase("it-IT");
+    return state.collaborators.filter((collaborator) => {
+      const contact = contactsById.get(collaborator.contactId);
+      const searchableText = `${collaborator.displayName} ${contact?.email ?? ""}`
+        .toLocaleLowerCase("it-IT");
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) return false;
+      if (
+        assignmentFilter !== "all" &&
+        (assignmentFilter === "unassigned"
+          ? collaborator.assignment !== null
+          : collaborator.assignment !== assignmentFilter)
+      ) return false;
+      if (
+        statsFilter !== "all" &&
+        hasCompletedCourseX(collaborator.forms) !== (statsFilter === "visible")
+      ) return false;
+      if (levelFilter !== "all") {
+        const mastery = collaborator.mastery ?? createInitialCollaboratorMastery();
+        const level = collaborator.assignment
+          ? getCollaboratorMasteryProgress(mastery[collaborator.assignment]).level
+          : -1;
+        if (level !== Number(levelFilter)) return false;
+      }
+      if (activityFilter !== "all") {
+        const automation = getCollaboratorAutomationPresentation({
+          state,
+          collaboratorId: collaborator.id,
+          assignment: collaborator.assignment,
+          now,
+          activeEmail,
+        });
+        const active = collaborator.assignment === "instructor"
+          ? selectInstructorTeachingCount(state, collaborator.id) > 0
+          : automation.progress !== undefined;
+        if (active !== (activityFilter === "active")) return false;
+      }
+      return true;
+    });
+  }, [
+    activeEmail,
+    activityFilter,
+    assignmentFilter,
+    contactsById,
+    deferredSearch,
+    levelFilter,
+    now,
+    state,
+    statsFilter,
+  ]);
   const pageCount = Math.max(
     1,
-    Math.ceil(state.collaborators.length / COLLABORATORS_PER_PAGE),
+    Math.ceil(filteredCollaborators.length / COLLABORATORS_PER_PAGE),
   );
   const page = Math.min(requestedPage, pageCount - 1);
-  const visibleCollaborators = state.collaborators.slice(
+  const visibleCollaborators = filteredCollaborators.slice(
     page * COLLABORATORS_PER_PAGE,
     (page + 1) * COLLABORATORS_PER_PAGE,
   );
@@ -78,6 +139,18 @@ export function CollaboratorList({
         activeEmail,
       })
     : undefined;
+  const resetFilters = () => {
+    setSearch("");
+    setAssignmentFilter("all");
+    setActivityFilter("all");
+    setStatsFilter("all");
+    setLevelFilter("all");
+    setRequestedPage(0);
+  };
+  const updateFilter = (update: () => void) => {
+    setRequestedPage(0);
+    update();
+  };
 
   return (
     <section className="collaborator-list" aria-label="Collaboratori delle Onde">
@@ -117,6 +190,70 @@ export function CollaboratorList({
             <span>Azioni</span>
           </div>
 
+          <div className="collaborator-table-filters" aria-label="Filtri collaboratori">
+            <label>
+              <span className="sr-only">Cerca collaboratore</span>
+              <input
+                type="search"
+                value={search}
+                placeholder="Nome o email"
+                onChange={(event) => updateFilter(() => setSearch(event.target.value))}
+              />
+            </label>
+            <label>
+              <span className="sr-only">Livello collaboratore</span>
+              <select
+                aria-label="Filtra per livello"
+                value={levelFilter}
+                onChange={(event) => updateFilter(() => setLevelFilter(event.target.value))}
+              >
+                <option value="all">Tutti i livelli</option>
+                {COLLABORATOR_MASTERY_LEVELS.map((level, index) => (
+                  <option value={index} key={level.name}>{level.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Attività collaboratore</span>
+              <select
+                aria-label="Filtra per attività"
+                value={activityFilter}
+                onChange={(event) => updateFilter(() => setActivityFilter(event.target.value as ActivityFilter))}
+              >
+                <option value="all">Tutte le attività</option>
+                <option value="active">In corso</option>
+                <option value="waiting">In attesa</option>
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Statistiche ufficiali</span>
+              <select
+                aria-label="Filtra per statistiche"
+                value={statsFilter}
+                onChange={(event) => updateFilter(() => setStatsFilter(event.target.value as StatsFilter))}
+              >
+                <option value="all">Tutte le statistiche</option>
+                <option value="visible">Arena/Stile visibili</option>
+                <option value="locked">Arena/Stile bloccati</option>
+              </select>
+            </label>
+            <label>
+              <span className="sr-only">Assegnazione collaboratore</span>
+              <select
+                aria-label="Filtra per assegnazione"
+                value={assignmentFilter}
+                onChange={(event) => updateFilter(() => setAssignmentFilter(event.target.value as CollaboratorFilter))}
+              >
+                <option value="all">Tutte le assegnazioni</option>
+                <option value="unassigned">Non assegnati</option>
+                {Object.entries(COLLABORATOR_ASSIGNMENT_LABELS).map(([value, label]) => (
+                  <option value={value} key={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+            <button type="button" onClick={resetFilters}>Azzera</button>
+          </div>
+
           {visibleCollaborators.map((collaborator) => {
             const contact = contactsById.get(collaborator.contactId);
             const automation = getCollaboratorAutomationPresentation({
@@ -135,6 +272,9 @@ export function CollaboratorList({
               ? getContactPreparation(contact, collaborator.forms)
               : undefined;
             const selected = collaborator.id === selectedCollaboratorId;
+            const nextMasteryLevel = masteryProgress
+              ? COLLABORATOR_MASTERY_LEVELS[masteryProgress.level + 1]
+              : undefined;
 
             return (
               <article
@@ -175,13 +315,23 @@ export function CollaboratorList({
                       ? COLLABORATOR_ASSIGNMENT_LABELS[collaborator.assignment]
                       : "Non assegnato"}
                   </strong>
-                  <small>
-                    {collaborator.assignment && masteryProgress
-                      ? `${COLLABORATOR_MASTERY_ROLE_LABELS[collaborator.assignment]} · ${
-                          masteryProgress.definition.name
-                        }`
-                      : "Assegna un ruolo per iniziare"}
-                  </small>
+                  {collaborator.assignment && masteryProgress ? (
+                    <span className="collaborator-mastery-level">
+                      <small>
+                        {COLLABORATOR_MASTERY_ROLE_LABELS[collaborator.assignment]} · {masteryProgress.definition.name}
+                      </small>
+                      <ProgressBar
+                        variant="circular"
+                        value={masteryProgress.progress}
+                        label={nextMasteryLevel
+                          ? `Progresso verso ${nextMasteryLevel.name}`
+                          : "Livello massimo raggiunto"}
+                        title={nextMasteryLevel
+                          ? `${masteryProgress.progress}% verso ${nextMasteryLevel.name}`
+                          : "Livello massimo raggiunto"}
+                      />
+                    </span>
+                  ) : <small>Assegna un ruolo per iniziare</small>}
                 </div>
 
                 <div className="collaborator-activity" data-label="Attività">
@@ -204,6 +354,7 @@ export function CollaboratorList({
                             className="collaborator-progress-bar"
                             label={automation.progressLabel ?? automation.title}
                             value={automation.progress}
+                            durationMs={automation.durationMs}
                           />
                         </span>
                       )}
@@ -277,6 +428,9 @@ export function CollaboratorList({
               </article>
             );
           })}
+          {filteredCollaborators.length === 0 ? (
+            <div className="collaborator-filter-empty">Nessun collaboratore corrisponde ai filtri.</div>
+          ) : null}
         </div>
       )}
 

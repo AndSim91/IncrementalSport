@@ -5,6 +5,7 @@ import {
   getShortGoalReward,
 } from "../../content/shortGoals";
 import type { GameState, ScheduledTrial } from "../../game/types";
+import { GAME_CONFIG } from "../../game/config";
 import { useGameTime } from "../../game/GameTimeContext";
 import { formatLongDate } from "../../shared/formatters";
 import { getRarityClassName } from "../../shared/rarityPresentation";
@@ -66,7 +67,7 @@ function ShortGoalCard({ state }: { state: GameState }) {
 }
 
 export function DayPanel({ state }: { state: GameState }) {
-  const now = useGameTime(true, 1_000);
+  const now = useGameTime(true, GAME_CONFIG.gameTickMs);
   const contactsById = useMemo(
     () => new Map(state.contacts.map((contact) => [contact.id, contact])),
     [state.contacts],
@@ -140,6 +141,7 @@ export function DayPanel({ state }: { state: GameState }) {
                 className="appointment-expiry"
                 label={`Tempo residuo della notifica di ${contactName}`}
                 value={expiryProgress}
+                durationMs={COMPLETED_TRIAL_VISIBILITY_MS}
               />
             )}
           </div>

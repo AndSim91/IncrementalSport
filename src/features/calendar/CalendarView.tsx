@@ -1,5 +1,7 @@
 import { Icon } from "../../components/common/Icon";
+import { ProgressBar } from "../../components/common/ProgressBar";
 import { useGameTime } from "../../game/GameTimeContext";
+import { GAME_CONFIG } from "../../game/config";
 import type { GameState, ScheduledTrial } from "../../game/types";
 import { getRarityClassName } from "../../shared/rarityPresentation";
 
@@ -35,7 +37,10 @@ export function CalendarView({
   onOpenSentEmail: (emailId: string) => void;
 }) {
   const hasPendingTrials = state.scheduledTrials.some((trial) => trial.status === "scheduled");
-  const now = useGameTime(true, hasPendingTrials ? 1_000 : 60_000);
+  const now = useGameTime(
+    true,
+    hasPendingTrials ? GAME_CONFIG.gameTickMs : 60_000,
+  );
 
   return (
     <main className="overview-view calendar-view">
@@ -106,16 +111,12 @@ export function CalendarView({
                       <span>{timing}</span>
                       <strong>{progress}%</strong>
                     </div>
-                    <div
+                    <ProgressBar
                       className="trial-progress"
-                      role="progressbar"
-                      aria-label={`Avanzamento lezione di prova di ${contactName}`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={progress}
-                    >
-                      <span style={{ width: `${progress}%` }} />
-                    </div>
+                      label={`Avanzamento lezione di prova di ${contactName}`}
+                      value={progress}
+                      durationMs={trial.resolvesAt - trial.startsAt}
+                    />
                   </div>
                   <button
                     type="button"

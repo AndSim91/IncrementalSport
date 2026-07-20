@@ -11,6 +11,7 @@ import { gameReducer } from "./engine";
 import { freezeGameState } from "./offline";
 import { loadGame, saveGame } from "./save";
 import { createSaveScheduler, type SaveScheduler } from "./saveScheduler";
+import type { GameSaveStatus } from "./saveStatus";
 import { getNextGameTickDelay } from "./gameScheduler";
 import type { GameAction } from "./types";
 
@@ -21,12 +22,23 @@ export function useGameEngine() {
   const pausedAtRef = useRef<number | null>(null);
   const saveSchedulerRef = useRef<SaveScheduler | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const savePausedGame = useCallback((currentState: typeof state, now = Date.now()) => {
+  const [saveStatus, setSaveStatus] = useState<GameSaveStatus>(() => ({
+    phase: "pending",
+    lastSavedAt: null,
+    nextAutoSaveAt: Date.now() + GAME_CONFIG.saveIntervalMs,
+  }));
+  const persistGame = useCallback((currentState: typeof state, now = Date.now()) => {
     const pausedAt = pausedAtRef.current;
     const stateToSave = pausedAt === null
       ? currentState
       : freezeGameState(currentState, now, now - pausedAt);
-    return saveGame(stateToSave, now);
+    const saved = saveGame(stateToSave, now);
+    setSaveStatus((current) => ({
+      ...current,
+      phase: saved ? "saved" : "error",
+      lastSavedAt: saved ? now : current.lastSavedAt,
+    }));
+    return saved;
   }, []);
 
   useLayoutEffect(() => {
@@ -34,6 +46,10 @@ export function useGameEngine() {
     if (observedStateRef.current !== state) {
       observedStateRef.current = state;
       saveSchedulerRef.current?.markDirty(state);
+      setSaveStatus((current) => ({
+        ...current,
+        phase: current.phase === "error" ? "error" : "pending",
+      }));
     }
   }, [state]);
 
@@ -73,17 +89,38 @@ export function useGameEngine() {
   }, [isPaused, state]);
 
   useEffect(() => {
-    const saveScheduler = createSaveScheduler(stateRef.current, savePausedGame);
+    const saveScheduler = createSaveScheduler(stateRef.current, persistGame);
     saveSchedulerRef.current = saveScheduler;
-    const stopScheduler = saveScheduler.start(GAME_CONFIG.saveIntervalMs);
-    const saveOnExit = () => saveScheduler.flush();
+    const stopScheduler = saveScheduler.start(
+      GAME_CONFIG.saveIntervalMs,
+      (nextAutoSaveAt) => setSaveStatus((current) => ({
+        ...current,
+        nextAutoSaveAt,
+      })),
+    );
+    saveScheduler.flush();
+    const saveOnExit = () => saveScheduler.saveNow();
+    const saveWhenHidden = () => {
+      if (document.visibilityState === "hidden") saveScheduler.saveNow();
+    };
     window.addEventListener("beforeunload", saveOnExit);
+    window.addEventListener("pagehide", saveOnExit);
+    document.addEventListener("visibilitychange", saveWhenHidden);
     return () => {
       stopScheduler();
       window.removeEventListener("beforeunload", saveOnExit);
-      saveSchedulerRef.current = null;
+      window.removeEventListener("pagehide", saveOnExit);
+      document.removeEventListener("visibilitychange", saveWhenHidden);
+      if (saveSchedulerRef.current === saveScheduler) {
+        saveSchedulerRef.current = null;
+      }
     };
-  }, [savePausedGame]);
+  }, [persistGame]);
+
+  const saveNow = useCallback(
+    () => saveSchedulerRef.current?.saveNow() ?? false,
+    [],
+  );
 
   const dispatchAction = useCallback((action: GameAction) => {
     if (action.type === "REPLACE_STATE" && pausedAtRef.current !== null) {
@@ -119,5 +156,7 @@ export function useGameEngine() {
     getGameNow,
     isPaused,
     togglePause,
+    saveStatus,
+    saveNow,
   };
 }

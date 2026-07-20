@@ -42,11 +42,11 @@ function compareText(left: string, right: string): number {
   return left.localeCompare(right, "it", { numeric: true, sensitivity: "base" });
 }
 
-function getMemberStudent(contact: Contact, context: MemberSortContext) {
+export function getMemberStudent(contact: Contact, context: MemberSortContext) {
   return context.collaboratorsByContactId.get(contact.id) ?? contact;
 }
 
-function getVisibleScore(
+export function getMemberVisibleScore(
   contact: Contact,
   key: "arena" | "style",
   context: MemberSortContext,
@@ -56,7 +56,10 @@ function getVisibleScore(
   return getContactPreparation(contact, forms)[key];
 }
 
-function getNextFormLabel(contact: Contact, context: MemberSortContext): string | null {
+export function getMemberNextFormLabel(
+  contact: Contact,
+  context: MemberSortContext,
+): string | null {
   if (context.collaboratorsByContactId.has(contact.id)) return "Collaboratore";
   if (contact.training) return getTrainingCourseTitle(contact.training.formId);
   const nextForm = getAvailableForms(
@@ -136,8 +139,8 @@ function compareMembers(
     case "arena":
     case "style":
       return compareNullable(
-        getVisibleScore(left, sort.key, context),
-        getVisibleScore(right, sort.key, context),
+        getMemberVisibleScore(left, sort.key, context),
+        getMemberVisibleScore(right, sort.key, context),
         (leftScore, rightScore) => leftScore - rightScore,
         sort.direction,
       );
@@ -146,8 +149,8 @@ function compareMembers(
       break;
     case "next-form":
       return compareNullable(
-        getNextFormLabel(left, context),
-        getNextFormLabel(right, context),
+        getMemberNextFormLabel(left, context),
+        getMemberNextFormLabel(right, context),
         compareText,
         sort.direction,
       );

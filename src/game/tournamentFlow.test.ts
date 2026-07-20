@@ -265,23 +265,20 @@ describe("tournament reward effects", () => {
 
   it("keeps both Champion rewards Legendary when two profiles are already enrolled", () => {
     const initial = rewardState();
-    const withSecondLegendary = applyTournamentRewards(initial, resultWithReward({
-      discipline: "arena",
-      position: 1,
-      euros: 50_000,
-      contacts: 0,
-      bonus: { kind: "enrollment", rarity: "legendary" },
-    }), 2_000);
-    const existingLegendaryCount = withSecondLegendary.contacts.filter(
+    const withTwoLegendaries = applyTournamentRewards(initial, resultWithRewards([
+      getTournamentReward("champions", "arena", 1),
+      getTournamentReward("champions", "style", 1),
+    ]), 2_000);
+    const existingLegendaryCount = withTwoLegendaries.contacts.filter(
       (contact) => contact.status === "enrolled" && contact.rarity === "legendary",
     ).length;
 
-    const rewarded = applyTournamentRewards(withSecondLegendary, resultWithRewards([
+    const rewarded = applyTournamentRewards(withTwoLegendaries, resultWithRewards([
       getTournamentReward("champions", "arena", 1),
       getTournamentReward("champions", "style", 1),
     ]), 3_000);
     const newTournamentContacts = rewarded.contacts
-      .slice(withSecondLegendary.contacts.length);
+      .slice(withTwoLegendaries.contacts.length);
 
     expect(existingLegendaryCount).toBe(2);
     expect(newTournamentContacts).toHaveLength(2);

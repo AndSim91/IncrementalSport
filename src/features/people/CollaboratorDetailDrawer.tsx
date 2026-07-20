@@ -116,6 +116,7 @@ export function CollaboratorDetailDrawer({
                   className="collaborator-progress-bar"
                   label={automation.progressLabel ?? automation.title}
                   value={automation.progress}
+                  durationMs={automation.durationMs}
                 />
               </>
             )}

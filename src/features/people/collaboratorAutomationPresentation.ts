@@ -1,4 +1,6 @@
 import { getEmailBuildLength } from "../../content/emailBuild";
+import { getCollaboratorProductivity } from "../../content/forms";
+import { getUpgradeEffectTotal } from "../../content/upgrades";
 import { GAME_CONFIG } from "../../game/config";
 import { getEffectiveDamagedSwords } from "../../game/equipment";
 import { selectActiveEmail } from "../../game/selectors";
@@ -15,6 +17,7 @@ export interface CollaboratorAutomationPresentation {
   detail?: string;
   progress?: number;
   progressLabel?: string;
+  durationMs?: number;
 }
 
 function getTimedProgress(startedAt: number, completesAt: number, now: number): number {
@@ -22,6 +25,37 @@ function getTimedProgress(startedAt: number, completesAt: number, now: number): 
   return duration <= 0
     ? 100
     : Math.min(100, Math.max(0, Math.round(((now - startedAt) / duration) * 100)));
+}
+
+function getAutomationCycleDurationMs(
+  state: GameState,
+  assignment: Exclude<CollaboratorAssignment, null>,
+  work = 1,
+): number | undefined {
+  const productivity = state.collaborators.reduce(
+    (total, collaborator) => collaborator.assignment === assignment
+      ? total + getCollaboratorProductivity(collaborator, assignment)
+      : total,
+    0,
+  );
+  if (productivity <= 0) return undefined;
+  const automationMultiplier = 1 + getUpgradeEffectTotal(
+    state.upgrades,
+    "automationMultiplier",
+  );
+  const effectiveProductivity = productivity * automationMultiplier;
+  if (assignment === "lessons") {
+    return GAME_CONFIG.lessonImprovementIntervalMs / effectiveProductivity;
+  }
+  if (assignment === "social") {
+    const socialMultiplier = 1 + getUpgradeEffectTotal(state.upgrades, "socialMultiplier");
+    return GAME_CONFIG.socialAutomationIntervalMs /
+      (effectiveProductivity * socialMultiplier);
+  }
+  if (assignment === "equipment") {
+    return GAME_CONFIG.equipmentRepairIntervalMs * work / effectiveProductivity;
+  }
+  return undefined;
 }
 
 export function getCollaboratorAutomationPresentation({
@@ -50,6 +84,16 @@ export function getCollaboratorAutomationPresentation({
       detail: "Scrittura email in corso",
       progress,
       progressLabel: `Scrittura di ${activeEmail.subject}`,
+      durationMs: length / Math.max(
+        Number.EPSILON,
+        state.collaborators.reduce(
+          (total, collaborator) => collaborator.assignment === "writing"
+            ? total + getCollaboratorProductivity(collaborator, "writing")
+            : total,
+          0,
+        ) * GAME_CONFIG.collaboratorWritingPerSecond * state.player.writingPower *
+          (1 + getUpgradeEffectTotal(state.upgrades, "automationMultiplier")),
+      ) * 1_000,
     };
   }
 
@@ -63,6 +107,7 @@ export function getCollaboratorAutomationPresentation({
       detail: event.location,
       progress: getTimedProgress(event.startedAt, event.resolvesAt, now),
       progressLabel: event.title,
+      durationMs: event.resolvesAt - event.startedAt,
     };
   }
 
@@ -75,6 +120,7 @@ export function getCollaboratorAutomationPresentation({
         : "Nessun atleta migliorato finora",
       progress,
       progressLabel: "Progresso miglioramento atleta",
+      durationMs: getAutomationCycleDurationMs(state, "lessons"),
     };
   }
 
@@ -87,6 +133,7 @@ export function getCollaboratorAutomationPresentation({
       detail: `Ciclo base ${GAME_CONFIG.socialAutomationIntervalMs / 1_000} s · ${formatPercent(getSocialTrialChance(state.school.followers))} prova · ${formatPercent(getSocialContactChance(state.school.followers))} nuovo contatto`,
       progress: Math.min(100, Math.floor(state.automation.socialBuffer * 100)),
       progressLabel: "Progresso ciclo pubblicitario Social",
+      durationMs: getAutomationCycleDurationMs(state, "social"),
     };
   }
 
@@ -113,6 +160,11 @@ export function getCollaboratorAutomationPresentation({
       progressLabel: isRepairingSword
         ? "Progresso riparazione spada"
         : "Progresso riduzione usura",
+      durationMs: getAutomationCycleDurationMs(
+        state,
+        "equipment",
+        isRepairingSword ? GAME_CONFIG.equipmentSwordRepairWork : 1,
+      ),
     };
   }
 

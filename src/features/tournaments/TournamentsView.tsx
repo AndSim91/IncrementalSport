@@ -1,8 +1,8 @@
 import { memo, useMemo, useState } from "react";
+import { Icon } from "../../components/common/Icon";
 import { TabButton } from "../../components/common/TabButton";
 import { TOURNAMENT_DEFINITIONS } from "../../content/tournaments";
-import type { GameState, TournamentParticipant, TournamentResult } from "../../game/types";
-import { TournamentAthletes } from "./TournamentAthletes";
+import type { GameState, TournamentDiscipline, TournamentParticipant, TournamentResult } from "../../game/types";
 import { TournamentOverview } from "./TournamentOverview";
 import { TournamentResults } from "./TournamentResults";
 import { useVirtualRows } from "../../shared/useVirtualRows";
@@ -12,58 +12,84 @@ import {
   type TournamentTab,
 } from "./tournamentPresentation";
 
-const TOURNAMENT_HALL_ROW_HEIGHT = 64;
+const TOURNAMENT_HALL_ROW_HEIGHT = 274;
 
 type TournamentHallWinner = {
-  kind: "winner";
   id: string;
   participant: TournamentParticipant;
   position: 1 | 2 | 3;
-  detail: string;
+  metric: string;
 };
 
-type TournamentHallRow = TournamentHallWinner | {
-  kind: "tournament";
+type TournamentHallRow = {
   id: string;
   label: string;
   level: string;
   season: number;
-  winnerCount: number;
+  arena: TournamentHallWinner[];
+  style: TournamentHallWinner[];
 };
+
+function buildTournamentHallDiscipline(
+  result: GameState["tournaments"]["results"][number],
+  discipline: TournamentDiscipline,
+): TournamentHallWinner[] {
+  const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
+  const podium = discipline === "arena" ? result.arenaPodium : result.stylePodium;
+  return podium
+    .map((entry): TournamentHallWinner | undefined => {
+      const participant = participantById.get(entry.participantId);
+      if (!participant?.ownedContactId) return undefined;
+      return {
+        id: `${result.id}-${entry.discipline}-${entry.position}`,
+        participant,
+        position: entry.position,
+        metric: discipline === "arena" ? "Arena" : entry.score.toFixed(3),
+      };
+    })
+    .filter((entry): entry is TournamentHallWinner => Boolean(entry));
+}
 
 function getTournamentHallRows(
   results: GameState["tournaments"]["results"],
 ): TournamentHallRow[] {
-  return [...results].reverse().flatMap((result) => {
-    const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
-    const winners = [...result.arenaPodium, ...result.stylePodium]
-      .map((entry): TournamentHallWinner | undefined => {
-        const participant = participantById.get(entry.participantId);
-        if (!participant?.ownedContactId) return undefined;
-        return {
-          kind: "winner",
-          id: `${result.id}-${entry.discipline}-${entry.position}`,
-          participant,
-          position: entry.position,
-          detail: entry.discipline === "arena" ? "Arena" : `Stile ${entry.score.toFixed(3)}`,
-        };
-      })
-      .filter((entry): entry is TournamentHallWinner => Boolean(entry));
+  return [...results].reverse().map((result) => ({
+    id: result.id,
+    label: TOURNAMENT_DEFINITIONS[result.level].label,
+    level: levelShortLabel[result.level],
+    season: result.season,
+    arena: buildTournamentHallDiscipline(result, "arena"),
+    style: buildTournamentHallDiscipline(result, "style"),
+  }));
+}
 
-    if (winners.length === 0) return [];
-
-    return [
-      {
-        kind: "tournament" as const,
-        id: `${result.id}-header`,
-        label: TOURNAMENT_DEFINITIONS[result.level].label,
-        level: levelShortLabel[result.level],
-        season: result.season,
-        winnerCount: winners.length,
-      },
-      ...winners,
-    ];
-  });
+function TournamentHallDiscipline({
+  discipline,
+  entries,
+}: {
+  discipline: TournamentDiscipline;
+  entries: readonly TournamentHallWinner[];
+}) {
+  const label = discipline === "arena" ? "Arena" : "Stile";
+  return (
+    <section className={`tournament-hall-discipline is-${discipline}`} aria-label={label}>
+      <header>
+        <Icon name={discipline === "arena" ? "trophy" : "spark"} />
+        <h4>{label}</h4>
+      </header>
+      {entries.length > 0 ? (
+        <ol className="tournament-hall-podium">
+          {entries.map((entry) => (
+            <li key={entry.id} className={entry.position === 1 ? "is-first" : ""}>
+              <b>{entry.position}°</b>
+              <strong>{participantName(entry.participant)}</strong>
+              <small>{entry.metric}</small>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="tournament-hall-empty-discipline">Nessun vincitore della scuola</p>}
+    </section>
+  );
 }
 
 const TournamentsHall = memo(function TournamentsHall({
@@ -74,7 +100,7 @@ const TournamentsHall = memo(function TournamentsHall({
   schoolName: string;
 }) {
   const entries = useMemo(() => getTournamentHallRows(results), [results]);
-  const winnerCount = entries.filter((entry) => entry.kind === "winner").length;
+  const winnerCount = entries.reduce((total, entry) => total + entry.arena.length + entry.style.length, 0);
   const virtualRows = useVirtualRows({
     count: entries.length,
     rowHeight: TOURNAMENT_HALL_ROW_HEIGHT,
@@ -97,21 +123,22 @@ const TournamentsHall = memo(function TournamentsHall({
           <div className="virtual-list-spacer" style={{ height: virtualRows.paddingTop }} aria-hidden="true" />
         ) : null}
         {renderedEntries.map((entry) => (
-          entry.kind === "tournament" ? (
-            <div key={entry.id} className="tournament-hall-group">
+          <article key={entry.id} className="tournament-hall-tournament">
+            <header>
               <div>
-                <h3>{entry.label}</h3>
-                <span>Livello {entry.level} · Stagione {entry.season}</span>
+                <Icon name="trophy" />
+                <div>
+                  <h3>{entry.label}</h3>
+                  <small>Livello {entry.level} · Stagione {entry.season}</small>
+                </div>
               </div>
-              <strong>{entry.winnerCount} piazzamenti</strong>
+              <em>{schoolName}</em>
+            </header>
+            <div className="tournament-hall-disciplines">
+              <TournamentHallDiscipline discipline="arena" entries={entry.arena} />
+              <TournamentHallDiscipline discipline="style" entries={entry.style} />
             </div>
-          ) : (
-            <article key={entry.id} className="is-owned">
-              <b>{entry.position}°</b>
-              <span className={entry.participant.rarity === "secret-legendary" ? "secret-legendary" : ""}><strong>{participantName(entry.participant)}</strong><small>{entry.detail}</small></span>
-              <em>{entry.participant.schoolName}</em>
-            </article>
-          )
+          </article>
         ))}
         {virtualRows.paddingBottom > 0 ? (
           <div className="virtual-list-spacer" style={{ height: virtualRows.paddingBottom }} aria-hidden="true" />
@@ -122,19 +149,20 @@ const TournamentsHall = memo(function TournamentsHall({
   );
 });
 
-export function TournamentsView({ state }: { state: GameState }) {
+export function TournamentsView({
+  state,
+  onOpenAthletes = () => undefined,
+}: {
+  state: GameState;
+  onOpenAthletes?: () => void;
+}) {
   const [tab, setTab] = useState<TournamentTab>("overview");
   const [selectedResultId, setSelectedResultId] = useState<string>();
-  const [athleteQualificationFilter, setAthleteQualificationFilter] = useState<"all" | "qualified">("all");
   const latestResult = state.tournaments.results.at(-1);
   const selectedResult = state.tournaments.results.find((result) => result.id === selectedResultId) ?? latestResult;
   const openResult = (result: TournamentResult) => {
     setSelectedResultId(result.id);
     setTab("results");
-  };
-  const openAthletes = (qualifiedOnly: boolean) => {
-    setAthleteQualificationFilter(qualifiedOnly ? "qualified" : "all");
-    setTab("athletes");
   };
 
   return (
@@ -142,13 +170,11 @@ export function TournamentsView({ state }: { state: GameState }) {
       <header><div><h1>Tornei</h1><p>Segui la stagione, prepara la squadra, conquista la Champion’s Arena</p></div></header>
       <div className="people-tabs tournament-tabs" role="tablist" aria-label="Sezioni tornei">
         <TabButton active={tab === "overview"} onClick={() => setTab("overview")}>Panoramica</TabButton>
-        <TabButton active={tab === "athletes"} onClick={() => openAthletes(false)}>Atleti</TabButton>
         <TabButton active={tab === "results"} onClick={() => setTab("results")}>Risultati</TabButton>
         <TabButton active={tab === "hall"} onClick={() => setTab("hall")}>Albo d'oro</TabButton>
       </div>
 
       {tab === "overview" ? <TournamentOverview state={state} onOpenResult={openResult} /> : null}
-      {tab === "athletes" ? <TournamentAthletes state={state} initialQualificationFilter={athleteQualificationFilter} /> : null}
       {tab === "results" ? (
         selectedResult ? (
           <TournamentResults
@@ -156,7 +182,7 @@ export function TournamentsView({ state }: { state: GameState }) {
             results={state.tournaments.results}
             onSelectResult={setSelectedResultId}
             onBackToOverview={() => setTab("overview")}
-            onViewQualified={() => openAthletes(true)}
+            onViewQualified={onOpenAthletes}
           />
         ) : <p className="empty-tournaments tournament-empty-page">Nessun torneo disputato.</p>
       ) : null}

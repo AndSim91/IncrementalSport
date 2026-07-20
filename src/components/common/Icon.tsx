@@ -22,6 +22,8 @@ export type IconName =
   | "trophy"
   | "pause"
   | "play"
+  | "check"
+  | "warning"
   | "admin";
 
 const paths: Record<IconName, React.ReactNode> = {
@@ -46,6 +48,8 @@ const paths: Record<IconName, React.ReactNode> = {
   trophy: <><path d="M8 4h8v4c0 3-1.6 5-4 5s-4-2-4-5V4Z"/><path d="M8 6H5v2c0 2 1.2 3 3.4 3M16 6h3v2c0 2-1.2 3-3.4 3M12 13v4m-4 3h8m-6-3h4"/></>,
   pause: <><path d="M8 5v14M16 5v14"/></>,
   play: <path d="m8 5 11 7-11 7V5Z" />,
+  check: <path d="m5 12 4 4L19 6" />,
+  warning: <><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5m0 3h.01"/></>,
   admin: <><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0Zm-1 7c.6-2 1.9-3 4-3s3.4 1 4 3"/></>,
 };
 

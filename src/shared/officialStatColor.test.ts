@@ -33,10 +33,10 @@ describe("getOfficialStatPresentation", () => {
     expectStop(187.5, 150, 225, "50%", "50%");
   });
 
-  it("moves from red to cyan at 225 and adds the outline only from 275", () => {
+  it("moves from red to cyan at 225 and adds the outline only from 300", () => {
     expectStop(225, 225, 300, "100%", "0%");
     expectStop(262.5, 225, 300, "50%", "50%");
-    expectStop(275, 225, 300, "33.333333333333336%", "66.66666666666666%", true);
+    expectStop(300, 225, 300, "33.333333333333336%", "66.66666666666666%", true);
     expectStop(300, 300, 300, "100%", "0%", true);
     expectStop(400, 300, 300, "100%", "0%", true);
   });

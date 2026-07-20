@@ -54,7 +54,7 @@ export function EventsView({
     () => state.acquisitionEvents.filter((event) => event.status === "running"),
     [state.acquisitionEvents],
   );
-  const now = useGameTime(true, 1_000);
+  const now = useGameTime(true, GAME_CONFIG.gameTickMs);
   const runningByDefinition = useMemo(
     () => new Map(runningEvents.map((event) => [event.definitionId, event])),
     [runningEvents],
@@ -165,7 +165,12 @@ export function EventsView({
                 {matching ? (
                   <div className="event-progress-block">
                     <div className="event-progress-label"><span>Attività in corso</span><strong>{remainingSeconds} s rimanenti · {progress}%</strong></div>
-                    <ProgressBar className="event-progress" label={`Avanzamento ${definition.title}`} value={progress} />
+                    <ProgressBar
+                      className="event-progress"
+                      label={`Avanzamento ${definition.title}`}
+                      value={progress}
+                      durationMs={matching.resolvesAt - matching.startedAt}
+                    />
                   </div>
                 ) : null}
               </div>

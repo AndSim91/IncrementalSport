@@ -10,6 +10,13 @@ describe("OverviewView settings", () => {
     onExport: vi.fn(),
     onImport: vi.fn(() => true),
     onReset: vi.fn(),
+    onForceUpdate: vi.fn(),
+    saveStatus: {
+      phase: "saved" as const,
+      lastSavedAt: 1_000,
+      nextAutoSaveAt: 61_000,
+    },
+    onSaveNow: vi.fn(),
     onUpdateProfileName: vi.fn(),
     onFoundSchool: vi.fn(),
     darkMode: false,
@@ -21,9 +28,9 @@ describe("OverviewView settings", () => {
   it("requires a second explicit click before resetting", () => {
     render(<OverviewView view="settings" state={createInitialState(1_000)} {...callbacks} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Azzera salvataggio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Azzera partita" }));
     expect(callbacks.onReset).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: /Conferma: azzera definitivamente/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Conferma azzeramento" }));
     expect(callbacks.onReset).toHaveBeenCalledOnce();
   });
 
@@ -60,5 +67,31 @@ describe("OverviewView settings", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Tema scuro/ }));
 
     expect(callbacks.onDarkModeChange).toHaveBeenCalledWith(true);
+  });
+
+  it("offers a forced game update", () => {
+    render(<OverviewView view="settings" state={createInitialState(1_000)} {...callbacks} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Controlla aggiornamenti" }));
+
+    expect(callbacks.onForceUpdate).toHaveBeenCalledOnce();
+  });
+
+  it("shows a reliable save status and allows an immediate save", () => {
+    render(<OverviewView view="settings" state={createInitialState(1_000)} {...callbacks} />);
+
+    expect(screen.getByRole("heading", { name: "Partita salvata" })).toBeInTheDocument();
+    expect(screen.getByText(/Salvataggio automatico ogni 1 minuto/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Salva ora" }));
+
+    expect(callbacks.onSaveNow).toHaveBeenCalledOnce();
+  });
+
+  it("shows prestige as coming soon and disables its controls", () => {
+    render(<OverviewView view="settings" state={createInitialState(1_000)} {...callbacks} />);
+
+    expect(screen.getByLabelText("Prestigio non disponibile: Coming Soon")).toBeInTheDocument();
+    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fonda la nuova scuola", hidden: true })).toBeDisabled();
   });
 });

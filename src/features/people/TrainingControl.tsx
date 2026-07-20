@@ -19,6 +19,7 @@ import {
   hasFreeFormTraining,
 } from "../../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "../../game/calendar";
+import { GAME_CONFIG } from "../../game/config";
 import { useGameTime } from "../../game/GameTimeContext";
 import {
   selectAvailableInstructor,
@@ -121,6 +122,7 @@ function InstructorTeachingSummary({
               className="instructor-student-progress-bar"
               label={`Formazione di ${entry.displayName}`}
               value={progress}
+              durationMs={entry.training.completesAt - entry.training.startedAt}
             />
           </div>
         );
@@ -139,7 +141,7 @@ export function InstructorCompactActivity({
   const teaching = useInstructorTeachingEntries(state, collaborator.id);
   const enabled = collaborator.autoTeachingEnabled !== false;
   const capacity = selectInstructorCapacity(state);
-  const now = useGameTime(teaching.length > 0, 1_000);
+  const now = useGameTime(teaching.length > 0, GAME_CONFIG.gameTickMs);
 
   if (teaching.length === 0) {
     return (
@@ -173,6 +175,7 @@ export function InstructorCompactActivity({
                 className="collaborator-progress-bar"
                 label={`Formazione di ${entry.displayName}`}
                 value={progress}
+                durationMs={entry.training.completesAt - entry.training.startedAt}
               />
             </span>
           </span>
@@ -245,7 +248,7 @@ export function InstructorPanel({
   const teachingCount = selectInstructorTeachingCount(state, collaborator.id);
   const capacity = selectInstructorCapacity(state);
   const teaching = useInstructorTeachingEntries(state, collaborator.id);
-  const now = useGameTime(teaching.length > 0, 1_000);
+  const now = useGameTime(teaching.length > 0, GAME_CONFIG.gameTickMs);
   const enabled = collaborator.autoTeachingEnabled !== false;
   const hasMissingInstructorCertificates = getInstructorConversionCost(collaborator) > 0;
   const instructorCertificatesCost = hasFreeFormTraining(state.upgrades)
@@ -312,7 +315,7 @@ export function TrainingControl({
   variant?: "default" | "compact";
 }) {
   const [selectedFormId, setSelectedFormId] = useState<FormId | "">("");
-  const now = useGameTime(Boolean(student.training), 1_000);
+  const now = useGameTime(Boolean(student.training), GAME_CONFIG.gameTickMs);
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
   const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   const annualTrainingAvailable =
@@ -347,6 +350,7 @@ export function TrainingControl({
           className="training-progress-bar"
           label={`Formazione di ${displayName}`}
           value={progress}
+          durationMs={student.training.completesAt - student.training.startedAt}
         />
       </div>
     );

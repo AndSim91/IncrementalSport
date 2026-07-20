@@ -1,5 +1,5 @@
 import { fireEvent, render, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { addAdminMembers } from "../../game/adminFlow";
 import { createInitialState } from "../../game/engine";
 import { getEligibleSchoolContacts, simulateTournament } from "../../game/tournamentSimulation";
@@ -46,22 +46,7 @@ function createCompletedTournamentState() {
 }
 
 describe("TournamentsView", () => {
-  it("virtualizes a large athlete roster", () => {
-    const state = createStateWithForms(160);
-    const { container } = render(<TournamentsView state={state} />);
-    const view = within(container);
-
-    fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
-
-    const renderedRows = container.querySelectorAll(
-      ".athlete-table tbody tr:not(.virtual-table-spacer)",
-    );
-    expect(renderedRows.length).toBeGreaterThan(0);
-    expect(renderedRows.length).toBeLessThan(40);
-    expect(view.getByText("160 atleti")).toBeVisible();
-  });
-
-  it("shows the tournament overview and hides official stats before Course X", () => {
+  it("shows the tournament overview without duplicating the athletes page", () => {
     const state = createStateWithForms();
     const { container } = render(<TournamentsView state={state} />);
     const view = within(container);
@@ -69,8 +54,7 @@ describe("TournamentsView", () => {
     expect(view.getByText("Calendario della stagione")).toBeVisible();
     expect(view.getByText("6 iscritti")).toBeVisible();
     expect(view.getByText("al Torneo Scolastico")).toBeVisible();
-    fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
-    expect(view.getAllByText("???").length).toBeGreaterThan(0);
+    expect(view.queryByRole("tab", { name: "Atleti" })).not.toBeInTheDocument();
   });
 
   it("lists only the athletes in the current official qualification", () => {
@@ -122,68 +106,6 @@ describe("TournamentsView", () => {
     expect(qualifiedTeam.getByText("Nessun atleta qualificato per il Torneo Nazionale anno 1.")).toBeVisible();
     expect(qualifiedTeam.getByText("In attesa del prossimo Torneo Scolastico.")).toBeVisible();
     expect(within(container).queryByText("Forma della delegazione")).not.toBeInTheDocument();
-  });
-
-  it("shows the experience count and includes its bonus in Arena and Style", () => {
-    const initial = createStateWithForms();
-    const target = initial.contacts.find((contact) => contact.status === "enrolled")!;
-    const state = {
-      ...initial,
-      contacts: initial.contacts.map((contact) => contact.id === target.id
-        ? {
-            ...contact,
-            forms: ["form-1" as const, "course-x" as const],
-            arenaBase: 100,
-            styleBase: 50,
-            tournamentExperience: 10,
-          }
-        : contact),
-    };
-    const { container } = render(<TournamentsView state={state} />);
-    const view = within(container);
-
-    fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
-    const athleteName = view.getByText(`${target.firstName} ${target.lastName}`);
-    const athleteRow = within(athleteName.closest("tr")!);
-    const arena = athleteRow.getByText("143.000");
-    const style = athleteRow.getByText("71.500");
-
-    expect(arena).toHaveClass("official-stat-value");
-    expect(arena.style.getPropertyValue("--official-stat-from")).toBe("var(--official-stat-100)");
-    expect(arena.style.getPropertyValue("--official-stat-to")).toBe("var(--official-stat-150)");
-    expect(style).toHaveClass("official-stat-value");
-    expect(style.style.getPropertyValue("--official-stat-from")).toBe("var(--official-stat-50)");
-    expect(style.style.getPropertyValue("--official-stat-to")).toBe("var(--official-stat-100)");
-    expect(athleteRow.getByText("10", { exact: true })).toBeVisible();
-  });
-
-  it("colors Arena and Style red when their prepared value exceeds 150", () => {
-    const initial = createStateWithForms();
-    const target = initial.contacts.find((contact) => contact.status === "enrolled")!;
-    const state = {
-      ...initial,
-      contacts: initial.contacts.map((contact) => contact.id === target.id
-        ? {
-            ...contact,
-            forms: ["form-1" as const, "course-x" as const],
-            arenaBase: 100,
-            styleBase: 100,
-            tournamentExperience: 20,
-          }
-        : contact),
-    };
-    const { container } = render(<TournamentsView state={state} />);
-    const view = within(container);
-
-    fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
-    const athleteRow = within(view.getByText(`${target.firstName} ${target.lastName}`).closest("tr")!);
-    const preparedStats = athleteRow.getAllByText("176.000");
-
-    expect(preparedStats).toHaveLength(2);
-    preparedStats.forEach((stat) => {
-      expect(stat.style.getPropertyValue("--official-stat-from")).toBe("var(--official-stat-150)");
-      expect(stat.style.getPropertyValue("--official-stat-to")).toBe("var(--official-stat-225)");
-    });
   });
 
   it("opens a completed tournament directly from the calendar", () => {
@@ -325,7 +247,7 @@ describe("TournamentsView", () => {
     expect(view.getByRole("heading", { name: "Ottavi" })).toBeVisible();
   });
 
-  it("filters athletes and opens qualified athletes from results", () => {
+  it("opens the official athletes page from results", () => {
     const { state: completed, result } = createCompletedTournamentState();
     const qualifiedContactIds = completed.contacts
       .filter((contact) => contact.status === "enrolled")
@@ -343,15 +265,17 @@ describe("TournamentsView", () => {
         immuneContactIds: qualifiedContactIds,
       },
     };
-    const { container } = render(<TournamentsView state={state} />);
+    const onOpenAthletes = vi.fn();
+    const { container } = render(
+      <TournamentsView state={state} onOpenAthletes={onOpenAthletes} />,
+    );
     const view = within(container);
 
     fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
     fireEvent.click(view.getByRole("button", { name: "Vedi qualificati" }));
 
-    expect(view.getByRole("tab", { name: "Atleti" })).toHaveAttribute("aria-selected", "true");
-    expect(view.getByRole("combobox", { name: "Qualificazione" })).toHaveValue("qualified");
-    expect(container.querySelectorAll(".athlete-table tbody tr")).toHaveLength(2);
+    expect(onOpenAthletes).toHaveBeenCalledTimes(1);
+    expect(view.queryByRole("tab", { name: "Atleti" })).not.toBeInTheDocument();
   });
 
   it("highlights school athletes in the podium and group table", () => {
@@ -457,7 +381,10 @@ describe("TournamentsView", () => {
 
     expect(view.getByRole("heading", { name: "Torneo Accademico Alpha" })).toBeVisible();
     expect(view.getByText("Livello Accademico · Stagione 1")).toBeVisible();
+    expect(view.getByRole("heading", { name: "Arena" })).toBeVisible();
+    expect(view.getByRole("heading", { name: "Stile" })).toBeVisible();
     expect(view.getByText(`${schoolWinner.firstName} ${schoolWinner.lastName}`)).toBeVisible();
+    expect(view.getByText("Nessun vincitore della scuola")).toBeVisible();
     expect(view.queryByText(`${externalWinner.firstName} ${externalWinner.lastName}`)).not.toBeInTheDocument();
   });
 });

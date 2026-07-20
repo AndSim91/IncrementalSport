@@ -46,7 +46,7 @@ export function getOfficialStatPresentation(value: number): OfficialStatPresenta
   if (safeValue < 300) {
     return {
       style: createStyle(225, 300, (safeValue - 225) / 75),
-      outlined: safeValue >= 275,
+      outlined: safeValue >= 300,
     };
   }
   return { style: createStyle(300, 300, 0), outlined: true };

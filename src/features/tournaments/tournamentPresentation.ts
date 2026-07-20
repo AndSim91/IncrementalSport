@@ -12,7 +12,7 @@ import type {
   TournamentResult,
 } from "../../game/types";
 
-export type TournamentTab = "overview" | "athletes" | "results" | "hall";
+export type TournamentTab = "overview" | "results" | "hall";
 
 export const levelShortLabel: Record<TournamentLevel, string> = {
   school: "Scolastico",

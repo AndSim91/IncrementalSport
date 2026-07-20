@@ -5,8 +5,12 @@ type PersistGame = (state: GameState, now?: number) => boolean;
 export interface SaveScheduler {
   markDirty: (state: GameState) => void;
   flush: (now?: number) => boolean;
+  saveNow: (now?: number) => boolean;
   isDirty: () => boolean;
-  start: (intervalMs: number) => () => void;
+  start: (
+    intervalMs: number,
+    onNextSaveScheduled?: (nextSaveAt: number) => void,
+  ) => () => void;
 }
 
 export function createSaveScheduler(
@@ -19,14 +23,17 @@ export function createSaveScheduler(
   let savedRevision = 0;
   let currentState = initialState;
 
-  const flush = (now = Date.now()) => {
-    if (revision === savedRevision) return false;
-
+  const saveNow = (now = Date.now()) => {
     const revisionBeingSaved = revision;
     if (!persist(currentState, now)) return false;
 
     savedRevision = revisionBeingSaved;
     return true;
+  };
+
+  const flush = (now = Date.now()) => {
+    if (revision === savedRevision) return false;
+    return saveNow(now);
   };
 
   return {
@@ -35,9 +42,14 @@ export function createSaveScheduler(
       revision += 1;
     },
     flush,
+    saveNow,
     isDirty: () => revision !== savedRevision,
-    start: (intervalMs) => {
-      const intervalId = window.setInterval(() => flush(), intervalMs);
+    start: (intervalMs, onNextSaveScheduled) => {
+      onNextSaveScheduled?.(Date.now() + intervalMs);
+      const intervalId = window.setInterval(() => {
+        saveNow();
+        onNextSaveScheduled?.(Date.now() + intervalMs);
+      }, intervalMs);
       return () => window.clearInterval(intervalId);
     },
   };

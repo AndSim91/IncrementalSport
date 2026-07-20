@@ -1,0 +1,42 @@
+.progress-bar-linear.is-indeterminate > span {
+  width: 100%;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--blue-700) 0 7px,
+      var(--blue-500) 7px 14px
+    );
+  background-size: 20px 20px;
+  animation: progress-bar-shimmer 650ms linear infinite;
+  transition: none;
+}
+
+.progress-bar-circular {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--blue-600) var(--progress-value),
+    color-mix(in srgb, var(--blue-600) 18%, transparent) 0
+  );
+}
+
+.progress-bar-circular > span {
+  width: 10px;
+  height: 10px;
+  border-radius: inherit;
+  background: var(--surface);
+}
+
+@keyframes progress-bar-shimmer {
+  to { background-position: 20px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-linear.is-indeterminate > span {
+    animation-duration: 1.8s;
+  }
+}

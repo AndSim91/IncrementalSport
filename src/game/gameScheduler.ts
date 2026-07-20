@@ -7,8 +7,9 @@ import {
   getSendingEmails,
 } from "./runtimeIndexes";
 import type { GameState } from "./types";
+import { GAME_CONFIG } from "./config";
 
-export const AUTOMATION_HEARTBEAT_MS = 1_000;
+export const AUTOMATION_HEARTBEAT_MS = GAME_CONFIG.gameTickMs;
 const MAX_TIMEOUT_MS = 2_147_000_000;
 
 function earlier(current: number, candidate: number | undefined): number {

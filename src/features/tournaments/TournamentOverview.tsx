@@ -9,6 +9,7 @@ import {
   getContactPreparation,
   hasCompletedCourseX,
 } from "../../game/athleteStats";
+import { GAME_CONFIG } from "../../game/config";
 import { getEligibleSchoolContactsFromRoster } from "../../game/tournamentSimulation";
 import { useGameTime } from "../../game/GameTimeContext";
 import type { GameState, TournamentResult } from "../../game/types";
@@ -27,7 +28,7 @@ interface TournamentOverviewProps {
 
 export function TournamentOverview({ state, onOpenResult }: TournamentOverviewProps) {
   const upcoming = findUpcomingTournament(state);
-  const now = useGameTime(Boolean(upcoming), 1_000);
+  const now = useGameTime(Boolean(upcoming), GAME_CONFIG.gameTickMs);
   const upcomingDefinition = upcoming ? TOURNAMENT_DEFINITIONS[upcoming.level] : undefined;
   const qualification = state.tournaments.qualification;
   const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);

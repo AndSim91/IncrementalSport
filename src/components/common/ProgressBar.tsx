@@ -1,32 +1,54 @@
+import type { CSSProperties } from "react";
+import { GAME_CONFIG } from "../../game/config";
+
 interface ProgressBarProps {
   value: number;
   max?: number;
-  className: string;
+  className?: string;
   label?: string;
   ariaHidden?: boolean;
+  durationMs?: number;
+  variant?: "linear" | "circular";
+  title?: string;
 }
 
 export function ProgressBar({
   value,
   max = 100,
-  className,
+  className = "",
   label,
   ariaHidden = false,
+  durationMs,
+  variant = "linear",
+  title,
 }: ProgressBarProps) {
   const safeMax = Math.max(1, max);
   const boundedValue = Math.min(safeMax, Math.max(0, value));
   const percent = (boundedValue / safeMax) * 100;
+  const indeterminate = durationMs !== undefined && durationMs < GAME_CONFIG.gameTickMs;
+  const progressStyle = variant === "circular"
+    ? ({ "--progress-value": `${percent}%` } as CSSProperties)
+    : undefined;
+  const classes = [
+    "progress-bar",
+    `progress-bar-${variant}`,
+    indeterminate ? "is-indeterminate" : "",
+    className,
+  ].filter(Boolean).join(" ");
   return (
-    <div
-      className={className}
+    <span
+      className={classes}
       role={ariaHidden ? undefined : "progressbar"}
       aria-label={ariaHidden ? undefined : label}
       aria-hidden={ariaHidden || undefined}
       aria-valuemin={ariaHidden ? undefined : 0}
       aria-valuemax={ariaHidden ? undefined : safeMax}
-      aria-valuenow={ariaHidden ? undefined : boundedValue}
+      aria-valuenow={ariaHidden || indeterminate ? undefined : boundedValue}
+      aria-valuetext={ariaHidden || !indeterminate ? undefined : "Avanzamento in corso"}
+      title={title}
+      style={progressStyle}
     >
-      <span style={{ width: `${percent}%` }} />
-    </div>
+      <span style={variant === "linear" && !indeterminate ? { width: `${percent}%` } : undefined} />
+    </span>
   );
 }
