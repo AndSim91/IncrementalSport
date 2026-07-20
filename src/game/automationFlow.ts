@@ -149,11 +149,11 @@ export function processAutomation(
       automationMultiplier;
   const automatedCharacters = Math.floor(writingTotal);
   const hasEligibleAthletes = state.contacts.some((contact) => contact.status === "enrolled");
-  const lessonTotal = state.automation.lessonBuffer +
-    (hasEligibleAthletes
-      ? (elapsedMs / GAME_CONFIG.lessonImprovementIntervalMs) *
+  const lessonTotal = hasEligibleAthletes
+    ? state.automation.lessonBuffer +
+      (elapsedMs / GAME_CONFIG.lessonImprovementIntervalMs) *
         lessonProductivity * automationMultiplier
-      : 0);
+    : 0;
   const lessonImprovements = Math.floor(lessonTotal);
   const socialTotal =
     state.automation.socialBuffer +
@@ -178,7 +178,7 @@ export function processAutomation(
       ...state.automation,
       lastProcessedAt: now,
       writingBuffer: writingTotal - automatedCharacters,
-      lessonBuffer: lessonTotal - lessonImprovements,
+      lessonBuffer: hasEligibleAthletes ? lessonTotal - lessonImprovements : 0,
       socialBuffer: socialTotal - socialCycles,
       equipmentBuffer: equipmentRepair.remainingWork,
     },
@@ -210,6 +210,15 @@ export function processAutomation(
   if (lessonImprovements > 0) {
     const improved = improveRandomAthletes(nextState, lessonImprovements);
     nextState = improved.state;
+    nextState = {
+      ...nextState,
+      automation: {
+        ...nextState.automation,
+        lessonBuffer: hasEligibleAthletes
+          ? lessonTotal - improved.improvements
+          : 0,
+      },
+    };
     if (improved.improvements > 0) {
       nextState = dependencies.addCollaboratorMasteryExperience(
         nextState,

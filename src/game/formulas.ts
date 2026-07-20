@@ -23,14 +23,14 @@ export function getEnrollmentChance(
   rarity: PersonRarity = "common",
   previousFailures = 0,
 ) {
-  const lessonProductivity = state.collaborators
-    .filter((collaborator) => collaborator.assignment === "lessons")
+  const instructorProductivity = state.collaborators
+    .filter((collaborator) => collaborator.assignment === "instructor")
     .reduce((total, collaborator) => total + getCollaboratorBaseProductivity(collaborator), 0);
   const maximumUpgradeEffect = getUpgradeEffectMaximum("enrollmentMultiplier");
   const improvementProgress = clamp(
     (
       getUpgradeEffectTotal(state.upgrades, "enrollmentMultiplier") +
-      lessonProductivity * 0.1 +
+      instructorProductivity * 0.1 +
       (state.school.specialization === "accoglienza" ? 0.1 : 0)
     ) / maximumUpgradeEffect,
     0,

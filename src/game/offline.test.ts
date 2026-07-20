@@ -47,6 +47,35 @@ describe("offline progress disabled", () => {
     expect(result.state.contacts[0].training?.completesAt).toBe(112_000);
   });
 
+  it("does not run athletic preparation during an offline interval", () => {
+    const initial = createInitialState(1_000);
+    const athlete = {
+      ...initial.contacts[0],
+      status: "enrolled" as const,
+      arenaBase: 50,
+      styleBase: 50,
+    };
+    const state = {
+      ...initial,
+      contacts: [athlete],
+      collaborators: [{
+        id: "offline-preparator",
+        contactId: initial.contacts[1].id,
+        displayName: "Preparatore Atletico",
+        joinedAt: 1_000,
+        forms: [],
+        instructorForms: [],
+        assignment: "lessons" as const,
+        rarity: "legendary" as const,
+      }],
+    };
+    const result = simulateOfflineProgress(state, 121_000);
+
+    expect(result.state.contacts[0].arenaBase).toBe(50);
+    expect(result.state.contacts[0].styleBase).toBe(50);
+    expect(result.state.automation.lastImprovedAthleteId).toBeUndefined();
+  });
+
   it("freezes an explicit pause interval independently from the last save", () => {
     const initial = createInitialState(1_000);
     const paused = freezeGameState(initial, 51_000, 10_000);

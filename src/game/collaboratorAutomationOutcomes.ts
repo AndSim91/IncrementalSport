@@ -9,30 +9,64 @@ export function improveRandomAthletes(
   state: GameState,
   improvementCount: number,
 ): { state: GameState; improvements: number } {
-  const eligibleIndices = state.contacts.flatMap((contact, index) =>
+  const enrolledIndices = state.contacts.flatMap((contact, index) =>
     contact.status === "enrolled" ? [index] : []
   );
-  if (improvementCount <= 0 || eligibleIndices.length === 0) {
+  const nextIndices = enrolledIndices.filter((index) =>
+    state.contacts[index].id !== state.automation.lastImprovedAthleteId
+  );
+  const availableIndices = nextIndices.length > 0 ? nextIndices : enrolledIndices;
+  if (improvementCount <= 0 || availableIndices.length === 0) {
     return { state, improvements: 0 };
   }
 
   const contacts = [...state.contacts];
   let nextSeed = state.randomSeed;
   let lastImprovedAthlete: string | undefined;
+  let lastImprovedAthleteId: string | undefined;
+  let previousAthleteId = state.automation.lastImprovedAthleteId;
+  let improvements = 0;
   for (let index = 0; index < improvementCount; index += 1) {
-    const [athleteRoll, seedAfterAthlete] = nextRandom(nextSeed);
+    const [favoriteRoll, seedAfterFavorite] = nextRandom(nextSeed);
+    const [athleteRoll, seedAfterAthlete] = nextRandom(seedAfterFavorite);
     const [statRoll, seedAfterStat] = nextRandom(seedAfterAthlete);
     nextSeed = seedAfterStat;
-    const contactIndex = eligibleIndices[Math.min(
-      eligibleIndices.length - 1,
-      Math.floor(athleteRoll * eligibleIndices.length),
-    )];
+    const nextEligibleIndices = enrolledIndices.filter((contactIndex) =>
+      contacts[contactIndex].id !== previousAthleteId
+    );
+    const nextAvailableIndices = nextEligibleIndices.length > 0
+      ? nextEligibleIndices
+      : enrolledIndices;
+    if (nextAvailableIndices.length === 0) break;
+    const nextFavoriteIndices = nextAvailableIndices.filter((contactIndex) =>
+      contacts[contactIndex].favorite === true
+    );
+    const candidateIndices =
+      favoriteRoll < GAME_CONFIG.athleticPreparationFavoriteChance && nextFavoriteIndices.length > 0
+        ? nextFavoriteIndices
+        : nextAvailableIndices;
+    const candidatePosition = Math.min(
+      candidateIndices.length - 1,
+      Math.floor(athleteRoll * candidateIndices.length),
+    );
+    const contactIndex = candidateIndices[candidatePosition];
     const contact = contacts[contactIndex];
     const stats = getContactBaseStats(contact);
     contacts[contactIndex] = statRoll < 0.5
-      ? { ...contact, arenaBase: stats.arena + 1, styleBase: stats.style }
-      : { ...contact, arenaBase: stats.arena, styleBase: stats.style + 1 };
+      ? {
+          ...contact,
+          arenaBase: stats.arena + 1,
+          styleBase: stats.style,
+        }
+      : {
+          ...contact,
+          arenaBase: stats.arena,
+          styleBase: stats.style + 1,
+        };
     lastImprovedAthlete = `${contact.firstName} ${contact.lastName}`;
+    lastImprovedAthleteId = contact.id;
+    previousAthleteId = contact.id;
+    improvements += 1;
   }
 
   return {
@@ -40,9 +74,13 @@ export function improveRandomAthletes(
       ...state,
       randomSeed: nextSeed,
       contacts,
-      automation: { ...state.automation, lastImprovedAthlete },
+      automation: {
+        ...state.automation,
+        lastImprovedAthlete,
+        lastImprovedAthleteId,
+      },
     },
-    improvements: improvementCount,
+    improvements,
   };
 }
 

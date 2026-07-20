@@ -50,9 +50,9 @@ export const FORM_DEFINITIONS: FormDefinition[] = [
   { id: "form-3-long", title: "Forma 3", branch: "Spada Lunga", cost: 600, durationMs: 40_000, prerequisite: "course-y", bonusLabel: "+15% Eventi" },
   { id: "form-4-long", title: "Forma 4", branch: "Spada Lunga", cost: 1_000, durationMs: 45_000, prerequisite: "form-3-long", bonusLabel: "+30% Eventi" },
   { id: "form-5-long", title: "Forma 5", branch: "Spada Lunga", cost: 1_500, durationMs: 50_000, prerequisite: "form-4-long", bonusLabel: "+50% Eventi" },
-  { id: "form-3-staff", title: "Forma 3", branch: "Staffa", cost: 600, durationMs: 40_000, prerequisite: "course-y", bonusLabel: "+15% Lezioni" },
-  { id: "form-4-staff", title: "Forma 4", branch: "Staffa", cost: 1_000, durationMs: 45_000, prerequisite: "form-3-staff", bonusLabel: "+30% Lezioni" },
-  { id: "form-5-staff", title: "Forma 5", branch: "Staffa", cost: 1_500, durationMs: 50_000, prerequisite: "form-4-staff", bonusLabel: "+50% Lezioni" },
+  { id: "form-3-staff", title: "Forma 3", branch: "Staffa", cost: 600, durationMs: 40_000, prerequisite: "course-y", bonusLabel: "+15% Preparatore Atletico" },
+  { id: "form-4-staff", title: "Forma 4", branch: "Staffa", cost: 1_000, durationMs: 45_000, prerequisite: "form-3-staff", bonusLabel: "+30% Preparatore Atletico" },
+  { id: "form-5-staff", title: "Forma 5", branch: "Staffa", cost: 1_500, durationMs: 50_000, prerequisite: "form-4-staff", bonusLabel: "+50% Preparatore Atletico" },
   { id: "form-3-double", title: "Forma 3", branch: "Doppia spada corta", cost: 600, durationMs: 40_000, prerequisite: "course-y", bonusLabel: "+10% Redazione e Social" },
   { id: "form-4-double", title: "Forma 4", branch: "Doppia spada corta", cost: 1_000, durationMs: 45_000, prerequisite: "form-3-double", bonusLabel: "+20% Redazione e Social" },
   { id: "form-5-double", title: "Forma 5", branch: "Doppia spada corta", cost: 1_500, durationMs: 50_000, prerequisite: "form-4-double", bonusLabel: "+35% Redazione e Social" },
@@ -262,7 +262,7 @@ export function getCollaboratorBonusSummary(collaborator: Collaborator): string 
   const bonuses = getCollaboratorFormBonuses(collaborator);
   const entries = [
     bonuses.events > 0 ? `Eventi +${Math.round(bonuses.events * 100)}%` : "",
-    bonuses.lessons > 0 ? `Lezioni +${Math.round(bonuses.lessons * 100)}%` : "",
+    bonuses.lessons > 0 ? `Preparatore Atletico +${Math.round(bonuses.lessons * 100)}%` : "",
     bonuses.writing > 0 ? `Redazione e Social +${Math.round(bonuses.writing * 100)}%` : "",
     bonuses.all > 0 ? `Tutti gli incarichi +${Math.round(bonuses.all * 100)}%` : "",
   ].filter(Boolean);

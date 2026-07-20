@@ -540,6 +540,7 @@ export interface GameState {
     offlineContactBuffer: number;
     agonistCoursesEnabled: boolean;
     lastImprovedAthlete?: string;
+    lastImprovedAthleteId?: string;
   };
   achievements: AchievementId[];
   narrative: {

@@ -12,6 +12,8 @@ import {
   getEventFunnelOutcome,
 } from "./formulas";
 import { selectActiveEmail } from "./selectors";
+import { nextRandom } from "./random";
+import { improveRandomAthletes } from "./collaboratorAutomationOutcomes";
 import type { FormId, GameState } from "./types";
 
 describe("game engine: progression", () => {
@@ -283,6 +285,81 @@ describe("game engine: progression", () => {
       `${athlete.firstName} ${athlete.lastName}`,
     );
     expect(automated.automation.lessonBuffer).toBeLessThan(0.02);
+  });
+
+  it("does not select the same athlete consecutively but allows returning to it", () => {
+    const initial = createInitialState(1_000);
+    const athletes = [
+      {
+        ...initial.contacts[0],
+        status: "enrolled" as const,
+        arenaBase: 50,
+        styleBase: 60,
+      },
+      {
+        ...initial.contacts[1],
+        status: "enrolled" as const,
+        arenaBase: 50,
+        styleBase: 60,
+      },
+    ];
+    const baseState = { ...initial, contacts: athletes };
+    const first = improveRandomAthletes(baseState, 1);
+    const second = improveRandomAthletes(first.state, 1);
+    const third = improveRandomAthletes(second.state, 1);
+
+    expect(first.state.automation.lastImprovedAthleteId).toBeDefined();
+    expect(second.state.automation.lastImprovedAthleteId).not.toBe(
+      first.state.automation.lastImprovedAthleteId,
+    );
+    expect(third.state.automation.lastImprovedAthleteId).toBe(
+      first.state.automation.lastImprovedAthleteId,
+    );
+
+    const batch = improveRandomAthletes(baseState, 4);
+    expect(batch.improvements).toBe(4);
+  });
+
+  it("uses the favorite pool on the configured rare-priority roll", () => {
+    const initial = createInitialState(1_000);
+    const favorite = {
+      ...initial.contacts[0],
+      id: "favorite-athlete",
+      status: "enrolled" as const,
+      favorite: true,
+      arenaBase: 50,
+      styleBase: 50,
+    };
+    const ordinary = {
+      ...initial.contacts[1],
+      id: "ordinary-athlete",
+      status: "enrolled" as const,
+      favorite: false,
+      arenaBase: 50,
+      styleBase: 50,
+    };
+    let seed = 0;
+    while (nextRandom(seed)[0] >= 0.025) seed += 1;
+
+    const result = gameReducer({
+      ...initial,
+      randomSeed: seed,
+      contacts: [favorite, ordinary],
+      automation: { ...initial.automation, lessonBuffer: 0.99 },
+      collaborators: [{
+        id: "collaborator-favorite-priority",
+        contactId: initial.contacts[2].id,
+        displayName: "Preparatore Atletico",
+        joinedAt: 1_000,
+        forms: [],
+        instructorForms: [],
+        assignment: "lessons" as const,
+        rarity: "rare" as const,
+      }],
+    }, { type: "TICK", now: 2_000 });
+
+    expect(result.automation.lastImprovedAthleteId).toBe("favorite-athlete");
+    expect(result.contacts[0].arenaBase ?? 0).toBeGreaterThanOrEqual(50);
   });
 
   it("runs paid Social campaigns after the ten-member unlock", () => {

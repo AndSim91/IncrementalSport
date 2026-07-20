@@ -131,6 +131,8 @@ export function isValidGameState(value: unknown): value is GameState {
     typeof state.automation?.agonistCoursesEnabled === "boolean" &&
     (state.automation?.lastImprovedAthlete === undefined ||
       typeof state.automation.lastImprovedAthlete === "string") &&
+    (state.automation?.lastImprovedAthleteId === undefined ||
+      typeof state.automation.lastImprovedAthleteId === "string") &&
     typeof state.statistics?.automatedCharacters === "number" &&
     typeof state.statistics?.socialTrials === "number" &&
     typeof state.statistics?.socialCampaigns === "number" &&

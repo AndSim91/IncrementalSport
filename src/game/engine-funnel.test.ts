@@ -62,6 +62,28 @@ describe("game engine: funnel", () => {
       .toBeCloseTo(0.15);
   });
 
+  it("applies the enrollment bonus to Instructors, not Preparators", () => {
+    const initial = createInitialState(1_000);
+    const collaborator = {
+      id: "collaborator-enrollment-role",
+      contactId: initial.contacts[0].id,
+      displayName: "Collaboratore Test",
+      joinedAt: 1_000,
+      forms: [],
+      instructorForms: [],
+      assignment: "lessons" as const,
+      rarity: "legendary" as const,
+    };
+    const lessonState = { ...initial, collaborators: [collaborator] };
+    const instructorState = {
+      ...lessonState,
+      collaborators: [{ ...collaborator, assignment: "instructor" as const }],
+    };
+
+    expect(getEnrollmentChance(lessonState, "common")).toBe(0.625);
+    expect(getEnrollmentChance(instructorState, "common")).toBeGreaterThan(0.625);
+  });
+
   it("reveals only the configured amount of predetermined text", () => {
     const state = createInitialState(1_000);
     const email = selectActiveEmail(state)!;
@@ -440,7 +462,7 @@ describe("game engine: funnel", () => {
     expect(protectedAttempt.collaborators[0].rarity).toBe("legendary");
     expect(protectedAttempt.unlocks.forms).toBe(true);
     expect(protectedAttempt.messages.find((message) => message.subject === "Nuovo collaboratore disponibile")?.preview)
-      .toBe("Eva Parodi è il nuovo collaboratore della scuola. Può aiutare in vari settori automatizzando il lavoro o potenziandone l'efficacia.\n\nPuoi impiegarlo in Redazione, Eventi, Lezioni, Social, Attrezzatura o come Istruttore.\n\nPuò anche migliorare nel tempo la sua efficacia impiegandolo più tempo in un solo ruolo.");
+      .toBe("Eva Parodi è il nuovo collaboratore della scuola. Può aiutare in vari settori automatizzando il lavoro o potenziandone l'efficacia.\n\nPuoi impiegarlo in Redazione, Eventi, Preparatore Atletico, Social, Attrezzatura o come Istruttore.\n\nPuò anche migliorare nel tempo la sua efficacia impiegandolo più tempo in un solo ruolo.");
   });
 
   it("applies the same enrollment progression to Andrea and every other Legendary", () => {

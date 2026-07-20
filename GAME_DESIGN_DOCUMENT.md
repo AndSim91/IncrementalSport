@@ -503,7 +503,7 @@ Ogni collaboratore possiede:
 - stato e assegnazione attuale.
 
 Ogni collaboratore accumula inoltre una **Maestria** separata per ciascun ruolo operativo:
-Redazione, Eventi, Lezioni in palestra, Social, Attrezzatura e Istruttore. La Maestria
+Redazione, Eventi, Preparatore Atletico, Social, Attrezzatura e Istruttore. La Maestria
 parte dal grado **Novizio** e attraversa cinque livelli: Novizio, Iniziato, Accademico,
 Cavaliere e Maestro. Ogni grado concede un piccolo moltiplicatore alla produttività del
 relativo settore; il progresso viene comunicato tramite un messaggio automatico nella Posta.
@@ -535,11 +535,13 @@ Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 |---|---|
 | Redazione | scrive caratteri automaticamente |
 | Eventi | aumenta persone incontrate e contatti ottenuti |
-| Lezioni in palestra | aumenta la probabilità di iscrizione finale |
+| Preparatore Atletico | migliora Arena o Stile degli iscritti evitando ripetizioni consecutive |
 | Social | genera ricavi pubblicitari e, occasionalmente, prove o contatti |
 | Attrezzatura | controlla e ripristina le spade |
-| Istruttore | insegna le Forme già attestate agli iscritti, una persona alla volta |
+| Istruttore | insegna le Forme già attestate agli iscritti, una persona alla volta, e migliora la conversione prova → iscrizione |
 | Coordinamento | funzione futura, non inclusa nell'MVP |
+
+Il Preparatore Atletico opera solo durante il gioco online. La selezione è casuale senza priorità legata alla debolezza dell'atleta e impedisce di scegliere lo stesso iscritto nel potenziamento immediatamente successivo, salvo il caso in cui sia l'unico iscritto disponibile. Nel 97,5% dei casi il tiro usa tutti gli iscritti disponibili; nel restante 2,5% usa soltanto gli iscritti nei preferiti ancora disponibili.
 
 ### 9.4 Scrittura automatica
 

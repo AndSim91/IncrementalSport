@@ -12,7 +12,7 @@ export const COLLABORATOR_MASTERY_ROLES: readonly CollaboratorMasteryRole[] = [
 export const COLLABORATOR_MASTERY_ROLE_LABELS: Record<CollaboratorMasteryRole, string> = {
   writing: "Scrittura",
   events: "Eventi",
-  lessons: "Lezioni",
+  lessons: "Preparatore Atletico",
   social: "Social",
   equipment: "Attrezzatura",
   instructor: "Istruttore",
