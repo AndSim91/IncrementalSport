@@ -57,8 +57,6 @@ export const PERSON_RARITIES: Record<PersonRarity, PersonRarityDefinition> = {
     queueAppearanceChance: 0.02,
     collaboratorPath: "immediate",
     collaboratorDescription: "Collaboratore dall'iscrizione",
-    collaboratorBadgeLabel: "Collaboratore VIP",
     collaboratorProductivityMultiplier: 2,
   },
 };
-

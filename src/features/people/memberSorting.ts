@@ -67,7 +67,7 @@ function getNextFormLabel(contact: Contact, context: MemberSortContext): string 
     context.annualTrainingLimit,
   )[0];
   if (!nextForm) return null;
-  return [nextForm.title, nextForm.branch].filter(Boolean).join(" · ");
+  return nextForm.longName;
 }
 
 function getDisplayedRisk(contact: Contact, context: MemberSortContext): number {

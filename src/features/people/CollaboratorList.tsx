@@ -22,8 +22,7 @@ import { getCollaboratorAutomationPresentation } from "./collaboratorAutomationP
 import { CollaboratorDetailDrawer } from "./CollaboratorDetailDrawer";
 import { FormLogoStrip, PersonName } from "./PersonPresentation";
 import {
-  InstructorCompactProgress,
-  InstructorCompactStatus,
+  InstructorCompactActivity,
   InstructorCompactTraining,
 } from "./TrainingControl";
 
@@ -111,8 +110,7 @@ export function CollaboratorList({
           <div className="collaborator-table-head" aria-hidden="true">
             <span>Collaboratore</span>
             <span>Assegnazione attuale</span>
-            <span>Stato e attività</span>
-            <span>Progresso</span>
+            <span>Attività</span>
             <span>Arena / Stile</span>
             <span>Assegnazione</span>
             <span>Azioni</span>
@@ -181,30 +179,29 @@ export function CollaboratorList({
                   </small>
                 </div>
 
-                <div className="collaborator-activity" data-label="Stato e attività">
+                <div className="collaborator-activity" data-label="Attività">
                   {collaborator.assignment === "instructor" ? (
-                    <InstructorCompactStatus collaborator={collaborator} state={state} />
+                    <InstructorCompactActivity collaborator={collaborator} state={state} />
                   ) : (
                     <>
-                      <strong>{automation.title}</strong>
-                      {automation.detail ? <small>{automation.detail}</small> : null}
-                    </>
-                  )}
-                </div>
-
-                <div className="collaborator-compact-progress" data-label="Progresso">
-                  {collaborator.assignment === "instructor" ? (
-                    <InstructorCompactProgress collaborator={collaborator} state={state} />
-                  ) : automation.progress === undefined ? (
-                    <strong>—</strong>
-                  ) : (
-                    <>
-                      <strong>{automation.progress}%</strong>
-                      <ProgressBar
-                        className="collaborator-progress-bar"
-                        label={automation.progressLabel ?? automation.title}
-                        value={automation.progress}
-                      />
+                      <span className="collaborator-activity-title">
+                        <strong>{automation.title}</strong>
+                        {automation.detail ? <small>{automation.detail}</small> : null}
+                      </span>
+                      {automation.progress === undefined ? (
+                        <span className="collaborator-activity-progress is-empty">
+                          <strong>—</strong>
+                        </span>
+                      ) : (
+                        <span className="collaborator-activity-progress">
+                          <strong>{automation.progress}%</strong>
+                          <ProgressBar
+                            className="collaborator-progress-bar"
+                            label={automation.progressLabel ?? automation.title}
+                            value={automation.progress}
+                          />
+                        </span>
+                      )}
                     </>
                   )}
                 </div>

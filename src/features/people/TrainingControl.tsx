@@ -129,7 +129,7 @@ function InstructorTeachingSummary({
   );
 }
 
-export function InstructorCompactStatus({
+export function InstructorCompactActivity({
   collaborator,
   state,
 }: {
@@ -139,48 +139,42 @@ export function InstructorCompactStatus({
   const teaching = useInstructorTeachingEntries(state, collaborator.id);
   const enabled = collaborator.autoTeachingEnabled !== false;
   const capacity = selectInstructorCapacity(state);
-
-  return (
-    <div className="instructor-compact-status" aria-label="Allievi seguiti">
-      {teaching.length > 0 ? teaching.map((entry) => (
-        <span className="instructor-compact-student" key={entry.id}>
-          <strong>{entry.displayName}</strong>
-          <small>{getTrainingCourseTitle(entry.training.formId)}</small>
-        </span>
-      )) : (
-        <span className="instructor-compact-student is-waiting">
-          <strong>{enabled ? "In attesa di un allievo" : "Lezioni in pausa"}</strong>
-          <small>0/{capacity} posti occupati</small>
-        </span>
-      )}
-    </div>
-  );
-}
-
-export function InstructorCompactProgress({
-  collaborator,
-  state,
-}: {
-  collaborator: Collaborator;
-  state: GameState;
-}) {
-  const teaching = useInstructorTeachingEntries(state, collaborator.id);
   const now = useGameTime(teaching.length > 0, 1_000);
 
-  if (teaching.length === 0) return <strong>—</strong>;
+  if (teaching.length === 0) {
+    return (
+      <div className="instructor-compact-activity-list" aria-label="Allievi seguiti">
+        <span className="instructor-compact-activity is-waiting">
+          <span className="collaborator-activity-title">
+            <strong>{enabled ? "In attesa di un allievo" : "Lezioni in pausa"}</strong>
+            <small>0/{capacity} posti</small>
+          </span>
+          <span className="collaborator-activity-progress is-empty">
+            <strong>—</strong>
+          </span>
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="instructor-compact-progress-list">
+    <div className="instructor-compact-activity-list" aria-label="Allievi seguiti">
       {teaching.map((entry) => {
         const progress = getTrainingProgress(entry.training, now);
         return (
-          <span className="instructor-compact-progress" key={entry.id}>
-            <strong>{progress}%</strong>
-            <ProgressBar
-              className="collaborator-progress-bar"
-              label={`Formazione di ${entry.displayName}`}
-              value={progress}
-            />
+          <span className="instructor-compact-activity" key={entry.id}>
+            <span className="collaborator-activity-title">
+              <strong>{entry.displayName}</strong>
+              <small>{getTrainingCourseTitle(entry.training.formId)}</small>
+            </span>
+            <span className="collaborator-activity-progress">
+              <strong>{progress}%</strong>
+              <ProgressBar
+                className="collaborator-progress-bar"
+                label={`Formazione di ${entry.displayName}`}
+                value={progress}
+              />
+            </span>
           </span>
         );
       })}
@@ -401,7 +395,7 @@ export function TrainingControl({
       return <div className={`training-locked${variantClass}`}><strong>Hai raggiunto il limite di Forme per quest'anno</strong></div>;
     }
     const latestForm = getFormDefinition(student.forms.at(-1)!);
-    return <div className={`training-locked${variantClass}`}><span>Formazione</span><strong>Percorso completato alla {latestForm?.title ?? "ultima Forma"}</strong></div>;
+    return <div className={`training-locked${variantClass}`}><span>Formazione</span><strong>Percorso completato alla {latestForm?.longName ?? "ultima Forma"}</strong></div>;
   }
 
   const needsSelection = qualificationDefinitions.length > 0 ||
@@ -462,8 +456,7 @@ export function TrainingControl({
                   !qualification && collaborator?.assignment !== "instructor" && cost < definition.cost;
                 return (
                   <option key={definition.id} value={definition.id}>
-                    {qualification ? "Qualifica · " : ""}{definition.title}
-                    {definition.branch ? ` — ${definition.branch}` : ""}
+                    {qualification ? "Qualifica · " : ""}{definition.longName}
                     {definition.bonusLabel ? ` · ${definition.bonusLabel}` : ""} · {formatCurrency(cost)}
                     {hasInstructorDiscount ? " · sconto Istruttore" : ""}
                     {!qualification && cost > definition.cost ? " · qualifica inclusa" : ""}

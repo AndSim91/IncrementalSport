@@ -214,7 +214,6 @@ export function MemberList({
               <FormLogoStrip
                 forms={memberForms}
                 instructorForms={collaborator?.instructorForms}
-                showLabels={false}
               />
             </div>
             <span className="member-stat" data-label="Arena">

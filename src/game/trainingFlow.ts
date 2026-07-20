@@ -348,7 +348,7 @@ export function startFormTraining(
       },
       now,
       "Qualifica da Istruttore ottenuta",
-      `${collaborator.displayName} ora può insegnare ${definition.title}${definition.branch ? ` — ${definition.branch}` : ""}. Costo: ${euroFormatter.format(qualificationCost)}.`,
+      `${collaborator.displayName} ora può insegnare ${definition.longName}. Costo: ${euroFormatter.format(qualificationCost)}.`,
       "positive",
       "other",
       "training",
@@ -568,7 +568,7 @@ export function resolveFormTraining(
     student.training.instructorId
       ? "Riepilogo formazione automatica"
       : "Formazione completata",
-    `${collaborator?.displayName ?? `${member?.firstName} ${member?.lastName}`} ha completato ${definition.title}${definition.branch ? ` — ${definition.branch}` : ""}.`,
+    `${collaborator?.displayName ?? `${member?.firstName} ${member?.lastName}`} ha completato ${definition.longName}.`,
     "positive",
     "other",
     "training",

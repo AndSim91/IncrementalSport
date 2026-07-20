@@ -585,7 +585,21 @@ Forma 1
   → Forma 7
 ```
 
-Nomi e numeri sono sufficienti nella prima versione; gli effetti ludici non devono riprodurre fedelmente le caratteristiche tecniche reali delle Forme.
+Ogni Forma ha un nome lungo, usato nei testi descrittivi, e un nome corto per le interfacce compatte:
+
+| Percorso | Nome lungo | Nome corto |
+|---|---|---|
+| Iniziale | Forma 1 | F1 |
+| Iniziale | Corso X | CX |
+| Iniziale | Forma 2 | F2 |
+| Iniziale | Corso Y | CY |
+| Spada Lunga | Forma 3/4/5 Spada Lunga | F3L / F4L / F5L |
+| Doppie Spade Corte | Forma 3/4/5 Doppie Spade Corte | F3D / F4D / F5D |
+| Staffa | Forma 3/4/5 Staffa | F3S / F4S / F5S |
+| Finale | Forma 6 | F6 |
+| Finale | Forma 7 | F7 |
+
+Gli effetti ludici non devono riprodurre fedelmente le caratteristiche tecniche reali delle Forme.
 
 Regole:
 

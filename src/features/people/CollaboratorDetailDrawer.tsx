@@ -49,6 +49,7 @@ export function CollaboratorDetailDrawer({
 
   const bonusSummary = getCollaboratorBonusSummary(collaborator) ||
     "Nessun bonus d'arma attivo";
+  const badgeLabel = PERSON_RARITIES[collaborator.rarity].collaboratorBadgeLabel;
 
   return (
     <aside
@@ -78,7 +79,7 @@ export function CollaboratorDetailDrawer({
           </div>
           <div>
             <PersonName displayName={collaborator.displayName} rarity={collaborator.rarity} />
-            <span>{PERSON_RARITIES[collaborator.rarity].collaboratorBadgeLabel}</span>
+            {badgeLabel ? <span>{badgeLabel}</span> : null}
             {contact ? (
               <span className={`rarity-address rarity-${collaborator.rarity}`}>{contact.email}</span>
             ) : null}

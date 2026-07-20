@@ -5,7 +5,7 @@ import type { FormId, PersonRarity } from "../../game/types";
 export function formatFormPath(forms: FormId[]): string {
   if (forms.length === 0) return "Da iniziare · Forma 1";
   const latest = getFormDefinition(forms.at(-1)!);
-  return `${latest?.title ?? forms.at(-1)}${latest?.branch ? ` · ${latest.branch}` : ""}`;
+  return latest?.longName ?? forms.at(-1)!;
 }
 
 export function getMemberDepartureRiskLabel(

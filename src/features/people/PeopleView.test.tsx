@@ -267,7 +267,7 @@ describe("PeopleView", () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(screen.getByText("Andrea Simonazzi")).toHaveClass("rarity-legendary");
-    expect(screen.getByText("VIP")).toBeVisible();
+    expect(screen.queryByText("VIP")).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: /Forma 1 — emblema ufficiale/ })).toBeVisible();
     expect(screen.getByRole("img", { name: /Corso X — emblema generato/ })).toBeVisible();
     expect(screen.getByRole("img", { name: /Corso Y — emblema ufficiale/ })).toBeVisible();
@@ -289,6 +289,8 @@ describe("PeopleView", () => {
     expect(screen.queryByText("Tutorial")).not.toBeInTheDocument();
     expect(screen.queryByText(/Livello Leggendario/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Potere VIP ×2/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Dettagli di Andrea Simonazzi" }));
+    expect(screen.getByRole("dialog", { name: "Scheda collaboratore" })).not.toHaveTextContent("VIP");
     fireEvent.change(screen.getByRole("combobox", { name: "Assegnazione" }), {
       target: { value: "writing" },
     });
@@ -512,7 +514,7 @@ describe("PeopleView", () => {
     expect(
       within(collaborators).getByText(`${enrolled.firstName} ${enrolled.lastName}`),
     ).toBeVisible();
-    expect(within(collaborators).getByText("Forma 1", { exact: true })).toBeVisible();
+    expect(within(collaborators).getByText("F1", { exact: true })).toBeVisible();
     const memberName = within(members).getByText(`${enrolled.firstName} ${enrolled.lastName}`);
     const memberRow = memberName.closest(".member-row");
     expect(memberName).toBeVisible();
