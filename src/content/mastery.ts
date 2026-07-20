@@ -30,7 +30,8 @@ export const COLLABORATOR_MASTERY_XP = {
   writingPerSecond: 1.5,
   eventCompleted: 10,
   lessonCompleted: 5,
-  socialContact: 5,
+  socialCycle: 5,
+  socialCampaignContact: 5,
   equipmentRepairPoint: 5,
   instructorTraining: 10,
 } as const;

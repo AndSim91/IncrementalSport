@@ -24,7 +24,9 @@ export function describeTournamentRewardBonus(reward: TournamentReward): string 
   const bonus = getTournamentRewardBonus(reward);
   if (!bonus) return "Nessun bonus aggiuntivo";
   if (bonus.kind === "random-contacts") {
-    return `${bonus.amount} ${bonus.amount === 1 ? "contatto" : "contatti"} casuali`;
+    return bonus.amount === 1
+      ? "1 contatto email casuale"
+      : `${bonus.amount} contatti casuali`;
   }
   if (bonus.kind === "trial") {
     return `1 prova in palestra ${bonus.rarity === "ultra-rare" ? "ultra rara" : "leggendaria"}`;

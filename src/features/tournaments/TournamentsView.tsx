@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { TabButton } from "../../components/common/TabButton";
-import type { GameState, TournamentResult } from "../../game/types";
+import { TOURNAMENT_DEFINITIONS } from "../../content/tournaments";
+import type { GameState, TournamentParticipant, TournamentResult } from "../../game/types";
 import { TournamentAthletes } from "./TournamentAthletes";
 import { TournamentOverview } from "./TournamentOverview";
 import { TournamentResults } from "./TournamentResults";
@@ -11,25 +12,69 @@ import {
   type TournamentTab,
 } from "./tournamentPresentation";
 
-const TOURNAMENT_HALL_ROW_HEIGHT = 58;
+const TOURNAMENT_HALL_ROW_HEIGHT = 64;
+
+type TournamentHallWinner = {
+  kind: "winner";
+  id: string;
+  participant: TournamentParticipant;
+  position: 1 | 2 | 3;
+  detail: string;
+};
+
+type TournamentHallRow = TournamentHallWinner | {
+  kind: "tournament";
+  id: string;
+  label: string;
+  level: string;
+  season: number;
+  winnerCount: number;
+};
+
+function getTournamentHallRows(
+  results: GameState["tournaments"]["results"],
+): TournamentHallRow[] {
+  return [...results].reverse().flatMap((result) => {
+    const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
+    const winners = [...result.arenaPodium, ...result.stylePodium]
+      .map((entry): TournamentHallWinner | undefined => {
+        const participant = participantById.get(entry.participantId);
+        if (!participant?.ownedContactId) return undefined;
+        return {
+          kind: "winner",
+          id: `${result.id}-${entry.discipline}-${entry.position}`,
+          participant,
+          position: entry.position,
+          detail: entry.discipline === "arena" ? "Arena" : `Stile ${entry.score.toFixed(3)}`,
+        };
+      })
+      .filter((entry): entry is TournamentHallWinner => Boolean(entry));
+
+    if (winners.length === 0) return [];
+
+    return [
+      {
+        kind: "tournament" as const,
+        id: `${result.id}-header`,
+        label: TOURNAMENT_DEFINITIONS[result.level].label,
+        level: levelShortLabel[result.level],
+        season: result.season,
+        winnerCount: winners.length,
+      },
+      ...winners,
+    ];
+  });
+}
 
 const TournamentsHall = memo(function TournamentsHall({
   results,
+  schoolName,
 }: {
   results: GameState["tournaments"]["results"];
+  schoolName: string;
 }) {
-  const entries = useMemo(() => [...results].reverse().flatMap((result) => {
-    const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
-    return [...result.arenaPodium, ...result.stylePodium].map((entry) => {
-      const participant = participantById.get(entry.participantId);
-      return {
-        id: `${result.id}-${entry.discipline}-${entry.position}`,
-        participant,
-        position: entry.position,
-        detail: `${levelShortLabel[result.level]} · Stagione ${result.season} · ${entry.discipline === "arena" ? "Arena" : `Stile ${entry.score.toFixed(3)}`}`,
-      };
-    });
-  }), [results]);
+  const entries = useMemo(() => getTournamentHallRows(results), [results]);
+  const winnerCount = entries.filter((entry) => entry.kind === "winner").length;
   const virtualRows = useVirtualRows({
     count: entries.length,
     rowHeight: TOURNAMENT_HALL_ROW_HEIGHT,
@@ -37,7 +82,13 @@ const TournamentsHall = memo(function TournamentsHall({
   const renderedEntries = entries.slice(virtualRows.startIndex, virtualRows.endIndex);
   return (
     <section className="tournament-hall" aria-label="Albo d'oro">
-      <header><h2>Albo d'oro</h2><span>{entries.length} piazzamenti</span></header>
+      <header>
+        <div>
+          <h2>Albo d'oro</h2>
+          <small>Solo vincitori di {schoolName}</small>
+        </div>
+        <span>{winnerCount} piazzamenti</span>
+      </header>
       <div
         className="virtualized-tournament-hall"
         onScroll={virtualRows.onScroll}
@@ -46,11 +97,21 @@ const TournamentsHall = memo(function TournamentsHall({
           <div className="virtual-list-spacer" style={{ height: virtualRows.paddingTop }} aria-hidden="true" />
         ) : null}
         {renderedEntries.map((entry) => (
-          <article key={entry.id} className={entry.participant?.ownedContactId ? "is-owned" : ""}>
-            <b>{entry.position}°</b>
-            <span className={entry.participant?.rarity === "secret-legendary" ? "secret-legendary" : ""}><strong>{participantName(entry.participant)}</strong><small>{entry.detail}</small></span>
-            <em>{entry.participant?.schoolName}</em>
-          </article>
+          entry.kind === "tournament" ? (
+            <div key={entry.id} className="tournament-hall-group">
+              <div>
+                <h3>{entry.label}</h3>
+                <span>Livello {entry.level} · Stagione {entry.season}</span>
+              </div>
+              <strong>{entry.winnerCount} piazzamenti</strong>
+            </div>
+          ) : (
+            <article key={entry.id} className="is-owned">
+              <b>{entry.position}°</b>
+              <span className={entry.participant.rarity === "secret-legendary" ? "secret-legendary" : ""}><strong>{participantName(entry.participant)}</strong><small>{entry.detail}</small></span>
+              <em>{entry.participant.schoolName}</em>
+            </article>
+          )
         ))}
         {virtualRows.paddingBottom > 0 ? (
           <div className="virtual-list-spacer" style={{ height: virtualRows.paddingBottom }} aria-hidden="true" />
@@ -99,7 +160,7 @@ export function TournamentsView({ state }: { state: GameState }) {
           />
         ) : <p className="empty-tournaments tournament-empty-page">Nessun torneo disputato.</p>
       ) : null}
-      {tab === "hall" ? <TournamentsHall results={state.tournaments.results} /> : null}
+      {tab === "hall" ? <TournamentsHall results={state.tournaments.results} schoolName={state.school.name} /> : null}
     </main>
   );
 }

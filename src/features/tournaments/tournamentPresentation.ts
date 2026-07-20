@@ -132,12 +132,13 @@ export function formatTournamentCountdown(remainingMs: number): string {
   return `${minutes.toString().padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
-export function getLatestResultForLevel(
+export function getResultForLevelAndSeason(
   results: readonly TournamentResult[],
   level: TournamentLevel,
+  season: number,
 ): TournamentResult | undefined {
   for (let index = results.length - 1; index >= 0; index -= 1) {
-    if (results[index].level === level) return results[index];
+    if (results[index].level === level && results[index].season === season) return results[index];
   }
   return undefined;
 }

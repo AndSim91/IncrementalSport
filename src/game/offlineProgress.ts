@@ -89,7 +89,7 @@ export function processOfflinePassiveProgress(
   return addCollaboratorMasteryExperience(
     nextState,
     "social",
-    socialCycles * COLLABORATOR_MASTERY_XP.socialContact,
+    socialCycles * COLLABORATOR_MASTERY_XP.socialCycle,
     now,
   );
 }

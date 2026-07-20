@@ -711,9 +711,18 @@ export function simulateTournament(
     });
   const arenaPodium = podiumFor("arena", arenaRanking);
   const stylePodium = podiumFor("style", styleRanking);
-  const rewards = [...arenaPodium, ...stylePodium]
-    .filter((entry) => participantMap.get(entry.participantId)?.ownedContactId)
-    .map((entry) => getTournamentReward(level, entry.discipline, entry.position));
+  const rewards = [arenaPodium, stylePodium].flatMap((podium) => {
+    const bestOwnedResult = podium.find(
+      (entry) => participantMap.get(entry.participantId)?.ownedContactId,
+    );
+    return bestOwnedResult
+      ? [getTournamentReward(
+          level,
+          bestOwnedResult.discipline,
+          bestOwnedResult.position,
+        )]
+      : [];
+  });
   const groupStandings: TournamentGroupStanding[] = mutableStandings.map((standing) => ({
     participantId: standing.participantId,
     groupIndex: standing.groupIndex,

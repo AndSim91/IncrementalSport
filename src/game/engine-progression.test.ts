@@ -188,7 +188,7 @@ describe("game engine: progression", () => {
     const automated = gameReducer(
       {
         ...initial,
-        randomSeed: 81_259,
+        randomSeed: 470_208,
         school: { ...initial.school, activeMembers: 12, followers: 1_000 },
         collaborators: [socialCollaborator, equipmentCollaborator],
         unlocks: { ...initial.unlocks, collaborators: true, social: true },
@@ -202,9 +202,10 @@ describe("game engine: progression", () => {
       { type: "TICK", now: 2_000 },
     );
 
-    expect(automated.school.euros).toBe(1_260);
+    expect(automated.school.euros).toBe(72);
     expect(automated.school.followers).toBe(1_001);
-    expect(automated.statistics.eurosEarned).toBe(1_260);
+    expect(automated.statistics.eurosEarned).toBe(72);
+    expect(automated.collaborators[0].mastery?.social).toBe(5);
     expect(automated.statistics.socialContacts).toBe(1);
     expect(automated.statistics.socialTrials).toBe(1);
     expect(automated.automation.socialBuffer).toBeCloseTo(0.995 + 1 / 120 - 1);

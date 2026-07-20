@@ -28,9 +28,17 @@ function createCompletedTournamentState() {
   return {
     state: {
       ...state,
+      school: { ...state.school, currentMonth: 12 },
       tournaments: {
         ...state.tournaments,
         results: [simulation.result],
+        qualification: {
+          level: "academy" as const,
+          season: simulation.result.season,
+          contactIds: simulation.result.qualifiers.flatMap((qualifier) =>
+            qualifier.ownedContactId ? [qualifier.ownedContactId] : []
+          ),
+        },
       },
     },
     result: simulation.result,
@@ -59,7 +67,8 @@ describe("TournamentsView", () => {
     const view = within(container);
 
     expect(view.getByText("Calendario della stagione")).toBeVisible();
-    expect(view.getAllByText("6/6").length).toBeGreaterThan(0);
+    expect(view.getByText("6 iscritti")).toBeVisible();
+    expect(view.getByText("al Torneo Scolastico")).toBeVisible();
     fireEvent.click(view.getByRole("tab", { name: "Atleti" }));
     expect(view.getAllByText("???").length).toBeGreaterThan(0);
   });
@@ -356,5 +365,99 @@ describe("TournamentsView", () => {
     expect(view.getAllByText(`${ownedParticipant.firstName} ${ownedParticipant.lastName}`).length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".group-table tr.is-owned").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".results-podium-list span.is-owned").length).toBeGreaterThan(0);
+  });
+
+  it("shows the actual qualified athletes without treating a smaller team as incomplete", () => {
+    const initial = createStateWithForms();
+    const qualifiedContactIds = initial.contacts
+      .filter((contact) => contact.status === "enrolled")
+      .slice(0, 5)
+      .map((contact) => contact.id);
+    const state = {
+      ...initial,
+      school: { ...initial.school, currentMonth: 18 },
+      tournaments: {
+        ...initial.tournaments,
+        qualification: {
+          level: "national" as const,
+          season: 1,
+          contactIds: qualifiedContactIds,
+        },
+      },
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    expect(view.getByText("5 qualificati")).toBeVisible();
+    expect(view.getByText("al Torneo Nazionale")).toBeVisible();
+    expect(view.queryByText("Delegazione incompleta")).not.toBeInTheDocument();
+    expect(view.queryByText("5/6")).not.toBeInTheDocument();
+  });
+
+  it("does not show a previous season result as completed in the current calendar", () => {
+    const initial = createStateWithForms();
+    const oldTournament = simulateTournament(
+      initial,
+      "national",
+      1,
+      181_000,
+      getEligibleSchoolContacts(initial),
+    ).result;
+    const qualifiedContactIds = initial.contacts
+      .filter((contact) => contact.status === "enrolled")
+      .slice(0, 5)
+      .map((contact) => contact.id);
+    const state = {
+      ...initial,
+      school: { ...initial.school, currentMonth: 30 },
+      tournaments: {
+        ...initial.tournaments,
+        results: [oldTournament],
+        qualification: {
+          level: "national" as const,
+          season: 2,
+          contactIds: qualifiedContactIds,
+        },
+      },
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    expect(view.getByText("Torneo in arrivo")).toBeVisible();
+    expect(view.queryByText("Completato · stagione 1")).not.toBeInTheDocument();
+  });
+
+  it("shows only school winners and separates each tournament by level", () => {
+    const initial = createStateWithForms();
+    const simulation = simulateTournament(
+      initial,
+      "academy",
+      1,
+      181_000,
+      getEligibleSchoolContacts(initial),
+    );
+    const schoolWinner = simulation.result.participants.find((participant) => participant.ownedContactId)!;
+    const externalWinner = simulation.result.participants.find((participant) => !participant.ownedContactId)!;
+    const result = {
+      ...simulation.result,
+      arenaPodium: [
+        { participantId: externalWinner.id, position: 1 as const, discipline: "arena" as const, score: 1 },
+        { participantId: schoolWinner.id, position: 2 as const, discipline: "arena" as const, score: 2 },
+      ],
+      stylePodium: [],
+    };
+    const state = {
+      ...initial,
+      tournaments: { ...initial.tournaments, results: [result] },
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Albo d'oro" }));
+
+    expect(view.getByRole("heading", { name: "Torneo Accademico Alpha" })).toBeVisible();
+    expect(view.getByText("Livello Accademico · Stagione 1")).toBeVisible();
+    expect(view.getByText(`${schoolWinner.firstName} ${schoolWinner.lastName}`)).toBeVisible();
+    expect(view.queryByText(`${externalWinner.firstName} ${externalWinner.lastName}`)).not.toBeInTheDocument();
   });
 });

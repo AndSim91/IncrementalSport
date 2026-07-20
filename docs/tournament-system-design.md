@@ -341,13 +341,16 @@ Dopo la Champion's l'immunità termina per tutti.
 
 La partecipazione non ha costi. Un torneo automatico non può essere bloccato dalla mancanza di denaro.
 
-Arena e Stile assegnano premi identici e cumulabili:
+Arena e Stile assegnano premi identici. Per ciascuna disciplina la scuola riceve
+un solo premio, corrispondente al miglior piazzamento raggiunto da uno dei suoi
+atleti. Il premio Arena e il premio Stile restano indipendenti: un torneo può
+quindi assegnare alla scuola al massimo due premi.
 
 | Torneo | 1° posto | 2° posto | 3° posto |
 |---|---:|---:|---:|
 | Scolastico | titolo e qualificazione | titolo e qualificazione | titolo e qualificazione |
-| Accademico | €1.000 + 3 contatti casuali | €500 + 2 contatti casuali | €250 + 1 contatto casuale |
-| Nazionale | €5.000 + 1 prova in palestra ultra rara | €2.500 + 1 contatto email ultra raro | €1.250 + 3 contatti casuali |
+| Accademico | €1.000 + 1 prova in palestra ultra rara | €500 + 1 contatto email ultra raro | €250 + 1 contatto email casuale |
+| Nazionale | €5.000 + 1 prova in palestra ultra rara | €2.500 + 1 contatto email ultra raro | €1.250 + 1 contatto email casuale |
 | Champion's | €50.000 + 1 iscrizione leggendaria | €25.000 + 1 prova in palestra leggendaria | €12.500 + 1 contatto email leggendario |
 
 I profili Leggendari sono unici e vengono riservati già al primo contatto. Se un premio Leggendario non trova più alcun profilo ordinario disponibile, conserva la propria modalità (iscrizione, prova o email) ma scende automaticamente a Ultra Raro. Il premio effettivamente risolto viene registrato anche nello storico del torneo.

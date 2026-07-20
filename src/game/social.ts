@@ -1,16 +1,20 @@
 import { GAME_CONFIG } from "./config";
 import { roundCurrency } from "./economy";
 
-function getFollowerChanceBonus(followers: number): number {
-  return Math.max(0, followers) * GAME_CONFIG.socialChancePerFollower;
-}
-
 export function getSocialTrialChance(followers: number): number {
-  return Math.min(1, GAME_CONFIG.socialTrialChance + getFollowerChanceBonus(followers));
+  return Math.min(
+    1,
+    GAME_CONFIG.socialTrialChance +
+      Math.max(0, followers) * GAME_CONFIG.socialTrialChancePerFollower,
+  );
 }
 
 export function getSocialContactChance(followers: number): number {
-  return Math.min(1, GAME_CONFIG.socialContactChance + getFollowerChanceBonus(followers));
+  return Math.min(
+    1,
+    GAME_CONFIG.socialContactChance +
+      Math.max(0, followers) * GAME_CONFIG.socialContactChancePerFollower,
+  );
 }
 
 export function getSocialIncomePerMember(followers: number): number {

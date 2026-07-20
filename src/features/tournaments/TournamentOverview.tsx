@@ -9,13 +9,13 @@ import {
   getContactPreparation,
   hasCompletedCourseX,
 } from "../../game/athleteStats";
-import { GAME_CONFIG } from "../../game/config";
+import { getEligibleSchoolContactsFromRoster } from "../../game/tournamentSimulation";
 import { useGameTime } from "../../game/GameTimeContext";
 import type { GameState, TournamentResult } from "../../game/types";
 import {
   findUpcomingTournament,
   formatTournamentCountdown,
-  getLatestResultForLevel,
+  getResultForLevelAndSeason,
   getUpcomingDelegationContactIds,
   monthShortLabel,
 } from "./tournamentPresentation";
@@ -31,6 +31,10 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
   const upcomingDefinition = upcoming ? TOURNAMENT_DEFINITIONS[upcoming.level] : undefined;
   const qualification = state.tournaments.qualification;
   const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);
+  const schoolEntrantCount = useMemo(
+    () => getEligibleSchoolContactsFromRoster(state.contacts, state.collaborators).length,
+    [state.collaborators, state.contacts],
+  );
   const collaboratorsByContactId = useMemo(
     () => new Map(state.collaborators.map((entry) => [entry.contactId, entry])),
     [state.collaborators],
@@ -43,10 +47,10 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
       return [contact.id, { contact, preparation, visible }] as const;
     }),
   ), [collaboratorsByContactId, state.contacts]);
-  const delegation = useMemo(() => delegationContactIds.flatMap((contactId) => {
+  const delegation = delegationContactIds.flatMap((contactId) => {
     const entry = teamEntryByContactId.get(contactId);
     return entry ? [entry] : [];
-  }), [delegationContactIds, teamEntryByContactId]);
+  });
   const officialQualified = useMemo(() => (qualification?.contactIds ?? []).flatMap((contactId) => {
     const entry = teamEntryByContactId.get(contactId);
     return entry ? [entry] : [];
@@ -60,8 +64,10 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
   const missingQualificationLabel = qualificationTarget?.level
     ? `Nessun atleta qualificato per il ${TOURNAMENT_DEFINITIONS[qualificationTarget.level].label} anno ${qualificationTarget.season}.`
     : "Nessuna qualificazione disponibile.";
-  const required = GAME_CONFIG.tournamentMinimumMembers;
-  const isReady = delegation.length >= required;
+  const participationCount = upcoming?.level === "school" ? schoolEntrantCount : delegation.length;
+  const participationLabel = upcoming?.level === "school"
+    ? `${participationCount} iscritt${participationCount === 1 ? "o" : "i"}`
+    : `${participationCount} qualificat${participationCount === 1 ? "o" : "i"}`;
 
   return (
     <div className="tournament-overview">
@@ -80,11 +86,10 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
             ? `${upcomingDefinition.calendarMonth.toString().padStart(2, "0")} ${monthShortLabel[upcomingDefinition.calendarMonth]} · STAGIONE ${upcoming?.season}`
             : "Nessun evento in programma"}</span>
         </div>
-        <div className={isReady ? "next-tournament-ready is-ready" : "next-tournament-ready"}>
-          <span aria-hidden="true">{isReady ? "✓" : "!"}</span>
-          <strong>{isReady ? "Delegazione pronta" : "Delegazione incompleta"}</strong>
-          <b>{delegation.length}/{required}</b>
-          <small>qualificati</small>
+        <div className="next-tournament-participation">
+          <span aria-hidden="true"><Icon name="people" /></span>
+          <strong>{participationLabel}</strong>
+          <small>{upcomingDefinition ? `al ${upcomingDefinition.label}` : "al prossimo torneo"}</small>
         </div>
       </section>
 
@@ -96,18 +101,20 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
           </div>
           {TOURNAMENT_LEVEL_ORDER.map((level, levelIndex) => {
             const definition = TOURNAMENT_DEFINITIONS[level];
-            const completed = getLatestResultForLevel(state.tournaments.results, level);
+            const completed = upcoming
+              ? getResultForLevelAndSeason(state.tournaments.results, level, upcoming.season)
+              : undefined;
             const missed = [...state.tournaments.missedTournaments]
               .reverse()
-              .find((entry) => entry.level === level);
+              .find((entry) => entry.level === level && entry.season === upcoming?.season);
             const isNext = upcoming?.level === level;
-            const isQualified = qualification?.level === level;
+            const isQualified = qualification?.level === level && qualification.season === upcoming?.season;
             const status = completed
               ? `Completato · stagione ${completed.season}`
               : missed
                 ? "Non disputato"
                 : isNext
-                  ? "Prossimo"
+                  ? "Torneo in arrivo"
                   : isQualified
                     ? `${qualification.contactIds.length} qualificati`
                     : "In attesa";

@@ -607,11 +607,11 @@ prenotazione ottenuta tramite email e produce il possibile iscritto finale. Per
 lo scopo del gioco, ogni persona partecipa a una sola lezione.
 
 I **Social** sviluppano le capacità pubblicitarie della scuola. Ogni ciclo base
-di 120 secondi di un collaboratore assegnato ha il **10%** di probabilità di
+di 120 secondi di un collaboratore assegnato ha il **25%** di probabilità di
 aggiungere un Follower. Il ciclo accredita per ogni iscritto attivo **€5 +
-Follower / 10**, ha una probabilità di ottenere una prova diretta pari a
-**0,01% + Follower / 1000 punti percentuali** e una probabilità indipendente di
-ottenere un nuovo contatto pari a **0,1% + Follower / 1000 punti percentuali**.
+Follower / 1000**, ha una probabilità di ottenere una prova diretta pari a
+**0,01% + Follower / 10000 punti percentuali** e una probabilità indipendente di
+ottenere un nuovo contatto pari a **0,1% + Follower / 5000 punti percentuali**.
 Le probabilità non possono superare il 100% e usano i Follower disponibili
 all'inizio del ciclo. Le persone generate dal canale Social sono sempre almeno
 Rare. Le campagne pagate in Euro restano disponibili, usano piattaforme
@@ -986,11 +986,13 @@ Influenza caratteri per pressione e automazione.
 ### 10.5 Social
 
 L'automazione dei collaboratori Social completa un ciclo base ogni 120 secondi.
-Ogni ciclo ha il 10% di probabilità di aggiungere un Follower. Il ricavo per
-iscritto è `€5 + Follower / 10`; la probabilità di una prova è `0,01% +
-Follower / 1000` punti percentuali e quella indipendente di un contatto è `0,1%
-+ Follower / 1000` punti percentuali. Le probabilità sono limitate al 100%. Le
-persone generate dai Social non possono essere Comuni: sono sempre Rare, Ultra
+Ogni ciclo ha il 25% di probabilità di aggiungere un Follower e assegna **5 XP
+Social** al collaboratore. Il ricavo per iscritto è `€5 + Follower / 1000`; la
+probabilità di una prova è `0,01% + Follower / 10000` punti percentuali e quella
+indipendente di un contatto è `0,1% + Follower / 5000` punti percentuali. Le
+probabilità sono limitate al 100%. I gradi di Maestria velocizzano i cicli del
+5%, 10%, 15% e infine 25% al grado Maestro. Le persone generate dai Social non
+possono essere Comuni: sono sempre Rare, Ultra
 Rare o Leggendarie. Produttività, Forme, Maestria e potenziamenti accelerano il
 completamento dei cicli. Le campagne social manuali continuano a consumare
 Euro, usano piattaforme inventate e possono diventare casualmente virali.
@@ -2093,7 +2095,7 @@ qualunque funzione che possa far credere di inviare davvero email.
 - I contatti possono esaurirsi.
 - Lo sparring esterno rimane una fonte gratuita o economica di pochi contatti.
 - I collaboratori assegnati ai Social completano un ciclo base ogni 120 secondi
-  e hanno il 10% di probabilità di aggiungere un Follower; ogni Follower aumenta
+  e hanno il 25% di probabilità di aggiungere un Follower; ogni Follower aumenta
   ricavi e probabilità di prove e contatti secondo le formule Social approvate.
   Tutte le persone generate dai Social sono almeno Rare e restano disponibili
   campagne pagate in Euro.

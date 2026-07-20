@@ -63,7 +63,7 @@
 
 .next-tournament-name,
 .next-tournament-countdown,
-.next-tournament-ready {
+.next-tournament-participation {
   position: relative;
   z-index: 1;
   display: flex;
@@ -142,44 +142,36 @@
   letter-spacing: .08em;
 }
 
-.next-tournament-ready {
+.next-tournament-participation {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   align-content: center;
-  gap: 3px 10px;
+  gap: 4px 12px;
 }
 
-.next-tournament-ready > span {
+.next-tournament-participation > span {
   display: grid;
-  width: 27px;
-  height: 27px;
+  width: 34px;
+  height: 34px;
   grid-row: 1 / span 2;
   place-items: center;
   border: 1px solid currentColor;
   border-radius: 50%;
-  color: var(--warning);
-  font-weight: 700;
+  color: var(--blue-700);
 }
 
-.next-tournament-ready.is-ready > span,
-.next-tournament-ready.is-ready > strong {
-  color: var(--success);
+.next-tournament-participation > span svg {
+  width: 20px;
+  height: 20px;
 }
 
-.next-tournament-ready > strong {
+.next-tournament-participation > strong {
   align-self: end;
-  color: var(--warning);
-  font-size: 14px;
-}
-
-.next-tournament-ready > b {
-  grid-column: 2;
-  margin-top: 8px;
-  font-size: 28px;
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
 
-.next-tournament-ready > small {
+.next-tournament-participation > small {
   grid-column: 2;
   color: var(--ink-muted);
 }
@@ -389,6 +381,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.tournament-hall > header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .qualified-team {
@@ -1335,9 +1333,50 @@
   grid-template-columns: 45px minmax(0, 1fr) minmax(150px, auto);
   align-items: center;
   gap: 14px;
-  min-height: 58px;
+  min-height: 64px;
   padding: 0 18px;
   border-bottom: 1px solid var(--line);
+}
+
+.tournament-hall-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--line);
+  border-left: 4px solid var(--blue-600);
+  background: var(--surface-muted);
+}
+
+.tournament-hall-group > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tournament-hall-group h3 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournament-hall-group span,
+.tournament-hall-group > strong,
+.tournament-hall > header small {
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tournament-hall-group > strong {
+  flex: 0 0 auto;
+  color: var(--blue-700);
 }
 
 .tournament-hall article.is-owned {

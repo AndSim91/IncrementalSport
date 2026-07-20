@@ -257,7 +257,7 @@ export function processAutomation(
     nextState = dependencies.addCollaboratorMasteryExperience(
       nextState,
       "social",
-      socialCycles * COLLABORATOR_MASTERY_XP.socialContact,
+      socialCycles * COLLABORATOR_MASTERY_XP.socialCycle,
       now,
     );
     if (outcome.contactsAcquired > 0) {
@@ -312,7 +312,7 @@ export function runSocialCampaign(
   nextState = dependencies.addCollaboratorMasteryExperience(
     nextState,
     "social",
-    contacts.length * COLLABORATOR_MASTERY_XP.socialContact,
+    contacts.length * COLLABORATOR_MASTERY_XP.socialCampaignContact,
     now,
   );
   nextState = dependencies.addMessage(

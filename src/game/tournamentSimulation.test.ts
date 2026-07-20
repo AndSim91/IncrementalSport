@@ -56,6 +56,10 @@ describe("tournament simulation", () => {
     expect(simulation.result.groupStandings.filter((entry) => entry.qualified)).toHaveLength(4);
     expect(simulation.result.qualifiers).toHaveLength(6);
     expect(new Set(simulation.result.qualifiers.map((entry) => entry.participantId)).size).toBe(6);
+    expect(simulation.result.rewards).toEqual([
+      expect.objectContaining({ discipline: "arena", position: 1 }),
+      expect.objectContaining({ discipline: "style", position: 1 }),
+    ]);
     expect(simulation.result.matches.every((match) =>
       (match.arenaScoreA === 2) !== (match.arenaScoreB === 2)
     )).toBe(true);

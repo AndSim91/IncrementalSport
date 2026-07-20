@@ -106,14 +106,14 @@ export const TOURNAMENT_REWARDS: Record<
   Record<1 | 2 | 3, { euros: number; contacts: number; bonus: TournamentRewardBonus }>
 > = {
   academy: {
-    1: { euros: 1_000, contacts: 3, bonus: { kind: "random-contacts", amount: 3 } },
-    2: { euros: 500, contacts: 2, bonus: { kind: "random-contacts", amount: 2 } },
+    1: { euros: 1_000, contacts: 0, bonus: { kind: "trial", rarity: "ultra-rare" } },
+    2: { euros: 500, contacts: 0, bonus: { kind: "email", rarity: "ultra-rare" } },
     3: { euros: 250, contacts: 1, bonus: { kind: "random-contacts", amount: 1 } },
   },
   national: {
     1: { euros: 5_000, contacts: 0, bonus: { kind: "trial", rarity: "ultra-rare" } },
     2: { euros: 2_500, contacts: 0, bonus: { kind: "email", rarity: "ultra-rare" } },
-    3: { euros: 1_250, contacts: 3, bonus: { kind: "random-contacts", amount: 3 } },
+    3: { euros: 1_250, contacts: 1, bonus: { kind: "random-contacts", amount: 1 } },
   },
   champions: {
     1: { euros: 50_000, contacts: 0, bonus: { kind: "enrollment", rarity: "legendary" } },

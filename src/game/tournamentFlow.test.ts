@@ -142,8 +142,18 @@ describe("tournament reward effects", () => {
   it("uses the requested tournament reward catalogue", () => {
     expect(getTournamentReward("academy", "arena", 1)).toMatchObject({
       euros: 1_000,
-      contacts: 3,
-      bonus: { kind: "random-contacts", amount: 3 },
+      contacts: 0,
+      bonus: { kind: "trial", rarity: "ultra-rare" },
+    });
+    expect(getTournamentReward("academy", "style", 2)).toMatchObject({
+      euros: 500,
+      contacts: 0,
+      bonus: { kind: "email", rarity: "ultra-rare" },
+    });
+    expect(getTournamentReward("academy", "arena", 3)).toMatchObject({
+      euros: 250,
+      contacts: 1,
+      bonus: { kind: "random-contacts", amount: 1 },
     });
     expect(getTournamentReward("national", "arena", 1)).toMatchObject({
       euros: 5_000,
@@ -152,6 +162,11 @@ describe("tournament reward effects", () => {
     expect(getTournamentReward("national", "style", 2)).toMatchObject({
       euros: 2_500,
       bonus: { kind: "email", rarity: "ultra-rare" },
+    });
+    expect(getTournamentReward("national", "arena", 3)).toMatchObject({
+      euros: 1_250,
+      contacts: 1,
+      bonus: { kind: "random-contacts", amount: 1 },
     });
     expect(getTournamentReward("champions", "arena", 1)).toMatchObject({
       euros: 50_000,
@@ -174,6 +189,10 @@ describe("tournament reward effects", () => {
   }
 
   function resultWithReward(reward: TournamentResult["rewards"][number]): TournamentResult {
+    return resultWithRewards([reward]);
+  }
+
+  function resultWithRewards(rewards: TournamentResult["rewards"]): TournamentResult {
     return {
       id: "reward-result",
       level: "academy",
@@ -187,7 +206,7 @@ describe("tournament reward effects", () => {
       arenaPodium: [],
       stylePodium: [],
       qualifiers: [],
-      rewards: [reward],
+      rewards,
       secretLegendaryDefeatedIds: [],
     };
   }
@@ -242,6 +261,32 @@ describe("tournament reward effects", () => {
     expect(enrollmentState.contacts.at(-1)?.status).toBe("enrolled");
     expect(enrollmentState.collaborators).toHaveLength(1);
     expect(enrollmentState.school.activeMembers).toBe(rewardState().school.activeMembers + 1);
+  });
+
+  it("keeps both Champion rewards Legendary when two profiles are already enrolled", () => {
+    const initial = rewardState();
+    const withSecondLegendary = applyTournamentRewards(initial, resultWithReward({
+      discipline: "arena",
+      position: 1,
+      euros: 50_000,
+      contacts: 0,
+      bonus: { kind: "enrollment", rarity: "legendary" },
+    }), 2_000);
+    const existingLegendaryCount = withSecondLegendary.contacts.filter(
+      (contact) => contact.status === "enrolled" && contact.rarity === "legendary",
+    ).length;
+
+    const rewarded = applyTournamentRewards(withSecondLegendary, resultWithRewards([
+      getTournamentReward("champions", "arena", 1),
+      getTournamentReward("champions", "style", 1),
+    ]), 3_000);
+    const newTournamentContacts = rewarded.contacts
+      .slice(withSecondLegendary.contacts.length);
+
+    expect(existingLegendaryCount).toBe(2);
+    expect(newTournamentContacts).toHaveLength(2);
+    expect(newTournamentContacts.every((contact) => contact.rarity === "legendary")).toBe(true);
+    expect(new Set(newTournamentContacts.map((contact) => contact.specialProfileId)).size).toBe(2);
   });
 
   it("falls back to Ultra Rare when no standard Legendary profile is available", () => {
