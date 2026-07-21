@@ -9,6 +9,8 @@ describe("AdminEmailView", () => {
     onAddContacts = vi.fn(),
     onAddMembers = vi.fn(),
     onAddEuros = vi.fn(),
+    onScheduleLegendaryTrial = vi.fn(),
+    availableLegendaryProfiles = 3,
   ) => {
     render(
       <AdminEmailView
@@ -16,9 +18,11 @@ describe("AdminEmailView", () => {
         availableContacts={4}
         activeMembers={4}
         euros={250}
+        availableLegendaryProfiles={availableLegendaryProfiles}
         onAddContacts={onAddContacts}
         onAddMembers={onAddMembers}
         onAddEuros={onAddEuros}
+        onScheduleLegendaryTrial={onScheduleLegendaryTrial}
       />,
     );
   };
@@ -58,5 +62,28 @@ describe("AdminEmailView", () => {
     expect(onAddContacts).toHaveBeenCalledWith(-2);
     expect(onAddMembers).toHaveBeenCalledWith(-7);
     expect(onAddEuros).toHaveBeenCalledWith(1250.5);
+  });
+
+  it("starts a Legendary trial without presenting it as a direct enrollment", () => {
+    const onScheduleLegendaryTrial = vi.fn();
+    renderAdmin(vi.fn(), vi.fn(), vi.fn(), onScheduleLegendaryTrial);
+
+    expect(screen.getByText("Profili disponibili: 3")).toBeVisible();
+    expect(screen.getByText(/senza creare iscrizioni dirette/i)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Avvia prova Leggendario" }));
+
+    expect(onScheduleLegendaryTrial).toHaveBeenCalledOnce();
+  });
+
+  it("disables the Legendary trial when the current school has no available profiles", () => {
+    const onScheduleLegendaryTrial = vi.fn();
+    renderAdmin(vi.fn(), vi.fn(), vi.fn(), onScheduleLegendaryTrial, 0);
+
+    const button = screen.getByRole("button", { name: "Avvia prova Leggendario" });
+    expect(button).toBeDisabled();
+    expect(screen.getByText(/nessun profilo Leggendario disponibile/i)).toBeVisible();
+    fireEvent.click(button);
+
+    expect(onScheduleLegendaryTrial).not.toHaveBeenCalled();
   });
 });

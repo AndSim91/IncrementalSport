@@ -38,10 +38,14 @@ export function describeTournamentRewardBonus(reward: TournamentReward): string 
 }
 
 export function resolveTournamentRewardFallbacks(
-  state: Pick<GameState, "contacts" | "collaborators" | "legendaryCollaborators">,
+  state: Pick<
+    GameState,
+    "contacts" | "collaborators" | "legendaryCollaborators" | "scheduledTrials"
+  >,
   result: TournamentResult,
+  now: number,
 ): TournamentResult {
-  let availableLegendaryCount = getAvailableStandardLegendaryProfiles(state).length;
+  let availableLegendaryCount = getAvailableStandardLegendaryProfiles(state, now).length;
   let changed = false;
   const rewards = result.rewards.map((reward) => {
     const bonus = getTournamentRewardBonus(reward);
@@ -169,7 +173,7 @@ export function applyTournamentRewards(
   result: TournamentResult,
   now: number,
 ): GameState {
-  const resolvedResult = resolveTournamentRewardFallbacks(state, result);
+  const resolvedResult = resolveTournamentRewardFallbacks(state, result, now);
   const euros = resolvedResult.rewards.reduce((total, reward) => total + reward.euros, 0);
   let nextState: GameState = {
     ...state,

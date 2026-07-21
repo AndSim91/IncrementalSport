@@ -95,7 +95,8 @@ describe("EventsView", () => {
     expect(screen.getByRole("heading", { name: "Sparring al parco" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Volantinaggio organizzato benissimo" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Lezioni all'aperto" })).not.toBeInTheDocument();
-    expect(screen.getByText("Prossimo sblocco: Lezioni all'aperto a 5 Fama.")).toBeVisible();
+    expect(screen.queryByText("Prossimo sblocco: Lezioni all'aperto a 5 Fama."))
+      .not.toBeInTheDocument();
     expect(screen.queryByText(/Previsione:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/persone →/)).not.toBeInTheDocument();
   });
@@ -108,6 +109,9 @@ describe("EventsView", () => {
     const tutorialRow = screen.getByRole("heading", { name: "Sparring al parco" })
       .closest("article");
     expect(within(tutorialRow!).getByText("3 secondi")).toBeVisible();
+    expect(tutorialRow).toHaveAttribute("data-tutorial-region", "park-sparring-event");
+    expect(within(tutorialRow!).getByRole("button", { name: "Partecipa gratis" }))
+      .toHaveAttribute("data-tutorial-region", "park-sparring-action");
 
     rerender(
       <EventsView
@@ -138,7 +142,7 @@ describe("EventsView", () => {
     expect(screen.getByRole("heading", { name: "CogoComix" })).toBeVisible();
     expect(screen.getByText("Potenzialità: Alta")).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Burtomics" })).not.toBeInTheDocument();
-    expect(screen.getByText("Prossimo sblocco: Burtomics a 90 Fama.")).toBeVisible();
+    expect(screen.queryByText(/Fama della scuola/)).not.toBeInTheDocument();
   });
 
   it("keeps events unlocked when current members fall below the fame record", () => {
@@ -148,10 +152,7 @@ describe("EventsView", () => {
       school: { ...initial.school, activeMembers: 70, peakActiveMembers: 70, historicMembers: 100 },
     }} onStart={() => undefined} />);
 
-    expect(screen.getByText("Fama della scuola: 100")).toBeVisible();
-    expect(screen.getByText("Equivale al totale cumulativo delle iscrizioni e non diminuisce quando qualcuno lascia la scuola.")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Burtomics" })).toBeVisible();
-    expect(screen.getByText("Prossimo sblocco: Genova Comics & Games a 120 Fama.")).toBeVisible();
   });
 
   it("shows members and swords available for concurrent events", () => {

@@ -10,6 +10,7 @@ interface ProgressBarProps {
   durationMs?: number;
   variant?: "linear" | "circular";
   title?: string;
+  valueText?: string;
 }
 
 export function ProgressBar({
@@ -21,6 +22,7 @@ export function ProgressBar({
   durationMs,
   variant = "linear",
   title,
+  valueText,
 }: ProgressBarProps) {
   const safeMax = Math.max(1, max);
   const boundedValue = Math.min(safeMax, Math.max(0, value));
@@ -44,7 +46,9 @@ export function ProgressBar({
       aria-valuemin={ariaHidden ? undefined : 0}
       aria-valuemax={ariaHidden ? undefined : safeMax}
       aria-valuenow={ariaHidden || indeterminate ? undefined : boundedValue}
-      aria-valuetext={ariaHidden || !indeterminate ? undefined : "Avanzamento in corso"}
+      aria-valuetext={ariaHidden
+        ? undefined
+        : indeterminate ? "Avanzamento in corso" : valueText}
       title={title}
       style={progressStyle}
     >

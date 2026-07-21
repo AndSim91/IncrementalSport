@@ -4,12 +4,20 @@ import type { GameState } from "../../game/types";
 
 export type AppView = GameArea | "admin";
 
-const items: { id: AppView; label: string; icon: IconName; devOnly?: boolean }[] = [
+interface AppRailItem {
+  id: AppView;
+  label: string;
+  icon: IconName;
+  devOnly?: boolean;
+  tutorialRegion?: "events-navigation" | "upgrades-navigation";
+}
+
+const items: AppRailItem[] = [
   { id: "mail", label: "Posta", icon: "mail" },
-  { id: "events", label: "Eventi", icon: "flag" },
+  { id: "events", label: "Eventi", icon: "flag", tutorialRegion: "events-navigation" },
   { id: "contacts", label: "Iscritti", icon: "people" },
   { id: "tournaments", label: "Tornei", icon: "trophy" },
-  { id: "upgrades", label: "Upgrade", icon: "spark" },
+  { id: "upgrades", label: "Upgrade", icon: "spark", tutorialRegion: "upgrades-navigation" },
   { id: "statistics", label: "Attività", icon: "tasks" },
   { id: "settings", label: "Impostazioni", icon: "settings" },
   { id: "admin", label: "Admin", icon: "admin", devOnly: true },
@@ -35,6 +43,8 @@ export function AppRail({
           key={item.id}
           type="button"
           className={view === item.id ? "rail-item active" : "rail-item"}
+          data-tutorial-region={item.tutorialRegion}
+          data-tutorial-target={item.tutorialRegion ? "true" : undefined}
           onClick={() => onChange(item.id)}
           aria-current={view === item.id ? "page" : undefined}
         >

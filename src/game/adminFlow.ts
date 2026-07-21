@@ -1,8 +1,12 @@
 import { addLegendaryEncounters, createAcquiredContacts, mergeAcquiredContacts } from "./contacts";
+import { GAME_CONFIG } from "./config";
 import { roundCurrency } from "./economy";
 import { startNextCampaign } from "./emailFlow";
+import { makeGameId } from "./ids";
+import { getAvailableStandardLegendaryProfiles } from "./legendaryAvailability";
 import { departMembers } from "./membershipFlow";
-import type { GameState } from "./types";
+import { nextRandom } from "./random";
+import type { GameState, ScheduledTrial } from "./types";
 import { unlockSocialIfEligible } from "./unlocks";
 
 export function addAdminContacts(state: GameState, rawAmount: number): GameState {
@@ -116,4 +120,55 @@ export function addAdminEuros(state: GameState, amount: number): GameState {
   return Number.isFinite(euros)
     ? { ...state, school: { ...state.school, euros } }
     : state;
+}
+
+export function scheduleAdminLegendaryTrial(state: GameState, now: number): GameState {
+  if (
+    !Number.isFinite(now) ||
+    getAvailableStandardLegendaryProfiles(state, now).length === 0
+  ) {
+    return state;
+  }
+
+  const acquired = createAcquiredContacts(
+    state,
+    1,
+    "event",
+    now,
+    { forcedRarity: "legendary" },
+  );
+  const contact = acquired.contacts[0];
+  if (!contact?.specialProfileId || contact.rarity !== "legendary") return state;
+
+  const [resultRoll, nextSeed] = nextRandom(acquired.nextSeed);
+  const trial: ScheduledTrial = {
+    id: makeGameId(
+      "trial",
+      now,
+      state.historyArchive.completedTrials + state.scheduledTrials.length,
+    ),
+    contactId: contact.id,
+    startsAt: now,
+    resolvesAt: now + GAME_CONFIG.trialDurationMs,
+    resultSeed: Math.floor(resultRoll * 2_147_483_647),
+    status: "scheduled",
+  };
+
+  return {
+    ...state,
+    randomSeed: nextSeed,
+    legendaryCollaborators: addLegendaryEncounters(
+      state.legendaryCollaborators,
+      acquired.contacts,
+    ),
+    contacts: mergeAcquiredContacts(
+      state.contacts,
+      [{ ...contact, status: "trialScheduled" }],
+    ),
+    scheduledTrials: [...state.scheduledTrials, trial],
+    statistics: {
+      ...state.statistics,
+      trialsBooked: state.statistics.trialsBooked + 1,
+    },
+  };
 }

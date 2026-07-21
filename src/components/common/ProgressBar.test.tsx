@@ -11,11 +11,13 @@ describe("ProgressBar", () => {
         label="Progresso test"
         value={35}
         durationMs={GAME_CONFIG.gameTickMs}
+        valueText="35 punti completati"
       />,
     );
 
     const progress = screen.getByRole("progressbar", { name: "Progresso test" });
     expect(progress).toHaveAttribute("aria-valuenow", "35");
+    expect(progress).toHaveAttribute("aria-valuetext", "35 punti completati");
     expect(progress).not.toHaveClass("is-indeterminate");
     expect(progress.firstElementChild).toHaveStyle({ width: "35%" });
   });

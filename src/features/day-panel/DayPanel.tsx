@@ -75,20 +75,34 @@ function ShortGoalCard({ state }: { state: GameState }) {
 function DayNotificationEntry({
   notification,
   now,
+  isTutorialTrial,
 }: {
   notification: DayNotification;
   now: number;
+  isTutorialTrial: boolean;
 }) {
   const timing = getTiming(notification, now);
-  const expiryProgress = notification.expiresAt === undefined
+  const expiryRemainingMs = notification.expiresAt === undefined
+    ? undefined
+    : Math.min(
+        DAY_NOTIFICATION_VISIBILITY_MS,
+        Math.max(0, notification.expiresAt - now),
+      );
+  const expiryProgress = expiryRemainingMs === undefined
     ? undefined
     : Math.max(
         0,
         Math.min(
           100,
-          ((notification.expiresAt - now) / DAY_NOTIFICATION_VISIBILITY_MS) * 100,
+          (expiryRemainingMs / DAY_NOTIFICATION_VISIBILITY_MS) * 100,
         ),
       );
+  const expiryRemainingSeconds = expiryRemainingMs === undefined
+    ? undefined
+    : Math.ceil(expiryRemainingMs / 1_000);
+  const expiryValueText = expiryRemainingSeconds === undefined
+    ? undefined
+    : `${expiryRemainingSeconds} ${expiryRemainingSeconds === 1 ? "secondo" : "secondi"} rimanenti`;
   const personClassName = notification.person
     ? `rarity-name ${getRarityClassName(
         notification.person.rarity,
@@ -102,6 +116,8 @@ function DayNotificationEntry({
   return (
     <div
       className={`appointment-entry appointment-entry-${notification.phase} day-notification-${notification.kind}`}
+      data-tutorial-region={isTutorialTrial ? "first-trial-row" : undefined}
+      data-tutorial-target={isTutorialTrial ? "true" : undefined}
     >
       <div
         className={`appointment appointment-${notification.phase}`}
@@ -123,6 +139,7 @@ function DayNotificationEntry({
           label={`Tempo residuo della notifica: ${accessibleSubject}`}
           value={expiryProgress}
           durationMs={DAY_NOTIFICATION_VISIBILITY_MS}
+          valueText={expiryValueText}
         />
       )}
     </div>
@@ -132,9 +149,12 @@ function DayNotificationEntry({
 export function DayPanel({ state }: { state: GameState }) {
   const now = useGameTime(true, GAME_CONFIG.gameTickMs);
   const notifications = selectDayNotifications(state, now);
+  const tutorialTrialNotificationId = state.scheduledTrials.find(
+    (trial) => trial.tutorialSceneId === "first-event",
+  )?.id;
 
   return (
-    <aside className="day-panel" aria-label="La mia giornata">
+    <aside className="day-panel" data-tutorial-target="true" aria-label="La mia giornata">
       <div className="day-heading"><strong>La mia giornata</strong><Icon name="calendar" /></div>
       <ShortGoalCard state={state} />
       {notifications.length === 0 ? (
@@ -144,7 +164,12 @@ export function DayPanel({ state }: { state: GameState }) {
           <span>Prove, iscrizioni, tornei ed eventi importanti compariranno qui.</span>
         </div>
       ) : notifications.map((notification) => (
-        <DayNotificationEntry key={notification.id} notification={notification} now={now} />
+        <DayNotificationEntry
+          key={notification.id}
+          notification={notification}
+          now={now}
+          isTutorialTrial={notification.id === `trial-${tutorialTrialNotificationId}`}
+        />
       ))}
     </aside>
   );

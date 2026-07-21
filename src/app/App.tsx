@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { Icon } from "../components/common/Icon";
 import { ProfileNameDialog } from "../components/ProfileNameDialog";
 import {
@@ -24,6 +24,7 @@ import { TutorialLayer } from "../features/tutorial/TutorialLayer";
 import { useTutorialController } from "../features/tutorial/useTutorialController";
 import { GameTimeProvider } from "../game/GameTimeProvider";
 import { useGameEngine } from "../game/useGameEngine";
+import { getAvailableStandardLegendaryProfiles } from "../game/legendaryAvailability";
 import { isGameAreaUnlocked } from "../game/progression";
 import { exportGame, importGame, resetGame, saveGame } from "../game/save";
 import {
@@ -74,10 +75,18 @@ export function App() {
   const activeView: AppView = view === "admin"
     ? import.meta.env.DEV ? "admin" : "mail"
     : isGameAreaUnlocked(view, state) ? view : "mail";
+  const navigateForTutorial = useCallback((targetView: string) => {
+    if (targetView !== "mail") return;
+    setView("mail");
+    setMailFolder("inbox");
+    setSelectedMessageId(null);
+    setSelectedSentEmailId(null);
+  }, []);
   const tutorial = useTutorialController({
     state,
     activeView,
     dispatch,
+    onNavigate: navigateForTutorial,
   });
 
   useLayoutEffect(() => {
@@ -167,6 +176,7 @@ export function App() {
         nextMonthAt={state.school.nextFeeAt}
         contactsAwaitingEmail={selectContactsAwaitingEmail(state)}
         activeMembers={state.school.activeMembers}
+        historicMembers={state.school.historicMembers}
         followers={state.unlocks.social ? state.school.followers : undefined}
         euros={state.school.euros}
         isPaused={isPaused}
@@ -293,9 +303,16 @@ export function App() {
             availableContacts={selectAvailableContacts(state)}
             activeMembers={state.school.activeMembers}
             euros={state.school.euros}
+            availableLegendaryProfiles={
+              getAvailableStandardLegendaryProfiles(state, getGameNow()).length
+            }
             onAddContacts={(amount) => dispatch({ type: "ADMIN_ADD_CONTACTS", amount })}
             onAddMembers={(amount) => dispatch({ type: "ADMIN_ADD_MEMBERS", amount })}
             onAddEuros={(amount) => dispatch({ type: "ADMIN_ADD_EUROS", amount })}
+            onScheduleLegendaryTrial={() => dispatch({
+              type: "ADMIN_SCHEDULE_LEGENDARY_TRIAL",
+              now: getGameNow(),
+            })}
           />
         ) : (
           <OverviewView
@@ -308,11 +325,6 @@ export function App() {
             saveStatus={saveStatus}
             onSaveNow={saveNow}
             onUpdateProfileName={updateProfileName}
-            onFoundSchool={(details) => dispatch({
-              type: "FOUND_SCHOOL",
-              details,
-              now: getGameNow(),
-            })}
             darkMode={darkMode}
             onDarkModeChange={setDarkMode}
             reduceMotion={reduceMotion}

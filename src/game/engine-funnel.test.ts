@@ -33,9 +33,7 @@ describe("game engine: funnel", () => {
     expect(state.school.euros).toBe(0);
     expect(state.school.currentMonth).toBe(9);
     expect(getSchoolYear(state.school.currentMonth)).toBe(1);
-    expect(state.contacts.every((contact) =>
-      contact.rarity === "common" || contact.rarity === "rare"
-    )).toBe(true);
+    expect(state.contacts.every((contact) => contact.rarity === "common")).toBe(true);
     expect(PERSON_RARITIES.common.queueAppearanceChance).toBe(0.8);
     expect(PERSON_RARITIES.rare.queueAppearanceChance).toBe(0.125);
     expect(PERSON_RARITIES["ultra-rare"].queueAppearanceChance).toBe(0.055);
@@ -127,7 +125,7 @@ describe("game engine: funnel", () => {
     }, { type: "TICK", now: 2_000 });
 
     expect(state.contacts.slice(0, 8).every((contact) =>
-      contact.rarity === "common" || contact.rarity === "rare"
+      contact.rarity === "common"
     )).toBe(true);
     expect(state.contacts[8].rarity).toBe("legendary");
     expect(state.contacts[8].specialProfileId).toBe("andrea-simonazzi");
@@ -200,6 +198,12 @@ describe("game engine: funnel", () => {
     });
 
     expect(generated.contacts[8].specialProfileId).toBe("andrea-simonazzi");
+    expect(generated.contacts.slice(0, 8).every((contact) =>
+      contact.rarity === "common"
+    )).toBe(true);
+    expect(generated.contacts.slice(9).some((contact) =>
+      contact.rarity === "rare"
+    )).toBe(true);
     expect(generated.contacts.slice(9).some((contact) =>
       contact.rarity === "ultra-rare" || contact.rarity === "legendary"
     )).toBe(true);

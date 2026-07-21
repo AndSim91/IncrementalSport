@@ -29,6 +29,126 @@
     0 0 0 6px rgb(15 108 189 / 18%);
 }
 
+.title-bar[data-tutorial-treatment="focus"]:has(
+  [data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"]
+) {
+  z-index: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.title-bar:has(
+  [data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"]
+) > :not(.title-resources),
+.title-bar:has(
+  [data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"]
+) .title-resource:not([data-tutorial-region="contacts-counter"]) {
+  opacity: .3;
+}
+
+[data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"] {
+  z-index: 5001;
+  border-radius: 4px;
+  color: var(--blue-700);
+  background: white;
+  box-shadow:
+    0 0 0 2px white,
+    0 0 0 7px rgb(255 255 255 / 32%),
+    0 5px 18px rgb(3 32 58 / 38%);
+}
+
+[data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"] svg,
+[data-tutorial-region="contacts-counter"][data-tutorial-treatment="focus"] small {
+  color: var(--blue-700);
+}
+
+.app-rail[data-tutorial-treatment="focus"]:has(
+  .rail-item[data-tutorial-target][data-tutorial-treatment="focus"]
+) {
+  box-shadow: none;
+}
+
+.app-rail:has(
+  .rail-item[data-tutorial-target][data-tutorial-treatment="focus"]
+) .rail-item:not([data-tutorial-treatment="focus"]) {
+  opacity: .22;
+}
+
+.rail-item[data-tutorial-target][data-tutorial-treatment="focus"] {
+  color: white;
+  background: var(--blue-600);
+  box-shadow:
+    0 0 0 2px white,
+    0 0 0 7px rgb(15 108 189 / 32%),
+    0 7px 20px rgb(15 57 92 / 32%);
+}
+
+.rail-item[data-tutorial-target][data-tutorial-treatment="focus"]:hover {
+  background: #115ea3;
+}
+
+[data-tutorial-target][data-tutorial-treatment="focus"] {
+  animation: tutorial-target-pulse 1.8s ease-in-out infinite;
+}
+
+.composer[data-tutorial-treatment="focus"]:has(
+  [data-tutorial-region="composer-header"][data-tutorial-treatment="focus"]
+) {
+  z-index: auto;
+  box-shadow: none;
+}
+
+[data-tutorial-region="composer-header"][data-tutorial-treatment="focus"] {
+  z-index: 5001;
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 3px white,
+    0 0 0 8px rgb(15 108 189 / 30%),
+    0 8px 24px rgb(15 57 92 / 30%);
+}
+
+.day-panel[data-tutorial-treatment="focus"]:has(
+  [data-tutorial-region="first-trial-row"][data-tutorial-treatment="focus"]
+) {
+  z-index: auto;
+}
+
+[data-tutorial-region="first-trial-row"][data-tutorial-treatment="focus"] {
+  z-index: 5001;
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 3px white,
+    0 0 0 8px rgb(15 108 189 / 30%),
+    0 8px 24px rgb(15 57 92 / 30%);
+}
+
+.mail-body[data-tutorial-target][data-tutorial-treatment="focus"],
+.event-row[data-tutorial-target][data-tutorial-treatment="focus"],
+.event-row > button[data-tutorial-target][data-tutorial-treatment="focus"],
+.day-panel[data-tutorial-target][data-tutorial-treatment="focus"] {
+  box-shadow:
+    0 0 0 3px white,
+    0 0 0 8px rgb(15 108 189 / 30%),
+    0 8px 24px rgb(15 57 92 / 24%);
+}
+
+.event-row > button[data-tutorial-target][data-tutorial-treatment="focus"] {
+  border-color: var(--blue-600);
+  color: white;
+  background: var(--blue-600);
+}
+
+@keyframes tutorial-target-pulse {
+  50% {
+    box-shadow:
+      0 0 0 2px white,
+      0 0 0 10px rgb(15 108 189 / 18%),
+      0 8px 24px rgb(15 57 92 / 38%);
+  }
+}
+
 .tutorial-layer {
   position: fixed;
   z-index: 5000;
@@ -42,6 +162,11 @@
   padding: 28px;
   background: rgb(8 25 43 / 34%);
   pointer-events: auto;
+}
+
+.tutorial-layer.is-dialog.is-card-left {
+  justify-items: start;
+  padding-left: clamp(28px, 6vw, 96px);
 }
 
 .tutorial-layer.is-objective {

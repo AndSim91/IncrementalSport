@@ -68,6 +68,29 @@ afterEach(() => {
 });
 
 describe("DayPanel", () => {
+  it("exposes La mia giornata as a guided tutorial target", () => {
+    render(<DayPanel state={createInitialState(1_000)} />);
+
+    expect(screen.getByLabelText("La mia giornata"))
+      .toHaveAttribute("data-tutorial-target", "true");
+  });
+
+  it("exposes only the tutorial trial row as the precise guided target", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(15_000);
+    const state = stateWithTrial("trialScheduled", "scheduled");
+    state.scheduledTrials[0] = {
+      ...state.scheduledTrials[0],
+      tutorialSceneId: "first-event",
+    };
+
+    render(<DayPanel state={state} />);
+
+    const trialRow = screen.getByLabelText(/Lezione di prova/).closest(".appointment-entry");
+    expect(trialRow).toHaveAttribute("data-tutorial-region", "first-trial-row");
+    expect(trialRow).toHaveAttribute("data-tutorial-target", "true");
+  });
+
   it("does not show the current date under the heading", () => {
     vi.useFakeTimers();
     vi.setSystemTime(15_000);
@@ -122,6 +145,8 @@ describe("DayPanel", () => {
     expect(screen.getByText(label).closest(".appointment")).toHaveClass(className);
     expect(screen.getByRole("progressbar", { name: /Tempo residuo/ }))
       .toHaveAttribute("aria-valuenow", "50");
+    expect(screen.getByRole("progressbar", { name: /Tempo residuo/ }))
+      .toHaveAttribute("aria-valuetext", "5 secondi rimanenti");
   });
 
   it.each([

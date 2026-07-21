@@ -1,4 +1,9 @@
-import { addAdminContacts, addAdminEuros, addAdminMembers } from "./adminFlow";
+import {
+  addAdminContacts,
+  addAdminEuros,
+  addAdminMembers,
+  scheduleAdminLegendaryTrial,
+} from "./adminFlow";
 import { buyOfficialSword, maintainEquipment } from "./equipment";
 import { startAcquisitionEvent } from "./eventFlow";
 import { markAllMessagesRead, markMessageRead } from "./inboxFlow";
@@ -66,6 +71,10 @@ export function createGameActionHandlers(
     ADMIN_ADD_CONTACTS: (state, action) => addAdminContacts(state, action.amount),
     ADMIN_ADD_MEMBERS: (state, action) => addAdminMembers(state, action.amount),
     ADMIN_ADD_EUROS: (state, action) => addAdminEuros(state, action.amount),
+    ADMIN_SCHEDULE_LEGENDARY_TRIAL: (state, action) => scheduleAdminLegendaryTrial(
+      state,
+      action.now,
+    ),
     UPDATE_PROFILE_NAME: (state, action) => updateProfileName(state, action.displayName),
     FOUND_SCHOOL: (state, action) => foundSchool(state, action.details, action.now),
     BUY_UPGRADE: (state, action) => buyUpgrade(state, action.upgradeId),

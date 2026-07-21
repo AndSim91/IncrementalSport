@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import { getTournamentReward } from "../content/tournaments";
 import { GAME_CONFIG } from "./config";
 import { createInitialState } from "./initialState";
@@ -343,7 +344,7 @@ describe("tournament reward effects", () => {
       bonus: { kind: "enrollment", rarity: "legendary" },
     });
 
-    const resolved = resolveTournamentRewardFallbacks(exhausted, result);
+    const resolved = resolveTournamentRewardFallbacks(exhausted, result, 2_000);
     const rewarded = applyTournamentRewards(exhausted, result, 2_000);
 
     expect(resolved.rewards[0].bonus).toEqual({
@@ -356,5 +357,57 @@ describe("tournament reward effects", () => {
       status: "enrolled",
     });
     expect(rewarded.collaborators).toHaveLength(exhausted.collaborators.length);
+  });
+
+  it("restores failed Legendary profiles to the tournament reward pool after notification expiry", () => {
+    const state = rewardState();
+    const failedProfileId = "eva-parodi" as const;
+    const failedContact = {
+      ...state.contacts[0],
+      id: "contact-failed-eva",
+      firstName: "Eva",
+      lastName: "Parodi",
+      status: "lost" as const,
+      rarity: "legendary" as const,
+      specialProfileId: failedProfileId,
+    };
+    const trialResolvedAt = 2_000;
+    const waitingForExpiry = {
+      ...state,
+      contacts: [...state.contacts, failedContact],
+      scheduledTrials: [{
+        id: "trial-failed-eva",
+        contactId: failedContact.id,
+        startsAt: 1_000,
+        resolvesAt: trialResolvedAt,
+        resultSeed: 1,
+        status: "completed" as const,
+      }],
+      legendaryCollaborators: {
+        ...state.legendaryCollaborators,
+        enrolledProfileIds: SPECIAL_COLLABORATORS
+          .filter((profile) => profile.id !== failedProfileId)
+          .map((profile) => profile.id),
+      },
+    };
+    const result = resultWithReward({
+      discipline: "arena",
+      position: 1,
+      euros: 50_000,
+      contacts: 0,
+      bonus: { kind: "trial", rarity: "legendary" },
+    });
+    const expiresAt = trialResolvedAt + GAME_CONFIG.dayNotificationVisibilityMs;
+
+    expect(resolveTournamentRewardFallbacks(
+      waitingForExpiry,
+      result,
+      expiresAt - 1,
+    ).rewards[0].bonus).toMatchObject({ rarity: "ultra-rare" });
+    expect(resolveTournamentRewardFallbacks(
+      waitingForExpiry,
+      result,
+      expiresAt,
+    ).rewards[0].bonus).toMatchObject({ rarity: "legendary" });
   });
 });

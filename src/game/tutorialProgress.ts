@@ -29,12 +29,9 @@ export function finishTutorialScene(
     state.emails.filter((email) => email.status === "sending").length;
   const releasesTutorialEmails = sceneId === FIRST_EVENT_TUTORIAL_SCENE_ID;
   const tutorialFinishedAt = state.automation.lastProcessedAt;
-  const completedSceneIds = !skipped && sceneId === FIRST_EVENT_TUTORIAL_SCENE_ID &&
-      !state.tutorial.completedSceneIds.includes("first-trial")
-    ? [...state.tutorial.completedSceneIds, sceneId, "first-trial"]
-    : skipped
-      ? state.tutorial.completedSceneIds
-      : [...state.tutorial.completedSceneIds, sceneId];
+  const completedSceneIds = skipped
+    ? state.tutorial.completedSceneIds
+    : [...state.tutorial.completedSceneIds, sceneId];
   const skippedSceneIds = skipped
     ? [...state.tutorial.skippedSceneIds, sceneId]
     : state.tutorial.skippedSceneIds;

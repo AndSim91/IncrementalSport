@@ -578,34 +578,6 @@
   font-weight: 600;
 }
 
-.event-fame-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: none;
-  padding: 10px 15px;
-  border: 1px solid var(--line);
-  border-top: 0;
-  background: #fff;
-}
-
-.event-fame-note svg {
-  width: 18px;
-  flex: 0 0 auto;
-  color: var(--blue-600);
-}
-
-.event-fame-note span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.event-fame-note small {
-  color: var(--ink-muted);
-  font-size: 11px;
-}
-
 .event-notice svg {
   color: var(--blue-600);
 }

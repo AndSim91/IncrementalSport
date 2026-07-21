@@ -4,12 +4,21 @@ import type { GameState } from "../game/types";
 
 export const TUTORIAL_REGION_IDS = [
   "title",
+  "contacts-counter",
   "commands",
   "navigation",
+  "events-navigation",
+  "upgrades-navigation",
   "folders",
   "messages",
   "main",
+  "composer-header",
+  "composer-recipient",
+  "composer-body",
+  "park-sparring-event",
+  "park-sparring-action",
   "day-panel",
+  "first-trial-row",
   "status",
 ] as const;
 
@@ -19,6 +28,7 @@ export const TUTORIAL_SCENE_IDS = [
   "first-invitation",
   "first-event",
   "first-trial",
+  "first-legendary",
   "first-enrollment",
 ] as const;
 
@@ -43,6 +53,8 @@ interface TutorialStepBase {
   body: TutorialBody;
   focusRegions: RegionSelection;
   hiddenRegions?: RegionSelection;
+  navigateTo?: string;
+  cardPlacement?: "left";
 }
 
 export interface TutorialDialogStep extends TutorialStepBase {
@@ -114,7 +126,7 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         body: [
           "Premi un tasto qualsiasi finché la bozza è completa. Durante questo passaggio il tempo di gioco resta in pausa.",
         ],
-        focusRegions: ["main"],
+        focusRegions: ["main", "composer-body"],
         isComplete: ({ state }) => state.emails.some((email) => email.status === "sending"),
       },
     ],
@@ -131,7 +143,9 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
           "La prima missione è completata. Apri Eventi dalla barra delle applicazioni per organizzare nuove attività esterne.",
         ],
         focusRegions: ({ activeView }) =>
-          activeView === "events" ? ["main"] : ["navigation"],
+          activeView === "events"
+            ? ["main"]
+            : ["navigation", "events-navigation"],
         isComplete: ({ activeView }) => activeView === "events",
       },
       {
@@ -152,7 +166,7 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         body: [
           "Trova “Sparring al parco” e premi “Partecipa gratis”. Per questa dimostrazione guidata durerà soltanto 3 secondi.",
         ],
-        focusRegions: ["main"],
+        focusRegions: ["main", "park-sparring-action"],
         isComplete: ({ state }) => state.acquisitionEvents.some(
           (event) => event.tutorialSceneId === "first-event",
         ),
@@ -164,7 +178,7 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         body: [
           "Lascia scorrere i 3 secondi dell'attività. Il tempo di gioco resta attivo durante lo sparring.",
         ],
-        focusRegions: ["main"],
+        focusRegions: ["main", "park-sparring-event"],
         isComplete: ({ state }) => state.acquisitionEvents.some(
           (event) => event.tutorialSceneId === "first-event" && event.status === "completed",
         ),
@@ -183,16 +197,17 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
             "I contatti da soli non sono ancora iscritti. Le email possono convertirli prima in una prova in palestra e, se la prova va bene, in un'iscrizione.",
           ];
         },
-        focusRegions: ["title"],
+        focusRegions: ["title", "contacts-counter"],
       },
       {
         id: "watch-first-trial",
         kind: "objective",
         title: "Osserva La mia giornata",
         body: [
-          "Una delle email inviate a inizio partita ha ricevuto risposta. Guarda “La mia giornata”: il tutorial terminerà quando comparirà la prova in palestra con il suo conto alla rovescia.",
+          "Torniamo in Posta e attendiamo la risposta a una delle email inviate a inizio partita.",
         ],
         focusRegions: ["day-panel"],
+        navigateTo: "mail",
         isComplete: ({ state }) => state.scheduledTrials.some(
           (trial) => trial.tutorialSceneId === "first-event" && trial.status === "scheduled",
         ),
@@ -207,12 +222,38 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         id: "trial-booked",
         kind: "dialog",
         speaker: "Segreteria dell'Ordine",
-        title: "Una risposta dalla palestra",
+        title: "Le email hanno funzionato",
         body: [
-          "Qualcuno ha accettato l'invito. La prova compare in “La mia giornata”, insieme al tempo che manca al suo esito.",
-          "Prima c'è l'attesa dell'appuntamento, poi la lezione. Alla fine saprai se la persona si è iscritta oppure no.",
+          "Una delle email inviate a inizio partita ha ricevuto risposta: la prima prova in palestra è ora prenotata.",
+          "La trovi in “La mia giornata” con il conto alla rovescia. Alla fine saprai se il contatto si iscriverà alla scuola.",
         ],
-        focusRegions: ["day-panel"],
+        focusRegions: ["day-panel", "first-trial-row"],
+      },
+    ],
+  },
+  {
+    id: "first-legendary",
+    canStart: ({ state }) =>
+      state.network.schools.length === 0 &&
+      state.contacts.some(
+        (contact) =>
+          contact.specialProfileId === "andrea-simonazzi" &&
+          contact.status === "writing",
+      ),
+    steps: [
+      {
+        id: "legendary-rarities",
+        kind: "dialog",
+        speaker: "Segreteria dell'Ordine",
+        title: "Il primo Leggendario",
+        body: [
+          "Finora hai incontrato soltanto atleti Comuni. Ogni possibile iscritto possiede però una rarità: Comune, Raro, Ultra Raro o Leggendario.",
+          "Andrea Simonazzi è il primo atleta Leggendario della partita. Da questo momento potranno comparire tutte le rarità, ognuna con probabilità e caratteristiche diverse.",
+          "I Leggendari sono profili unici e, quando si iscrivono, diventano subito Collaboratori delle Onde. Collezionali tutti!",
+        ],
+        focusRegions: ["main", "composer-header"],
+        navigateTo: "mail",
+        cardPlacement: "left",
       },
     ],
   },
@@ -239,7 +280,9 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
           "Usa la barra delle applicazioni a sinistra e apri Upgrade.",
         ],
         focusRegions: ({ activeView }) =>
-          activeView === "upgrades" ? ["main"] : ["navigation"],
+          activeView === "upgrades"
+            ? ["main"]
+            : ["navigation", "upgrades-navigation"],
         isComplete: ({ activeView }) => activeView === "upgrades",
       },
       {

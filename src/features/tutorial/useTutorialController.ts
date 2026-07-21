@@ -6,16 +6,32 @@ import {
 } from "../../content/tutorialScenes";
 import type { GameAction, GameState } from "../../game/types";
 
+interface TutorialStepProgress {
+  gameCreatedAt: number;
+  indexes: Partial<Record<TutorialSceneId, number>>;
+}
+
 export function useTutorialController({
   state,
   activeView,
   dispatch,
+  onNavigate,
 }: {
   state: GameState;
   activeView: string;
   dispatch: (action: GameAction) => void;
+  onNavigate?: (view: string) => void;
 }) {
-  const [stepIndexes, setStepIndexes] = useState<Partial<Record<TutorialSceneId, number>>>({});
+  const [stepProgress, setStepProgress] = useState<TutorialStepProgress>(() => ({
+    gameCreatedAt: state.createdAt,
+    indexes: {},
+  }));
+  if (stepProgress.gameCreatedAt !== state.createdAt) {
+    setStepProgress({ gameCreatedAt: state.createdAt, indexes: {} });
+  }
+  const stepIndexes = stepProgress.gameCreatedAt === state.createdAt
+    ? stepProgress.indexes
+    : {};
   const context = useMemo<TutorialRuntimeContext>(
     () => ({ state, activeView }),
     [activeView, state],
@@ -38,6 +54,12 @@ export function useTutorialController({
     : null;
   const activeScene = objectiveCompletedScene ? null : candidateScene;
   const activeStep = activeScene?.steps[resolvedStepIndex] ?? null;
+  const activeStepNavigation = activeStep?.navigateTo;
+
+  useEffect(() => {
+    if (!activeStepNavigation || activeStepNavigation === activeView) return;
+    onNavigate?.(activeStepNavigation);
+  }, [activeStepNavigation, activeView, onNavigate]);
 
   useEffect(() => {
     if (!objectiveCompletedScene) return;
@@ -63,11 +85,21 @@ export function useTutorialController({
       finishScene(false);
       return;
     }
-    setStepIndexes((current) => ({
-      ...current,
-      [activeScene.id]: resolvedStepIndex + 1,
-    }));
-  }, [activeScene, finishScene, resolvedStepIndex]);
+    const nextStep = activeScene.steps[resolvedStepIndex + 1];
+    if (nextStep.navigateTo) onNavigate?.(nextStep.navigateTo);
+    setStepProgress((current) => {
+      const currentIndexes = current.gameCreatedAt === state.createdAt
+        ? current.indexes
+        : {};
+      return {
+        gameCreatedAt: state.createdAt,
+        indexes: {
+          ...currentIndexes,
+          [activeScene.id]: resolvedStepIndex + 1,
+        },
+      };
+    });
+  }, [activeScene, finishScene, onNavigate, resolvedStepIndex, state.createdAt]);
 
   return {
     context,

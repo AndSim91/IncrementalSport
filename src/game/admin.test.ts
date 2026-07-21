@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { GAME_CONFIG } from "./config";
 import { createInitialState, gameReducer } from "./engine";
+import { nextRandom } from "./random";
 import { selectAvailableContacts } from "./selectors";
+import { getLegendaryEnrollmentChance } from "./trialFlow";
+
+function findSeed(predicate: (roll: number) => boolean): number {
+  for (let seed = 0; seed < 100_000; seed += 1) {
+    if (predicate(nextRandom(seed)[0])) return seed;
+  }
+  throw new Error("No deterministic seed found");
+}
 
 describe("admin resource actions", () => {
   it("adds members and updates member-based progression", () => {
@@ -86,5 +95,60 @@ describe("admin resource actions", () => {
 
     expect(state.school.activeMembers).toBe(0);
     expect(state.school.euros).toBe(0);
+  });
+
+  it("schedules a real Legendary trial and enrolls only when the trial resolves", () => {
+    const initial = createInitialState(1_000);
+    const scheduled = gameReducer(initial, {
+      type: "ADMIN_SCHEDULE_LEGENDARY_TRIAL",
+      now: 2_000,
+    });
+    const trial = scheduled.scheduledTrials.at(-1)!;
+    const contact = scheduled.contacts.find((candidate) => candidate.id === trial.contactId)!;
+
+    expect(contact).toMatchObject({
+      rarity: "legendary",
+      status: "trialScheduled",
+    });
+    expect(contact.specialProfileId).toBeDefined();
+    expect(trial.startsAt).toBe(2_000);
+    expect(trial.resolvesAt - trial.startsAt).toBe(GAME_CONFIG.trialDurationMs);
+    expect(scheduled.school.activeMembers).toBe(initial.school.activeMembers);
+    expect(scheduled.statistics.trialsBooked).toBe(initial.statistics.trialsBooked + 1);
+
+    const chance = getLegendaryEnrollmentChance(scheduled, contact.specialProfileId!);
+    const successSeed = findSeed((roll) => roll < chance);
+    const ready = {
+      ...scheduled,
+      scheduledTrials: scheduled.scheduledTrials.map((candidate) =>
+        candidate.id === trial.id ? { ...candidate, resultSeed: successSeed } : candidate,
+      ),
+    };
+    const resolved = gameReducer(ready, { type: "TICK", now: trial.resolvesAt });
+
+    expect(resolved.contacts.find((candidate) => candidate.id === contact.id)?.status)
+      .toBe("enrolled");
+    expect(resolved.school.activeMembers).toBe(initial.school.activeMembers + 1);
+    expect(resolved.collaborators.some(
+      (collaborator) => collaborator.specialProfileId === contact.specialProfileId,
+    )).toBe(true);
+  });
+
+  it("never schedules the same Legendary profile twice", () => {
+    const initial = createInitialState(1_000);
+    const first = gameReducer(initial, {
+      type: "ADMIN_SCHEDULE_LEGENDARY_TRIAL",
+      now: 2_000,
+    });
+    const second = gameReducer(first, {
+      type: "ADMIN_SCHEDULE_LEGENDARY_TRIAL",
+      now: 2_001,
+    });
+    const scheduledProfileIds = second.scheduledTrials.map((trial) =>
+      second.contacts.find((contact) => contact.id === trial.contactId)?.specialProfileId,
+    );
+
+    expect(scheduledProfileIds).toHaveLength(2);
+    expect(new Set(scheduledProfileIds).size).toBe(2);
   });
 });

@@ -206,7 +206,7 @@ function applyTournamentResult(
   nextSeed: number,
   now: number,
 ): GameState {
-  const resolvedResult = resolveTournamentRewardFallbacks(state, result);
+  const resolvedResult = resolveTournamentRewardFallbacks(state, result, now);
   const nextLevel = getNextTournamentLevel(resolvedResult.level);
   const ownedQualifierIds = resolvedResult.qualifiers.flatMap((qualifier) =>
     qualifier.ownedContactId ? [qualifier.ownedContactId] : []

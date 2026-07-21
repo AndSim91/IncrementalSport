@@ -41,7 +41,11 @@ export function TutorialLayer({
   }, [step]);
 
   return (
-    <div className={`tutorial-layer is-${step.kind}`}>
+    <div className={[
+      "tutorial-layer",
+      `is-${step.kind}`,
+      step.cardPlacement ? `is-card-${step.cardPlacement}` : "",
+    ].filter(Boolean).join(" ")}>
       <button
         className="tutorial-skip"
         type="button"

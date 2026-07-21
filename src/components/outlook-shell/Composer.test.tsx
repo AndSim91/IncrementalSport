@@ -19,12 +19,18 @@ describe("Composer", () => {
       ),
     };
 
-    render(<Composer state={state} onWrite={() => undefined} />);
+    const { container } = render(<Composer state={state} onWrite={() => undefined} />);
 
-    expect(screen.getByText(new RegExp(activeContact.email))).toHaveClass(
+    const recipient = screen.getByText(new RegExp(activeContact.email));
+    const mailHeader = container.querySelector<HTMLElement>(".mail-fields")!;
+    expect(mailHeader).toHaveAttribute("data-tutorial-region", "composer-header");
+    expect(mailHeader).toHaveAttribute("data-tutorial-target", "true");
+    expect(recipient).toHaveClass(
       "rarity-address",
       "rarity-rare",
     );
+    expect(recipient).toHaveAttribute("data-tutorial-region", "composer-recipient");
+    expect(recipient).toHaveAttribute("data-tutorial-target", "true");
   });
 
   it("keeps the character count without a redundant email progress bar", () => {
@@ -33,6 +39,10 @@ describe("Composer", () => {
     expect(screen.queryByRole("progressbar", { name: /Costruzione email/ })).not.toBeInTheDocument();
     expect(screen.getByText(/0 \/ \d+ caratteri/)).toBeVisible();
     expect(screen.queryByText(/Email aziendale grezza/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Corpo del messaggio/ })).toHaveAttribute(
+      "data-tutorial-region",
+      "composer-body",
+    );
   });
 
   it("uses the HTML source workspace for an active level 3 draft", () => {

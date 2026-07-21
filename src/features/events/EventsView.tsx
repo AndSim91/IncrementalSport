@@ -101,9 +101,6 @@ export function EventsView({
     definition.unlockMembers <= state.school.historicMembers ||
     runningEvents.some((event) => event.definitionId === definition.id)
   );
-  const nextLockedEvent = ACQUISITION_EVENTS.find(
-    (definition) => definition.unlockMembers > state.school.historicMembers,
-  );
   return (
     <main className="overview-view events-view">
       <header><Icon name="flag" /><div><h1>Eventi</h1><p>Attività esterne per incontrare persone e raccogliere nuovi contatti</p></div></header>
@@ -135,7 +132,6 @@ export function EventsView({
           </div>
         </div>
       </section>
-      <div className="event-fame-note"><Icon name="flag" /><span><strong>Fama della scuola: {state.school.historicMembers}</strong><small>Equivale al totale cumulativo delle iscrizioni e non diminuisce quando qualcuno lascia la scuola.</small><small>{nextLockedEvent ? `Prossimo sblocco: ${nextLockedEvent.title} a ${nextLockedEvent.unlockMembers} Fama.` : "Tutti gli eventi nazionali sono disponibili."}</small></span></div>
       <section className="event-list">
         {visibleEvents.map((definition) => {
           const matching = runningByDefinition.get(definition.id);
@@ -168,7 +164,14 @@ export function EventsView({
           else if (lacksFunds) action = `Servono ${formatCurrency(definition.cost)}`;
 
           return (
-            <article className="event-row" key={definition.id}>
+            <article
+              className="event-row"
+              key={definition.id}
+              data-tutorial-region={definition.id === "park-sparring"
+                ? "park-sparring-event"
+                : undefined}
+              data-tutorial-target={definition.id === "park-sparring" ? "true" : undefined}
+            >
               <div className="event-copy">
                 <div className="event-meta"><span>{Math.round(displayedDurationMs / 1_000)} secondi</span><span>Rischio {definition.risk.toLocaleLowerCase("it-IT")}</span><span>{memberRequirement(definition.requiredMembers)}</span><span>{definition.requiredSwords} spade</span></div>
                 <h2>{definition.title}</h2>
@@ -187,7 +190,17 @@ export function EventsView({
                   </div>
                 ) : null}
               </div>
-              <button type="button" disabled={disabled} onClick={() => onStart(definition.id)}>{action}</button>
+              <button
+                type="button"
+                disabled={disabled}
+                data-tutorial-region={definition.id === "park-sparring"
+                  ? "park-sparring-action"
+                  : undefined}
+                data-tutorial-target={definition.id === "park-sparring" ? "true" : undefined}
+                onClick={() => onStart(definition.id)}
+              >
+                {action}
+              </button>
             </article>
           );
         })}

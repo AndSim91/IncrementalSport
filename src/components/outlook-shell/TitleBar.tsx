@@ -16,6 +16,7 @@ export function TitleBar({
   now: providedNow,
   contactsAwaitingEmail,
   activeMembers,
+  historicMembers,
   followers,
   euros,
   isPaused,
@@ -26,6 +27,7 @@ export function TitleBar({
   now?: number;
   contactsAwaitingEmail: number;
   activeMembers: number;
+  historicMembers: number;
   followers?: number;
   euros: number;
   isPaused: boolean;
@@ -46,7 +48,11 @@ export function TitleBar({
         <Icon name="menu" />
       </button>
       <div className="title-resources" aria-label="Situazione del gioco">
-        <span className="title-resource" aria-label={`Contatti da contattare: ${formatExactNumber(contactsAwaitingEmail)}`}>
+        <span
+          className="title-resource"
+          data-tutorial-region="contacts-counter"
+          aria-label={`Contatti da contattare: ${formatExactNumber(contactsAwaitingEmail)}`}
+        >
           <Icon name="contact" />
           <small>Contatti</small>
           <strong title={formatExactNumber(contactsAwaitingEmail)}>{formatCompactNumber(contactsAwaitingEmail)}</strong>
@@ -69,6 +75,14 @@ export function TitleBar({
           <strong title={formatExactCurrency(euros)}>{formatCompactCurrency(euros)}</strong>
         </span>
       </div>
+      <span
+        className="title-resource title-fame"
+        aria-label={`Fama della scuola: ${formatExactNumber(historicMembers)}`}
+      >
+        <Icon name="flag" />
+        <small>Fama della scuola</small>
+        <strong title={formatExactNumber(historicMembers)}>{formatCompactNumber(historicMembers)}</strong>
+      </span>
       <button
         className={isPaused ? "title-pause active" : "title-pause"}
         type="button"

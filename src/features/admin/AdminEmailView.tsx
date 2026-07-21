@@ -7,9 +7,11 @@ interface AdminEmailViewProps {
   availableContacts: number;
   activeMembers: number;
   euros: number;
+  availableLegendaryProfiles: number;
   onAddContacts: (amount: number) => void;
   onAddMembers: (amount: number) => void;
   onAddEuros: (amount: number) => void;
+  onScheduleLegendaryTrial: () => void;
 }
 
 export function AdminEmailView({
@@ -17,9 +19,11 @@ export function AdminEmailView({
   availableContacts,
   activeMembers,
   euros,
+  availableLegendaryProfiles,
   onAddContacts,
   onAddMembers,
   onAddEuros,
+  onScheduleLegendaryTrial,
 }: AdminEmailViewProps) {
   const [contactAmount, setContactAmount] = useState("1");
   const [memberAmount, setMemberAmount] = useState("1");
@@ -108,6 +112,35 @@ export function AdminEmailView({
           <button type="submit" disabled={!canAddEuros}>Modifica Euro</button>
           <small>Attuali: {formatCurrency(euros)}</small>
         </form>
+      </section>
+
+      <section className="admin-gameplay-tools" aria-labelledby="admin-gameplay-title">
+        <div className="admin-resource-heading">
+          <span>Flussi di gioco</span>
+          <h2 id="admin-gameplay-title">Prove in palestra</h2>
+          <p>Avvia casi reali senza creare iscrizioni dirette.</p>
+        </div>
+        <div className="admin-gameplay-action">
+          <div>
+            <strong>Personaggio Leggendario</strong>
+            <p>
+              Seleziona casualmente un profilo disponibile e avvia subito la sua prova.
+              L'eventuale iscrizione viene risolta dal gioco al termine della lezione.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={availableLegendaryProfiles === 0}
+            onClick={onScheduleLegendaryTrial}
+          >
+            Avvia prova Leggendario
+          </button>
+          <small>
+            {availableLegendaryProfiles > 0
+              ? `Profili disponibili: ${availableLegendaryProfiles}`
+              : "Nessun profilo Leggendario disponibile nella scuola corrente."}
+          </small>
+        </div>
       </section>
     </main>
   );

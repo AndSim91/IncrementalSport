@@ -2,6 +2,7 @@ import { SPECIAL_COLLABORATORS } from "../content/specialCollaborators";
 import {
   SECRET_LEGENDARY_IDS as SECRET_LEGENDARY_CATALOG_IDS,
 } from "../content/secretLegendaries";
+import { GAME_CONFIG } from "./config";
 import type {
   GameState,
   SecretLegendaryId,
@@ -40,13 +41,29 @@ export function isCataloguedLegendaryId(value: unknown): value is SpecialCollabo
 }
 
 export function getReservedLegendaryProfileIds(
-  state: Pick<GameState, "contacts" | "collaborators" | "legendaryCollaborators">,
+  state: Pick<
+    GameState,
+    "contacts" | "collaborators" | "legendaryCollaborators" | "scheduledTrials"
+  >,
+  now: number,
 ): Set<SpecialCollaboratorId> {
   const reserved = new Set<SpecialCollaboratorId>([
     ...state.legendaryCollaborators.enrolledProfileIds,
   ]);
+  const visibleFailedTrialContactIds = new Set(
+    state.scheduledTrials
+      .filter((trial) =>
+        trial.status === "completed" &&
+        now < trial.resolvesAt + GAME_CONFIG.dayNotificationVisibilityMs
+      )
+      .map((trial) => trial.contactId),
+  );
   for (const contact of state.contacts) {
-    if (contact.specialProfileId && contact.status !== "departed") {
+    if (
+      contact.specialProfileId &&
+      contact.status !== "departed" &&
+      (contact.status !== "lost" || visibleFailedTrialContactIds.has(contact.id))
+    ) {
       reserved.add(contact.specialProfileId);
     }
   }
@@ -57,8 +74,12 @@ export function getReservedLegendaryProfileIds(
 }
 
 export function getAvailableStandardLegendaryProfiles(
-  state: Pick<GameState, "contacts" | "collaborators" | "legendaryCollaborators">,
+  state: Pick<
+    GameState,
+    "contacts" | "collaborators" | "legendaryCollaborators" | "scheduledTrials"
+  >,
+  now: number,
 ) {
-  const reserved = getReservedLegendaryProfileIds(state);
+  const reserved = getReservedLegendaryProfileIds(state, now);
   return SPECIAL_COLLABORATORS.filter((profile) => !reserved.has(profile.id));
 }

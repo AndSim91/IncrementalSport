@@ -45,14 +45,12 @@ function chooseOrdinaryRarity(seed: number): { rarity: Exclude<PersonRarity, "le
 }
 
 function chooseEarlyRarity(seed: number): {
-  rarity: Extract<PersonRarity, "common" | "rare">;
+  rarity: Extract<PersonRarity, "common">;
   nextSeed: number;
 } {
-  const [rarityRoll, nextSeed] = nextRandom(seed);
+  const [, nextSeed] = nextRandom(seed);
   return {
-    rarity: rarityRoll < PERSON_RARITIES.rare.queueAppearanceChance
-      ? "rare"
-      : "common",
+    rarity: "common",
     nextSeed,
   };
 }
@@ -189,7 +187,7 @@ export function createAcquiredContacts(
 ): { contacts: Contact[]; nextSeed: number } {
   let nextSeed = state.randomSeed;
   let progress = state.legendaryCollaborators;
-  const reservedProfileIds = getReservedLegendaryProfileIds(state);
+  const reservedProfileIds = getReservedLegendaryProfileIds(state, now);
   const contactIds = new Set(state.contacts.map((contact) => contact.id));
   let nextSequence = state.statistics.contactsAcquired;
   const currentSchoolContactCount = getCurrentSchoolContactCount(state);
@@ -200,16 +198,18 @@ export function createAcquiredContacts(
       !isInitialSchool || queuePosition > GAME_CONFIG.guaranteedAndreaContactPosition;
     const isGuaranteedAndreaPosition = queuePosition ===
       GAME_CONFIG.guaranteedAndreaContactPosition && isInitialSchool;
-    const selected = options?.forcedRarity === "legendary"
-      ? chooseLegendaryProfile(nextSeed, reservedProfileIds, true)
-      : isGuaranteedAndreaPosition
+    const canGuaranteeAndrea = isGuaranteedAndreaPosition &&
+      !reservedProfileIds.has(ANDREA_SIMONAZZI_ID);
+    const selected = canGuaranteeAndrea
       ? {
-          profile: !reservedProfileIds.has(ANDREA_SIMONAZZI_ID)
-            ? ANDREA_SIMONAZZI_PROFILE
-            : undefined,
+          profile: ANDREA_SIMONAZZI_PROFILE,
           legendaryRolled: true,
           nextSeed,
         }
+      : options?.forcedRarity === "legendary"
+        ? chooseLegendaryProfile(nextSeed, reservedProfileIds, true)
+      : isGuaranteedAndreaPosition
+        ? { profile: undefined, legendaryRolled: true, nextSeed }
       : advancedRaritiesUnlocked
         ? chooseLegendaryProfile(nextSeed, reservedProfileIds)
         : { profile: undefined, legendaryRolled: false, nextSeed };

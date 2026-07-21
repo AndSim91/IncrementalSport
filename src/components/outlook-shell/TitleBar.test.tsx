@@ -13,13 +13,14 @@ afterEach(cleanup);
 
 describe("TitleBar", () => {
   it("shows the month, school year, and progress toward the next month", () => {
-    const { rerender } = render(
+    const { container, rerender } = render(
       <TitleBar
         currentMonth={9}
         nextMonthAt={1_000 + GAME_CONFIG.gameMonthMs}
         now={1_000 + GAME_CONFIG.gameMonthMs / 2}
         contactsAwaitingEmail={4}
         activeMembers={3}
+        historicMembers={7}
         euros={120}
         isPaused={false}
         onTogglePause={() => undefined}
@@ -30,6 +31,11 @@ describe("TitleBar", () => {
       formatCompactCurrency(120).replace(/\u00a0/g, " "),
     );
     expect(screen.getByText("Iscritti attivi")).toBeVisible();
+    const fame = screen.getByLabelText("Fama della scuola: 7");
+    const pause = screen.getByRole("button", { name: "Pausa" });
+    expect(fame).toHaveTextContent("Fama della scuola7");
+    expect(fame.nextElementSibling).toBe(pause);
+    expect(pause.nextElementSibling).toBe(container.querySelector(".title-month"));
     expect(screen.getByLabelText("Mese corrente: Settembre, anno scolastico 1"))
       .toHaveTextContent("SettembreAnno scolastico 1");
     expect(screen.getByRole("progressbar", {
@@ -44,6 +50,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={7}
         euros={0}
         isPaused={false}
         onTogglePause={() => undefined}
@@ -58,6 +65,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={7}
         euros={0}
         isPaused={false}
         onTogglePause={() => undefined}
@@ -76,6 +84,7 @@ describe("TitleBar", () => {
         now={1_000 + GAME_CONFIG.gameMonthMs / 2}
         contactsAwaitingEmail={1_200_000}
         activeMembers={999_999}
+        historicMembers={1_250_000}
         euros={euros}
         isPaused={false}
         onTogglePause={() => undefined}
@@ -94,6 +103,25 @@ describe("TitleBar", () => {
     );
   });
 
+  it("exposes the contacts counter as a dedicated tutorial region", () => {
+    render(
+      <TitleBar
+        currentMonth={9}
+        nextMonthAt={61_000}
+        now={1_000}
+        contactsAwaitingEmail={2}
+        activeMembers={0}
+        historicMembers={0}
+        euros={25}
+        isPaused={false}
+        onTogglePause={() => undefined}
+      />,
+    );
+
+    expect(screen.getByLabelText("Contatti da contattare: 2"))
+      .toHaveAttribute("data-tutorial-region", "contacts-counter");
+  });
+
   it("shows Follower only after Social is available", () => {
     const { rerender } = render(
       <TitleBar
@@ -102,6 +130,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={0}
         followers={1_250}
         euros={0}
         isPaused={false}
@@ -119,6 +148,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={0}
         euros={0}
         isPaused={false}
         onTogglePause={() => undefined}
@@ -136,6 +166,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={0}
         euros={0}
         isPaused={false}
         onTogglePause={onTogglePause}
@@ -152,6 +183,7 @@ describe("TitleBar", () => {
         now={1_000}
         contactsAwaitingEmail={0}
         activeMembers={0}
+        historicMembers={0}
         euros={0}
         isPaused
         onTogglePause={onTogglePause}

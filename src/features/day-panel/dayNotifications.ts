@@ -1,5 +1,6 @@
 import { NARRATIVE_EVENTS } from "../../content/narrativeEvents";
 import { TOURNAMENT_DEFINITIONS } from "../../content/tournaments";
+import { GAME_CONFIG } from "../../game/config";
 import { selectDayTrials } from "../../game/selectors";
 import type {
   GameState,
@@ -7,7 +8,7 @@ import type {
   TournamentResult,
 } from "../../game/types";
 
-export const DAY_NOTIFICATION_VISIBILITY_MS = 10_000;
+export const DAY_NOTIFICATION_VISIBILITY_MS = GAME_CONFIG.dayNotificationVisibilityMs;
 
 export type DayNotificationKind =
   | "trial"

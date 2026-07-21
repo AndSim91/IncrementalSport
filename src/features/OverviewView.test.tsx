@@ -18,7 +18,6 @@ describe("OverviewView settings", () => {
     },
     onSaveNow: vi.fn(),
     onUpdateProfileName: vi.fn(),
-    onFoundSchool: vi.fn(),
     darkMode: false,
     onDarkModeChange: vi.fn(),
     reduceMotion: false,
@@ -103,11 +102,12 @@ describe("OverviewView settings", () => {
     expect(screen.getByText(/Le modifiche restano in memoria/)).toBeInTheDocument();
   });
 
-  it("shows prestige as coming soon and disables its controls", () => {
+  it("does not render prestige or school-foundation controls", () => {
     render(<OverviewView view="settings" state={createInitialState(1_000)} {...callbacks} />);
 
-    expect(screen.getByLabelText("Prestigio non disponibile: Coming Soon")).toBeInTheDocument();
-    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Fonda la nuova scuola", hidden: true })).toBeDisabled();
+    expect(screen.queryByText("Coming Soon")).not.toBeInTheDocument();
+    expect(screen.queryByText("Rete delle scuole")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Fonda la nuova scuola" }))
+      .not.toBeInTheDocument();
   });
 });

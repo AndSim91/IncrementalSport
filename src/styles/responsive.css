@@ -125,8 +125,7 @@
 :root[data-theme="dark"] .profile-settings-form input,
 :root[data-theme="dark"] .profile-dialog input,
 :root[data-theme="dark"] .foundation-fields input,
-:root[data-theme="dark"] .foundation-fields select,
-:root[data-theme="dark"] .event-fame-note {
+:root[data-theme="dark"] .foundation-fields select {
   background: var(--surface);
 }
 
@@ -272,8 +271,4 @@
   border-color: rgb(92 168 245 / 35%);
   background: rgb(17 26 36 / 96%);
   box-shadow: 0 24px 70px rgb(0 0 0 / 42%);
-}
-
-:root[data-theme="dark"] .event-fame-note {
-  border-color: var(--line);
 }

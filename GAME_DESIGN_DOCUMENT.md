@@ -248,11 +248,11 @@ consumati per acquistare qualcosa.
 I Contatti sono indirizzi email inventati ottenuti attraverso eventi, lezioni di
 prova, social e collaboratori.
 
-Nella scuola iniziale i primi otto contatti possono essere soltanto Comuni o
-Rari. Il nono contatto è sempre Andrea Simonazzi; dal decimo contatto si
-sbloccano anche le estrazioni Ultra Rare e Leggendarie. Nelle scuole successive
-tutte le rarità sono disponibili fin dal primo contatto e Andrea torna nel
-normale pool Leggendario.
+Nella scuola iniziale i primi otto contatti sono sempre Comuni. Il nono contatto
+è sempre Andrea Simonazzi, il primo Leggendario della partita; dal decimo
+contatto si sbloccano le estrazioni Rare, Ultra Rare e Leggendarie. Nelle scuole
+successive tutte le rarità sono disponibili fin dal primo contatto e Andrea
+torna nel normale pool Leggendario.
 
 Ogni contatto riceve una rarità al momento dell'acquisizione. La rarità
 determina la probabilità di prenotare una prova dopo la mail e quella di
@@ -697,9 +697,14 @@ Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 - la probabilità di comparsa del pool Leggendario è 2% per ogni nuovo contatto
   idoneo: dal decimo nella scuola iniziale e fin dal primo nelle scuole
   successive;
-- ogni profilo Leggendario è unico: finché esiste già come contatto, prova in
-  palestra, iscritto o collaboratore non può essere generato una seconda volta;
-  se nessun profilo del pool è disponibile, qualsiasi nuova assegnazione
+- ogni profilo Leggendario è unico: finché esiste già come contatto attivo,
+  prova in palestra, iscritto o collaboratore non può essere generato una
+  seconda volta;
+- dopo una prova non convertita, il profilo resta occupato finché l'esito
+  **Non iscritto** è visibile in **La mia giornata**; quando la notifica scade,
+  torna disponibile per nuovi contatti, prove, premi dei tornei e strumenti
+  Admin;
+- se nessun profilo del pool è disponibile, qualsiasi nuova assegnazione
   Leggendaria genera invece un Ultra Raro dello stesso tipo di premio;
 - con il prestigio tutti i profili Leggendari tornano disponibili nel pool della
   nuova scuola;
@@ -708,6 +713,12 @@ Regole interne dei Leggendari, mai esplicitate nell'interfaccia:
 - una nuova iscrizione successiva all'evento dedicato ripristina integralmente
   Forme, attestati da Istruttore, anzianità e storico formativo; l'incarico
   operativo torna invece non assegnato.
+
+La pagina **Admin**, disponibile soltanto in sviluppo, può avviare direttamente
+la prova in palestra di un profilo Leggendario scelto casualmente tra quelli
+ancora disponibili. Il comando non iscrive il personaggio: crea una prova della
+durata ordinaria, che usa le stesse probabilità di conversione, le stesse regole
+di unicità e lo stesso reclutamento automatico dei Leggendari del flusso normale.
 
 ### 9.3 Ruoli
 
@@ -1306,6 +1317,10 @@ Ogni scena è composta da due tipi di passaggio:
 Ogni passaggio dichiara quali aree dell'interfaccia restano a fuoco, quali vengono
 oscurate e sfocate e quali possono essere nascoste. Il completamento o il salto di
 una scena viene salvato, così la stessa scena non si ripete dopo il caricamento.
+Quando un obiettivo richiede di agire su un controllo preciso, quel controllo deve
+essere evidenziato direttamente con contrasto e pulsazione: mantenere visibile la
+sola sezione che lo contiene non è considerato sufficiente. Gli obiettivi di attesa
+evidenziano invece la scheda o il pannello nel quale osservare l'avanzamento.
 
 ### Sequenza iniziale
 
@@ -1324,20 +1339,35 @@ una scena viene salvato, così la stessa scena non si ripete dopo il caricamento
 4. **Primi Eventi e attrezzatura**\
    Dopo la missione dei tre inviti guida il giocatore ad aprire Eventi, spiega
    che le attività possono usurare o danneggiare le spade e richiede di avviare
-   lo **Sparring al parco** gratuito. Il tutorial termina quando lo sparring è in
-   corso.
+   lo **Sparring al parco** gratuito. Soltanto in questo passaggio lo sparring
+   dura 3 secondi e garantisce almeno un nuovo contatto. La scena attende la fine
+   dell'evento e mette in evidenza il contatore **Contatti** nella barra superiore
+   mentre spiega l'aumento.
 
-5. **Nuova lezione prenotata** Introduce il passaggio email → prova in palestra
-   → possibile iscrizione.
+5. **Nuova lezione prenotata** Dopo la spiegazione sull'aumento dei contatti,
+   **Continua** riporta automaticamente il giocatore in **Posta**. Una delle email
+   della campagna iniziale garantisce una prova soltanto in questo momento; quando
+   la prova compare in **La mia giornata** con il conto alla rovescia, un dialogo
+   introduce il passaggio email → prova in palestra → possibile iscrizione. Il
+   pannello resta leggibile sotto il velo del tutorial, mentre l'intera riga della
+   prova viene portata in primo piano ed evidenziata. La prima sequenza di tutorial
+   termina premendo **Continua** in questo dialogo.
 
 6. **Primo bonus e quota associativa** Introduce il bonus immediato di €20, la
    quota mensile base di €40, il bonus di €5 per ogni Forma o corso permanente e
    il finanziamento dei potenziamenti.
 
-7. **Una mano in più** Il primo Ultra Raro che completa il Corso Y introduce
+7. **Il primo Leggendario** Quando Andrea Simonazzi diventa il nono contatto e
+   la sua email entra in scrittura, il gioco torna in **Posta**, mette in evidenza
+   la zona superiore della mail con il destinatario e spiega le quattro rarità.
+   Da questo momento possono apparire contatti Rari, Ultra Rari e Leggendari. Il
+   dialogo ricorda che i Leggendari sono profili unici e si chiude con
+   **“Collezionali tutti!”**.
+
+8. **Una mano in più** Il primo Ultra Raro che completa il Corso Y introduce
    l'automazione.
 
-8. **Le spade non si sistemano da sole** Introduce attrezzatura e manutenzione.
+9. **Le spade non si sistemano da sole** Introduce attrezzatura e manutenzione.
    Più avanti si scopre che, tecnicamente, con abbastanza collaboratori si
    sistemano quasi da sole.
 

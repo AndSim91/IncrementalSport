@@ -61,6 +61,58 @@
   background: var(--surface-muted);
 }
 
+.admin-gameplay-tools {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(280px, 3fr);
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.admin-gameplay-action {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  align-items: center;
+  gap: 7px 18px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+
+.admin-gameplay-action strong {
+  font-size: 13px;
+}
+
+.admin-gameplay-action p {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.admin-gameplay-action button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--blue-600);
+  border-radius: var(--radius-md);
+  color: white;
+  background: var(--blue-600);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-gameplay-action button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-gameplay-action small {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .admin-resource-heading span {
   color: var(--blue-700);
   font-size: 10px;
@@ -128,11 +180,18 @@
 }
 
 @media (max-width: 1050px) {
-  .admin-resource-tools {
+  .admin-resource-tools,
+  .admin-gameplay-tools {
     grid-template-columns: 1fr;
   }
 
   .admin-resource-tools form {
+    padding: 14px 0 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .admin-gameplay-action {
     padding: 14px 0 0;
     border-top: 1px solid var(--line);
     border-left: 0;
