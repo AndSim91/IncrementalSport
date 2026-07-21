@@ -33,7 +33,10 @@ export function TitleBar({
   isPaused: boolean;
   onTogglePause: () => void;
 }) {
-  const liveNow = useGameTime(providedNow === undefined, GAME_CONFIG.gameTickMs);
+  const liveNow = useGameTime(
+    providedNow === undefined,
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
   const now = providedNow ?? liveNow;
   const monthName = getGameMonthName(currentMonth);
   const currentSchoolYear = getSchoolYear(currentMonth);

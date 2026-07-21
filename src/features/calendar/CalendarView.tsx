@@ -39,7 +39,7 @@ export function CalendarView({
   const hasPendingTrials = state.scheduledTrials.some((trial) => trial.status === "scheduled");
   const now = useGameTime(
     true,
-    hasPendingTrials ? GAME_CONFIG.gameTickMs : 60_000,
+    hasPendingTrials ? GAME_CONFIG.progressUpdateIntervalMs : 60_000,
   );
 
   return (

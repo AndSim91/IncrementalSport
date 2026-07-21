@@ -27,7 +27,8 @@ export function ProgressBar({
   const safeMax = Math.max(1, max);
   const boundedValue = Math.min(safeMax, Math.max(0, value));
   const percent = (boundedValue / safeMax) * 100;
-  const indeterminate = durationMs !== undefined && durationMs < GAME_CONFIG.gameTickMs;
+  const indeterminate = durationMs !== undefined &&
+    durationMs < GAME_CONFIG.progressUpdateIntervalMs;
   const progressStyle = variant === "circular"
     ? ({ "--progress-value": `${percent}%` } as CSSProperties)
     : undefined;

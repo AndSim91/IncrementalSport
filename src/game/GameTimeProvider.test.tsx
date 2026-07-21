@@ -1,10 +1,11 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { GAME_CONFIG } from "./config";
 import { useGameTime } from "./GameTimeContext";
 import { GameTimeProvider } from "./GameTimeProvider";
 
 function ClockProbe({ label = "Tempo di gioco" }: { label?: string }) {
-  const now = useGameTime(true, 1_000);
+  const now = useGameTime(true, GAME_CONFIG.progressUpdateIntervalMs);
   return <output aria-label={label}>{now}</output>;
 }
 
@@ -28,8 +29,8 @@ describe("GameTimeProvider", () => {
     act(() => vi.advanceTimersByTime(0));
     expect(screen.getByLabelText("Tempo di gioco")).toHaveTextContent("1000");
 
-    act(() => vi.advanceTimersByTime(1_000));
-    expect(screen.getByLabelText("Tempo di gioco")).toHaveTextContent("2000");
+    act(() => vi.advanceTimersByTime(GAME_CONFIG.progressUpdateIntervalMs));
+    expect(screen.getByLabelText("Tempo di gioco")).toHaveTextContent("1250");
 
     vi.setSystemTime(2_500);
     pausedAt = 2_500;
@@ -56,5 +57,9 @@ describe("GameTimeProvider", () => {
     );
 
     expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(setIntervalSpy).toHaveBeenCalledWith(
+      expect.any(Function),
+      GAME_CONFIG.progressUpdateIntervalMs,
+    );
   });
 });

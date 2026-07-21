@@ -58,7 +58,7 @@ export function EventsView({
     () => state.acquisitionEvents.filter((event) => event.status === "running"),
     [state.acquisitionEvents],
   );
-  const now = useGameTime(true, GAME_CONFIG.gameTickMs);
+  const now = useGameTime(true, GAME_CONFIG.progressUpdateIntervalMs);
   const runningByDefinition = useMemo(
     () => new Map(runningEvents.map((event) => [event.definitionId, event])),
     [runningEvents],

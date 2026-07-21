@@ -4,13 +4,13 @@ import { GAME_CONFIG } from "../../game/config";
 import { ProgressBar } from "./ProgressBar";
 
 describe("ProgressBar", () => {
-  it("shows a determinate value for progress at least as long as a game tick", () => {
+  it("shows a determinate value for progress at least as long as a visual update", () => {
     render(
       <ProgressBar
         className="test-progress"
         label="Progresso test"
         value={35}
-        durationMs={GAME_CONFIG.gameTickMs}
+        durationMs={GAME_CONFIG.progressUpdateIntervalMs}
         valueText="35 punti completati"
       />,
     );
@@ -22,12 +22,12 @@ describe("ProgressBar", () => {
     expect(progress.firstElementChild).toHaveStyle({ width: "35%" });
   });
 
-  it("uses the striped indeterminate state below one game tick", () => {
+  it("uses the striped indeterminate state below one visual update", () => {
     render(
       <ProgressBar
         label="Progresso rapido"
         value={70}
-        durationMs={GAME_CONFIG.gameTickMs - 1}
+        durationMs={GAME_CONFIG.progressUpdateIntervalMs - 1}
       />,
     );
 

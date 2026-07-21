@@ -144,7 +144,10 @@ export function InstructorCompactActivity({
   const teaching = useInstructorTeachingEntries(state, collaborator.id);
   const enabled = collaborator.autoTeachingEnabled !== false;
   const capacity = selectInstructorCapacity(state);
-  const now = useGameTime(teaching.length > 0, GAME_CONFIG.gameTickMs);
+  const now = useGameTime(
+    teaching.length > 0,
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
 
   if (teaching.length === 0) {
     return (
@@ -251,7 +254,10 @@ export function InstructorPanel({
   const teachingCount = selectInstructorTeachingCount(state, collaborator.id);
   const capacity = selectInstructorCapacity(state);
   const teaching = useInstructorTeachingEntries(state, collaborator.id);
-  const now = useGameTime(teaching.length > 0, GAME_CONFIG.gameTickMs);
+  const now = useGameTime(
+    teaching.length > 0,
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
   const enabled = collaborator.autoTeachingEnabled !== false;
   const hasMissingInstructorCertificates = getInstructorConversionCost(collaborator) > 0;
   const instructorCertificatesCost = hasFreeFormTraining(state.upgrades)
@@ -318,7 +324,10 @@ export function TrainingControl({
   variant?: "default" | "compact";
 }) {
   const [selectedFormId, setSelectedFormId] = useState<FormId | "">("");
-  const now = useGameTime(Boolean(student.training), GAME_CONFIG.gameTickMs);
+  const now = useGameTime(
+    Boolean(student.training),
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
   const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
   const annualTrainingAvailable =

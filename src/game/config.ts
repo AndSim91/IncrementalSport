@@ -22,6 +22,7 @@ export const GAME_CONFIG = {
   trialWaitMaxMs: 55_000,
   trialDurationMs: 10_000,
   dayNotificationVisibilityMs: 10_000,
+  progressUpdateIntervalMs: 250,
   gameTickMs: 1_000,
   minimumTrainingDurationMs: 1_000,
   instructorTrainingWhileTeachingDurationMultiplier: 3,

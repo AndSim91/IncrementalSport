@@ -28,7 +28,10 @@ interface TournamentOverviewProps {
 
 export function TournamentOverview({ state, onOpenResult }: TournamentOverviewProps) {
   const upcoming = findUpcomingTournament(state);
-  const now = useGameTime(Boolean(upcoming), GAME_CONFIG.gameTickMs);
+  const now = useGameTime(
+    Boolean(upcoming),
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
   const upcomingDefinition = upcoming ? TOURNAMENT_DEFINITIONS[upcoming.level] : undefined;
   const qualification = state.tournaments.qualification;
   const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);

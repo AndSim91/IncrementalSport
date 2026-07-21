@@ -147,7 +147,7 @@ function DayNotificationEntry({
 }
 
 export function DayPanel({ state }: { state: GameState }) {
-  const now = useGameTime(true, GAME_CONFIG.gameTickMs);
+  const now = useGameTime(true, GAME_CONFIG.progressUpdateIntervalMs);
   const notifications = selectDayNotifications(state, now);
   const tutorialTrialNotificationId = state.scheduledTrials.find(
     (trial) => trial.tutorialSceneId === "first-event",

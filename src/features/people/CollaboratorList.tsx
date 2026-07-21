@@ -100,7 +100,10 @@ export function CollaboratorList({
   const hasTimedAutomation = state.acquisitionEvents.some((event) =>
     event.status === "running" && event.collaboratorId !== undefined
   );
-  const now = useGameTime(hasTimedAutomation, GAME_CONFIG.gameTickMs);
+  const now = useGameTime(
+    hasTimedAutomation,
+    GAME_CONFIG.progressUpdateIntervalMs,
+  );
   const filteredCollaborators = useMemo(() => {
     const normalizedSearch = deferredSearch.trim().toLocaleLowerCase("it-IT");
     return state.collaborators.filter((collaborator) => {
