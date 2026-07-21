@@ -6,13 +6,6 @@
   background: #fdfdfd;
 }
 
-.today {
-  padding: 12px 8px 14px;
-  border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  text-transform: capitalize;
-}
-
 .day-empty {
   display: flex;
   flex-direction: column;
@@ -87,6 +80,14 @@
   color: var(--warning);
 }
 
+.appointment-entry-positive .appointment-expiry {
+  color: var(--success);
+}
+
+.appointment-entry-neutral .appointment-expiry {
+  color: var(--blue-600);
+}
+
 .appointment-timing {
   align-self: start;
   font-size: 11px;
@@ -129,11 +130,43 @@
   color: var(--warning);
 }
 
+.appointment-positive {
+  background: #edf7ee;
+}
+
+.appointment-positive > i {
+  background: var(--success);
+}
+
+.appointment-positive .appointment-timing {
+  color: var(--success);
+}
+
+.appointment-neutral {
+  background: #eef5fc;
+}
+
+.appointment-neutral .appointment-timing {
+  color: var(--blue-700);
+}
+
 .appointment > div {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 3px;
+}
+
+.appointment > div > strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.appointment > div > strong svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
 }
 
 .appointment strong,
@@ -163,4 +196,3 @@
 .add-event svg {
   width: 16px;
 }
-

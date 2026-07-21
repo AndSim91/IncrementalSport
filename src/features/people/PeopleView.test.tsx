@@ -855,18 +855,16 @@ describe("PeopleView", () => {
     expect(onStartTraining).toHaveBeenCalledWith(enrolled.id, "form-1");
   });
 
-  it("shows Nessun Rancore's cancellation action and asks for confirmation", () => {
+  it("places cancellation at the row end and asks for confirmation in a modal", () => {
     const initial = createInitialState(1_000);
     const enrolled = { ...initial.contacts[0], status: "enrolled" as const };
     const onCancelEnrollment = vi.fn();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
 
     render(
       <PeopleView
         state={{
           ...initial,
           contacts: [enrolled, ...initial.contacts.slice(1)],
-          upgrades: { ...initial.upgrades, "no-hard-feelings": 1 },
         }}
         onAssign={() => undefined}
         onStartTraining={() => undefined}
@@ -874,13 +872,29 @@ describe("PeopleView", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", {
+    const cancellationButton = screen.getByRole("button", {
       name: `Annulla l'iscrizione di ${enrolled.firstName} ${enrolled.lastName}`,
-    }));
+    });
+    expect(cancellationButton.closest(".member-row")?.lastElementChild).toBe(cancellationButton);
 
-    expect(confirm).toHaveBeenCalledOnce();
+    fireEvent.click(cancellationButton);
+
+    const dialog = screen.getByRole("alertdialog", { name: "Annullare l'iscrizione?" });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveTextContent(`${enrolled.firstName} ${enrolled.lastName}`);
+    expect(onCancelEnrollment).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mantieni iscrizione" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(onCancelEnrollment).not.toHaveBeenCalled();
+
+    fireEvent.click(cancellationButton);
+    fireEvent.click(within(
+      screen.getByRole("alertdialog", { name: "Annullare l'iscrizione?" }),
+    ).getByRole("button", { name: "Annulla iscrizione" }));
+
     expect(onCancelEnrollment).toHaveBeenCalledWith(enrolled.id);
-    confirm.mockRestore();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
   it("replaces manual training with every possible next Form when an Instructor is assigned", () => {

@@ -89,10 +89,9 @@ describe("Form training save migration", () => {
     expect(migrated.contacts[0].agonistCourseCompletions).toBe(0);
   });
 
-  it("adds Nessun Rancore and applies PagoSport's retroactive certificates", () => {
+  it("applies PagoSport's retroactive certificates", () => {
     const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
     legacy.version = 44;
-    delete legacy.upgrades["no-hard-feelings"];
     legacy.upgrades.pagosport = 2;
     legacy.collaborators = [{
       id: "legacy-pagosport",
@@ -111,7 +110,6 @@ describe("Form training save migration", () => {
     const migrated = migrate(legacy) as ReturnType<typeof createInitialState>;
 
     expect(migrated.version).toBe(45);
-    expect(migrated.upgrades["no-hard-feelings"]).toBe(0);
     expect(migrated.collaborators[0].instructorForms).toEqual(["form-1", "course-x"]);
   });
 });

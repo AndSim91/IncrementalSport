@@ -17,7 +17,7 @@
   },
   "0:coordinazione": {
     "subject": "Hai della coordinazione da buttare?",
-    "body": "Ciao {{firstName}},\nAlleniamo precisione, ritmo e il non cadere sui propri piedi. Se sai camminare sei già avanti, se non sai ti mettiamo vicino al muro. Prova gratiss.\n\n{{senderName}}"
+    "body": "Ciao {{firstName}},\nAlleniamo precisione, ritmo e il non cadere sui propri piedi. Se sai camminare sei già il migliore della classe, se non lo sai vieni pure in palestra rotolando. Prova gratiss.\n\n{{senderName}}"
   },
   "0:dopo-evento": {
     "subject": "Eri tu quello all'evento? Boh ciao",
@@ -25,11 +25,11 @@
   },
   "0:materiale-fornito": {
     "subject": "Le spade le portiamo noi, tranquillo",
-    "body": "Ciao {{firstName}},\nNon devi comprare niente perchè abbiamo già tutto, anche un casco che sa un pò di cantina. Porta scarpe e possibilmente te stesso. La prova è gratis.\n\n{{senderName}}"
+    "body": "Ciao {{firstName}},\nNon vogliamo venderti niente, solo l'esperienza migliore che potrebbe capitarti. Porta scarpe e possibilmente te stesso. La prova è gratis.\n\n{{senderName}}"
   },
   "0:allenamento-completo": {
     "subject": "Palestra per muscoli e altri organi",
-    "body": "Ciao {{firstName}},\nAlleni gambe, braccia, cervello e forse la milza. È completo perchè dopo sei stanco dappertutto. Vieni gratis e porta dell'acqua, non la cedrata.\n\n{{senderName}}"
+    "body": "Ciao {{firstName}},\nCon noi alleni gambe, braccia, mente e forse anche la milza. È uno sport completo perchè dopo sei rotto dappertutto. Vieni a provare gratis e porta dell'acqua, non la birra.\n\n{{senderName}}"
   },
   "0:prima-volta": {
     "subject": "La prima volta non si scorda (purtroppo)",

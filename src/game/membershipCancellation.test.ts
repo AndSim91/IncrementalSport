@@ -7,15 +7,11 @@ import { scheduleSecretLegendaryTrial } from "./tournamentFlow";
 import type { Collaborator, Contact, SecretLegendaryId } from "./types";
 
 function cancellableState() {
-  const initial = createInitialState(1_000, "", false);
-  return {
-    ...initial,
-    upgrades: { ...initial.upgrades, "no-hard-feelings": 1 },
-  };
+  return createInitialState(1_000, "", false);
 }
 
-describe("Nessun Rancore", () => {
-  it("removes an ordinary member from the school without reducing Fame or history", () => {
+describe("manual enrollment cancellation", () => {
+  it("is available by default and removes an ordinary member without reducing Fame or history", () => {
     const initial = cancellableState();
     const member = { ...initial.contacts[0], status: "enrolled" as const };
     const state = {

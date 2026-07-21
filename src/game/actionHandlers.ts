@@ -17,6 +17,7 @@ import {
 import type { FormId, GameAction, GameState } from "./types";
 import { startChroniclesTournament } from "./tournamentFlow";
 import { buyUpgrade } from "./upgradeFlow";
+import { finishTutorialScene } from "./tutorialProgress";
 
 type ActionType = GameAction["type"];
 type ActionByType<Type extends ActionType> = Extract<GameAction, { type: Type }>;
@@ -70,6 +71,11 @@ export function createGameActionHandlers(
     BUY_UPGRADE: (state, action) => buyUpgrade(state, action.upgradeId),
     MARK_MESSAGE_READ: (state, action) => markMessageRead(state, action.messageId),
     MARK_ALL_MESSAGES_READ: (state) => markAllMessagesRead(state),
+    FINISH_TUTORIAL_SCENE: (state, action) => finishTutorialScene(
+      state,
+      action.sceneId,
+      action.skipped,
+    ),
     MAINTAIN_EQUIPMENT: (state, action) => maintainEquipment(state, action.now),
     BUY_OFFICIAL_SWORD: (state) => buyOfficialSword(state),
     ASSIGN_COLLABORATOR: (state, action) => assignCollaborator(

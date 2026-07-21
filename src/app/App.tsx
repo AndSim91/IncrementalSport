@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { Icon } from "../components/common/Icon";
 import { ProfileNameDialog } from "../components/ProfileNameDialog";
 import {
@@ -7,7 +7,6 @@ import {
 } from "../components/outlook-shell/AppRail";
 import { CommandBar } from "../components/outlook-shell/CommandBar";
 import { Composer } from "../components/outlook-shell/Composer";
-import { DayPanel } from "../components/outlook-shell/DayPanel";
 import { FolderPane, type MailFolder } from "../components/outlook-shell/FolderPane";
 import { MessageDetail } from "../components/outlook-shell/MessageDetail";
 import { MessageList } from "../components/outlook-shell/MessageList";
@@ -20,6 +19,9 @@ import { EventsView } from "../features/events/EventsView";
 import { PeopleView } from "../features/people/PeopleView";
 import { TournamentsView } from "../features/tournaments/TournamentsView";
 import { UpgradesView } from "../features/upgrades/UpgradesView";
+import { DayPanel } from "../features/day-panel/DayPanel";
+import { TutorialLayer } from "../features/tutorial/TutorialLayer";
+import { useTutorialController } from "../features/tutorial/useTutorialController";
 import { GameTimeProvider } from "../game/GameTimeProvider";
 import { useGameEngine } from "../game/useGameEngine";
 import { isGameAreaUnlocked } from "../game/progression";
@@ -50,6 +52,7 @@ export function App() {
     getGameNow,
     isPaused,
     togglePause,
+    setTutorialPaused,
     saveStatus,
     saveNow,
   } = useGameEngine();
@@ -71,6 +74,15 @@ export function App() {
   const activeView: AppView = view === "admin"
     ? import.meta.env.DEV ? "admin" : "mail"
     : isGameAreaUnlocked(view, state) ? view : "mail";
+  const tutorial = useTutorialController({
+    state,
+    activeView,
+    dispatch,
+  });
+
+  useLayoutEffect(() => {
+    setTutorialPaused(tutorial.shouldPauseGame);
+  }, [setTutorialPaused, tutorial.shouldPauseGame]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,6 +91,7 @@ export function App() {
         mailFolder !== "inbox" ||
         selectedMessageId !== null ||
         !state.profile.displayName.trim() ||
+        tutorial.isBlockingInput ||
         event.repeat ||
         isWindowsKey(event) ||
         targetConsumesKeyboard(event.target)
@@ -87,7 +100,7 @@ export function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeView, dispatch, getGameNow, mailFolder, selectedMessageId, state.profile.displayName]);
+  }, [activeView, dispatch, getGameNow, mailFolder, selectedMessageId, state.profile.displayName, tutorial.isBlockingInput]);
 
   const write = () => dispatch({ type: "WRITE", now: getGameNow() });
   const selectMessage = (messageId: string | null) => {
@@ -190,7 +203,6 @@ export function App() {
             {mailFolder === "sent" ? (
               selectedSentEmail ? <SentMailDetail state={state} email={selectedSentEmail} /> : <main className="empty-composer"><Icon name="send" /><h1>Nessuna mail inviata</h1><p>Completa una campagna per visualizzarne qui il contenuto e lo stato.</p></main>
             ) : selectedMessage ? <MessageDetail message={selectedMessage} /> : <Composer state={state} onWrite={write} />}
-            <DayPanel state={state} />
           </>
         ) : activeView === "upgrades" ? (
           <UpgradesView
@@ -307,9 +319,20 @@ export function App() {
             onReduceMotionChange={setReduceMotion}
           />
         )}
+        <DayPanel state={state} />
       </div>
         <footer className="status-bar"><span>Tutti i messaggi sono aggiornati.</span><span>Profilo: {state.profile.displayName}</span><span>Connesso localmente</span><b title={state.school.motto || undefined}>{state.school.name}</b></footer>
       </div>
+      {tutorial.activeScene && tutorial.activeStep ? (
+        <TutorialLayer
+          scene={tutorial.activeScene}
+          step={tutorial.activeStep}
+          stepIndex={tutorial.activeStepIndex}
+          context={tutorial.context}
+          onContinue={tutorial.continueScene}
+          onSkip={tutorial.skipScene}
+        />
+      ) : null}
     </GameTimeProvider>
   );
 }

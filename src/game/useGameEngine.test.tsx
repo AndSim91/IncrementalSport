@@ -62,6 +62,50 @@ describe("useGameEngine pause", () => {
     ).toBe(15_000);
   });
 
+  it("keeps a manual pause active when a tutorial dialogue ends", () => {
+    const { result } = renderHook(() => useGameEngine());
+
+    act(() => result.current.setTutorialPaused(true));
+    expect(result.current.isPaused).toBe(true);
+
+    act(() => result.current.togglePause());
+    act(() => result.current.setTutorialPaused(false));
+    expect(result.current.isPaused).toBe(true);
+
+    act(() => result.current.togglePause());
+    expect(result.current.isPaused).toBe(false);
+  });
+
+  it("allows the first draft to reach sending while tutorial time stays frozen", () => {
+    const { result } = renderHook(() => useGameEngine());
+
+    act(() => result.current.setTutorialPaused(true));
+    const pausedAt = result.current.getGameNow();
+
+    act(() => {
+      for (let input = 0; input < 1_000; input += 1) {
+        result.current.dispatch({ type: "WRITE", now: result.current.getGameNow() });
+      }
+    });
+
+    expect(result.current.getGameNow()).toBe(pausedAt);
+    expect(result.current.state.emails[0].status).toBe("sending");
+    expect(result.current.state.statistics.emailsSent).toBe(0);
+
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(result.current.getGameNow()).toBe(pausedAt);
+    expect(result.current.state.statistics.emailsSent).toBe(0);
+
+    act(() => result.current.setTutorialPaused(false));
+    expect(result.current.isPaused).toBe(false);
+
+    act(() => vi.advanceTimersByTime(GAME_CONFIG.sendDelayMs - 1));
+    expect(result.current.state.statistics.emailsSent).toBe(0);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.state.statistics.emailsSent).toBe(1);
+  });
+
   it("does not update an idle game before its nearest deadline", () => {
     const { result } = renderHook(() => useGameEngine());
     const initialState = result.current.state;

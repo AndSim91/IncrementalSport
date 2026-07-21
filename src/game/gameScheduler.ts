@@ -75,7 +75,12 @@ export function getNextGameDeadline(state: GameState): number {
   );
   nextDeadline = earlier(
     nextDeadline,
-    earliest(getPendingEmailOutcomes(state.pendingEmailOutcomes), (outcome) => outcome.resolvesAt),
+    earliest(
+      getPendingEmailOutcomes(state.pendingEmailOutcomes).filter(
+        (outcome) => !outcome.waitForTutorialEvent,
+      ),
+      (outcome) => outcome.resolvesAt,
+    ),
   );
   nextDeadline = earlier(
     nextDeadline,

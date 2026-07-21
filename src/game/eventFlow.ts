@@ -22,6 +22,11 @@ import {
 import { selectAvailableEventMembers } from "./selectors";
 import { startNextCampaign } from "./emailFlow";
 import { getArchivedCompletedEventCount } from "./historyArchive";
+import { isGameAreaUnlocked } from "./progression";
+import {
+  FIRST_EVENT_TUTORIAL_SCENE_ID,
+  isTutorialScenePending,
+} from "./tutorialProgress";
 import type { AcquisitionEvent, GameState } from "./types";
 
 export function startAcquisitionEvent(
@@ -63,6 +68,9 @@ export function startAcquisitionEvent(
   const attendanceVariance =
     definition.varianceMin + varianceRoll * (definition.varianceMax - definition.varianceMin);
   const outcome = getEventFunnelOutcome(state, definition, attendanceVariance);
+  const isTutorialSparring = definitionId === "park-sparring" &&
+    isGameAreaUnlocked("events", state) &&
+    isTutorialScenePending(state, FIRST_EVENT_TUTORIAL_SCENE_ID);
 
   const event: AcquisitionEvent = {
     id: makeGameId(
@@ -74,11 +82,15 @@ export function startAcquisitionEvent(
     title: definition.title,
     location: definition.location,
     startedAt: now,
-    resolvesAt: now + Math.round(definition.durationMs / (1 + masteryBonus)),
+    resolvesAt: now + (isTutorialSparring
+      ? GAME_CONFIG.tutorialSparringDurationMs
+      : Math.round(definition.durationMs / (1 + masteryBonus))),
     cost: eventCost,
     peopleMet: outcome.peopleMet,
     demonstrationsGiven: outcome.demonstrationsGiven,
-    contactReward: outcome.contactsObtained,
+    contactReward: isTutorialSparring
+      ? Math.max(GAME_CONFIG.tutorialSparringMinimumContacts, outcome.contactsObtained)
+      : outcome.contactsObtained,
     membersUsed: definition.requiredMembers,
     equipmentUsed: definition.requiredSwords,
     wearAdded: Math.max(
@@ -92,6 +104,9 @@ export function startAcquisitionEvent(
     ),
     collaboratorId,
     status: "running",
+    tutorialSceneId: isTutorialSparring
+      ? FIRST_EVENT_TUTORIAL_SCENE_ID
+      : undefined,
   };
   return {
     ...state,
@@ -146,7 +161,15 @@ export function resolveAcquisitionEvent(
 ): GameState {
   if (event.status !== "running") return state;
   const source = event.definitionId === "park-sparring" ? "sparring" : "event";
-  const scaledReward = scaleContactGain(state, event.contactReward ?? 0, gainMultiplier);
+  const scaledReward = event.tutorialSceneId === FIRST_EVENT_TUTORIAL_SCENE_ID
+    ? {
+        state,
+        amount: Math.max(
+          GAME_CONFIG.tutorialSparringMinimumContacts,
+          event.contactReward ?? 0,
+        ),
+      }
+    : scaleContactGain(state, event.contactReward ?? 0, gainMultiplier);
   const rewardState = scaledReward.state;
   const contactReward = scaledReward.amount;
   const acquired = createAcquiredContacts(rewardState, contactReward, source, now);
@@ -180,6 +203,29 @@ export function resolveAcquisitionEvent(
       eventsCompleted: rewardState.statistics.eventsCompleted + 1,
     },
   };
+  if (event.tutorialSceneId === FIRST_EVENT_TUTORIAL_SCENE_ID) {
+    const selectedOutcomeId = nextState.pendingEmailOutcomes.find(
+      (outcome) => outcome.tutorialSceneId === FIRST_EVENT_TUTORIAL_SCENE_ID,
+    )?.id ?? nextState.pendingEmailOutcomes.find(
+      (outcome) => outcome.waitForTutorialEvent,
+    )?.id;
+    nextState = {
+      ...nextState,
+      pendingEmailOutcomes: nextState.pendingEmailOutcomes.map((outcome) => {
+        if (!outcome.waitForTutorialEvent) return outcome;
+        if (outcome.id === selectedOutcomeId) {
+          return {
+              ...outcome,
+              resolvesAt: now,
+              result: "trialBooked",
+              tutorialSceneId: FIRST_EVENT_TUTORIAL_SCENE_ID,
+              waitForTutorialEvent: undefined,
+            };
+        }
+        return outcome;
+      }),
+    };
+  }
   if (event.collaboratorId) {
     nextState = addCollaboratorMasteryExperienceForCollaborator(
       nextState,

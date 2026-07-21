@@ -1,7 +1,7 @@
 import type { UpgradeId, UpgradeLevels } from "../game/types";
 
 export type UpgradeCategory = "speed" | "charisma" | "writing" | "welcome" | "social" | "equipment" | "organization" | "instructors";
-export type UpgradeEffect = "writingPower" | "eventContactsMultiplier" | "eventAttendanceMultiplier" | "bookingMultiplier" | "enrollmentMultiplier" | "socialMultiplier" | "equipmentWearReduction" | "totalSwords" | "automationMultiplier" | "incomeMultiplier" | "annualFormCapacity" | "instructorBranchCapacity" | "instructorStudentCapacity" | "instructorTeachingSpeed" | "agonistCourseTier" | "memberCancellation";
+export type UpgradeEffect = "writingPower" | "eventContactsMultiplier" | "eventAttendanceMultiplier" | "bookingMultiplier" | "enrollmentMultiplier" | "socialMultiplier" | "equipmentWearReduction" | "totalSwords" | "automationMultiplier" | "incomeMultiplier" | "annualFormCapacity" | "instructorBranchCapacity" | "instructorStudentCapacity" | "instructorTeachingSpeed" | "agonistCourseTier";
 
 export interface UpgradeDefinition {
   id: UpgradeId;
@@ -89,8 +89,7 @@ const UPGRADE_CATALOG: UpgradeDefinition[] = [
   { id: "multi-site-coordination", category: "organization", title: "Coordinamento multi-sede", description: "La struttura è pronta a sostenere una rete di scuole.", effectLabel: "+100% automazione per livello", effect: "automationMultiplier", effectPerLevel: 1, baseCost: 1800, costGrowth: GROWTH, maxLevel: 5, requiredHistoricMembers: 100 },
 
   { id: "technical-arena", category: "instructors", title: "Arena Tecnica", description: "Sblocca il Corso Agonisti automatico e sempre attivo: protegge gli atleti a rischio che hanno concluso il proprio percorso o non hanno un Istruttore qualificato, aumentando Arena e Stile a ogni completamento annuale.", effectLabel: "Livello 1: sblocco · Livello 2: Durata base 10 secondi · Livello 3: gratuito", effect: "agonistCourseTier", effectPerLevel: 1, baseCost: 2_000, costGrowth: 1, levelCosts: [2_000, 5_000, 10_000], maxLevel: 3, requiredHistoricMembers: 15 },
-  { id: "no-hard-feelings", category: "instructors", title: "Nessun Rancore", description: "Permette di annullare definitivamente l'iscrizione di una persona dalla schermata Iscritti.", effectLabel: "Sblocca l'annullamento manuale delle iscrizioni", effect: "memberCancellation", effectPerLevel: 1, baseCost: 2_500, costGrowth: 1, maxLevel: 1, requiredHistoricMembers: 0, requiredUpgradeLevels: { "technical-arena": 1 } },
-  { id: "instructor-versatility", category: "instructors", title: "Polivalenza didattica", description: "Permette agli Istruttori di apprendere rami d'arma oltre le proprie preferenze iniziali.", effectLabel: "+1 ramo d'arma accessibile per livello", effect: "instructorBranchCapacity", effectPerLevel: 1, baseCost: 2_000, costGrowth: 2, levelCosts: [2_000, 4_000], maxLevel: 2, requiredHistoricMembers: 0, requiredUpgradeLevels: { "no-hard-feelings": 1 } },
+  { id: "instructor-versatility", category: "instructors", title: "Polivalenza didattica", description: "Permette agli Istruttori di apprendere rami d'arma oltre le proprie preferenze iniziali.", effectLabel: "+1 ramo d'arma accessibile per livello", effect: "instructorBranchCapacity", effectPerLevel: 1, baseCost: 2_000, costGrowth: 2, levelCosts: [2_000, 4_000], maxLevel: 2, requiredHistoricMembers: 0, requiredUpgradeLevels: { "technical-arena": 1 } },
   { id: "promiscuous-instructor", category: "instructors", title: "Istruttore Promisquo", description: "Un'organizzazione più flessibile permette a ogni Istruttore di seguire un allievo aggiuntivo.", effectLabel: "+1 allievo contemporaneo · massimo 2", effect: "instructorStudentCapacity", effectPerLevel: 1, baseCost: 5_000, costGrowth: 1, maxLevel: 1, requiredHistoricMembers: 0, requiredUpgradeLevels: { "instructor-versatility": 2 } },
   { id: "extra-form", category: "instructors", title: "Doppio Corso", description: "Aumenta per tutti gli atleti della scuola il numero di Forme apprendibili nello stesso anno formativo.", effectLabel: "+1 Forma apprendibile per atleta e anno", effect: "annualFormCapacity", effectPerLevel: 1, baseCost: 10_000, costGrowth: 1, maxLevel: 1, requiredHistoricMembers: 0, requiredUpgradeLevels: { "promiscuous-instructor": 1 } },
   { id: "tiamat-instructor", category: "instructors", title: "Istruttore Tiamat", description: "Una metodologia avanzata permette a ogni Istruttore di seguire più allievi nello stesso momento.", effectLabel: "+1 allievo contemporaneo per livello · massimo 6", effect: "instructorStudentCapacity", effectPerLevel: 1, baseCost: 8_000, costGrowth: 1, levelCosts: [8_000, 13_000, 21_000, 34_000], maxLevel: 4, requiredHistoricMembers: 0, requiredUpgradeLevels: { "extra-form": 1 } },
@@ -147,7 +146,6 @@ const SHOP_BASE_COSTS: Record<UpgradeId, number> = {
   "multi-site-coordination": 6_500,
   "instructor-versatility": 2_000,
   "technical-arena": 2_000,
-  "no-hard-feelings": 2_500,
   "promiscuous-instructor": 5_000,
   "extra-form": 10_000,
   "tiamat-instructor": 8_000,
@@ -240,8 +238,4 @@ export function hasFreeFormTraining(levels: UpgradeLevels): boolean {
 
 export function hasAutomaticInstructorCertificates(levels: UpgradeLevels): boolean {
   return (levels.pagosport ?? 0) >= 2;
-}
-
-export function canCancelMemberEnrollment(levels: UpgradeLevels): boolean {
-  return (levels["no-hard-feelings"] ?? 0) >= 1;
 }

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createInitialState } from "../game/engine";
 import { saveGame } from "../game/save";
@@ -21,6 +21,72 @@ describe("App profile and navigation", () => {
 
     expect(screen.getByText("genova@ludosport.net")).toBeVisible();
     expect(screen.getByText(/Andrea Ungaro/)).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Il primo mattino" })).toBeVisible();
+  });
+
+  it("ends the first tutorial on sending and starts the three-email mission paused at zero", async () => {
+    const initial = createInitialState(Date.now(), "Andrea Ungaro");
+    saveGame({
+      ...initial,
+      player: { ...initial.player, writingPower: 10_000 },
+    });
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Continua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continua" }));
+
+    expect(screen.getByText("Invia il primo invito")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Riprendi" })).toBeVisible();
+
+    fireEvent.keyDown(window, { key: "a", code: "KeyA" });
+
+    expect(screen.getAllByText("Invio in corso…").length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.queryByText("Invia il primo invito")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Pausa" })).toBeVisible();
+    });
+    expect(screen.getByText("0/3")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Eventi" })).not.toBeInTheDocument();
+  });
+
+  it("guides the first unlocked Event through the free sparring", async () => {
+    const initial = createInitialState(Date.now(), "Andrea Ungaro");
+    saveGame({
+      ...initial,
+      tutorial: {
+        ...initial.tutorial,
+        completedSceneIds: ["first-invitation"],
+      },
+      shortGoal: {
+        definitionId: "book-trials",
+        baseline: 0,
+        target: 2,
+        startedAt: Date.now(),
+        completedCount: 1,
+      },
+    });
+    render(<App />);
+
+    expect(screen.getByText("Apri Eventi")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Pausa" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Eventi" }));
+
+    expect(screen.getByRole("dialog", { name: "Eventi e attrezzatura" })).toBeVisible();
+    expect(screen.getByText(/può danneggiarsi/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Riprendi" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Continua" }));
+
+    expect(screen.getByText("Avvia lo sparring gratuito")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Pausa" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Partecipa gratis" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Avvia lo sparring gratuito")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Attività in corso…" })).toBeDisabled();
   });
 
   it("starts with only the applications useful during the first campaign", () => {
@@ -132,5 +198,17 @@ describe("App profile and navigation", () => {
 
     expect(screen.getByRole("heading", { name: "Admin" })).toBeVisible();
     expect(screen.getByText("DEV ONLY")).toBeVisible();
+  });
+
+  it("keeps the same day panel mounted when changing page", () => {
+    saveGame(createInitialState(Date.now(), "Andrea Ungaro"));
+    render(<App />);
+
+    expect(screen.getAllByRole("complementary", { name: "La mia giornata" })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Admin" }));
+
+    expect(screen.getByRole("heading", { name: "Admin" })).toBeVisible();
+    expect(screen.getAllByRole("complementary", { name: "La mia giornata" })).toHaveLength(1);
   });
 });

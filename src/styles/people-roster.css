@@ -161,7 +161,8 @@
     minmax(72px, 0.45fr)
     minmax(72px, 0.45fr)
     minmax(110px, 0.65fr)
-    minmax(250px, 1.5fr);
+    minmax(250px, 1.5fr)
+    42px;
   min-height: 68px;
 }
 
@@ -205,7 +206,8 @@
     minmax(72px, 0.45fr)
     minmax(72px, 0.45fr)
     minmax(110px, 0.65fr)
-    minmax(250px, 1.5fr);
+    minmax(250px, 1.5fr)
+    42px;
   min-height: 48px;
   align-items: center;
   border-bottom: 1px solid var(--line);
@@ -320,7 +322,7 @@
   width: 26px;
   height: 26px;
   flex: 0 0 26px;
-  margin-left: auto;
+  justify-self: center;
   place-items: center;
   padding: 0;
   border: 0;
@@ -328,6 +330,11 @@
   background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
+}
+
+.member-row > .member-cancel-enrollment {
+  overflow: visible;
+  padding: 0;
 }
 
 .member-cancel-enrollment svg {
@@ -339,6 +346,141 @@
 .member-cancel-enrollment:focus-visible {
   background: color-mix(in srgb, #c93535 12%, transparent);
   color: #b42318;
+}
+
+.member-cancellation-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(20 32 46 / 46%);
+  animation: member-cancellation-backdrop-enter 120ms ease-out;
+}
+
+.member-cancellation-dialog {
+  width: min(430px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 28%);
+  animation: member-cancellation-dialog-enter 140ms ease-out;
+}
+
+.member-cancellation-dialog > header {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.member-cancellation-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: #a4262c;
+  background: color-mix(in srgb, #a4262c 12%, var(--surface));
+}
+
+.member-cancellation-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.member-cancellation-dialog header span:not(.member-cancellation-icon) {
+  color: #a4262c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.member-cancellation-dialog h2 {
+  margin: 2px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.member-cancellation-content {
+  padding: 18px 20px 4px;
+}
+
+.member-cancellation-content p {
+  margin: 0 0 14px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.member-cancellation-content strong {
+  color: var(--ink);
+}
+
+.member-cancellation-content .member-cancellation-warning {
+  color: #a4262c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.member-cancellation-dialog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+}
+
+.member-cancellation-dialog footer button {
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.member-cancellation-dialog footer .secondary {
+  color: var(--blue-700);
+  background: var(--surface);
+}
+
+.member-cancellation-dialog footer .secondary:hover,
+.member-cancellation-dialog footer .secondary:focus-visible {
+  border-color: var(--blue-600);
+  background: var(--surface-muted);
+}
+
+.member-cancellation-dialog footer .danger {
+  border-color: #a4262c;
+  color: white;
+  background: #a4262c;
+}
+
+.member-cancellation-dialog footer .danger:hover,
+.member-cancellation-dialog footer .danger:focus-visible {
+  background: #8e1f25;
+}
+
+@keyframes member-cancellation-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes member-cancellation-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .member-row > .member-training-cell {
@@ -559,10 +701,11 @@
   }
 
   .people-view .member-row:not(.people-head) {
+    position: relative;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 18px;
     min-height: 0;
-    padding: 16px 0;
+    padding: 16px 38px 16px 0;
   }
 
   .people-view .member-row > * {
@@ -573,6 +716,12 @@
 
   .people-view .member-row > .member-training-cell {
     grid-column: 1 / -1;
+  }
+
+  .people-view .member-row > .member-cancel-enrollment {
+    position: absolute;
+    top: 16px;
+    right: 0;
   }
 
   .people-view .member-row > [data-label]::before {
@@ -605,5 +754,14 @@
 @media (max-width: 620px) {
   .member-filter-row {
     grid-template-columns: 1fr;
+  }
+
+  .member-cancellation-dialog > footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .member-cancellation-dialog footer button {
+    width: 100%;
   }
 }

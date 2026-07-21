@@ -230,12 +230,17 @@
   color: var(--success);
 }
 
-:root[data-theme="dark"] .appointment-enrolled {
+:root[data-theme="dark"] .appointment-enrolled,
+:root[data-theme="dark"] .appointment-positive {
   background: #173326;
 }
 
 :root[data-theme="dark"] .appointment-lost {
   background: #3a2426;
+}
+
+:root[data-theme="dark"] .appointment-neutral {
+  background: #1c3044;
 }
 
 :root[data-theme="dark"] .trial-status.iscritto {

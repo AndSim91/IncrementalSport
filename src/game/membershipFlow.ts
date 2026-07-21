@@ -1,4 +1,4 @@
-import { canCancelMemberEnrollment, getUpgradeEffectTotal } from "../content/upgrades";
+import { getUpgradeEffectTotal } from "../content/upgrades";
 import { MISSED_RENEWAL_EVENT } from "../content/narrativeEvents";
 import {
   getAthleteImmunityStatus,
@@ -122,7 +122,6 @@ export function cancelMemberEnrollment(
   state: GameState,
   contactId: string,
 ): GameState {
-  if (!canCancelMemberEnrollment(state.upgrades)) return state;
   const member = state.contacts.find(
     (contact) => contact.id === contactId && contact.status === "enrolled",
   );

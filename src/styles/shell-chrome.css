@@ -245,7 +245,7 @@
 }
 
 .overview-workspace {
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr) clamp(250px, 16vw, 310px);
 }
 
 .app-rail {

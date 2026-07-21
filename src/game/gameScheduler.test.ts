@@ -75,6 +75,24 @@ describe("game scheduler", () => {
     expect(getNextGameTickDelay(withEvent, NOW)).toBe(2_500);
   });
 
+  it("ignores email outcomes held by the Events tutorial", () => {
+    const state = stateAtNow();
+    const withHeldOutcome: GameState = {
+      ...state,
+      pendingEmailOutcomes: [{
+        id: "held-outcome",
+        emailId: "email-1",
+        contactId: state.contacts[0].id,
+        resolvesAt: NOW - 1,
+        result: "trialBooked",
+        waitForTutorialEvent: true,
+      }],
+    };
+
+    expect(getNextGameDeadline(withHeldOutcome)).toBe(NOW + 60_000);
+    expect(getNextGameTickDelay(withHeldOutcome, NOW)).toBe(60_000);
+  });
+
   it("keeps the one-second heartbeat required by continuous automation", () => {
     const state = stateAtNow();
     const automated: GameState = {

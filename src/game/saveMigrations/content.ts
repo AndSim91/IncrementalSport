@@ -4,6 +4,7 @@ import {
   resolveEmailTemplateCopy,
 } from "../../content/emailTemplates";
 import { getEmailPresentationLevel } from "../../content/emailPresentation";
+import { TUTORIAL_SCENE_IDS } from "../../content/tutorialScenes";
 import { createInitialUpgradeLevels } from "../../content/upgrades";
 import { GAME_CONFIG } from "../config";
 import { synchronizeEquipmentAvailability } from "../equipment";
@@ -230,6 +231,10 @@ export function migrateContentState(state: MigratableState): MigratableState {
     migrated = {
       ...migrated,
       version: GAME_CONFIG.version,
+      tutorial: {
+        completedSceneIds: [...TUTORIAL_SCENE_IDS],
+        skippedSceneIds: [],
+      },
     };
   }
 

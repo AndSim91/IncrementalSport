@@ -208,7 +208,6 @@ export function isValidGameState(value: unknown): value is GameState {
     hasValidLegendaryAssignments(state) &&
     typeof state.upgrades?.["instructor-versatility"] === "number" &&
     typeof state.upgrades?.["technical-arena"] === "number" &&
-    typeof state.upgrades?.["no-hard-feelings"] === "number" &&
     typeof state.upgrades?.["promiscuous-instructor"] === "number" &&
     typeof state.upgrades?.["tiamat-instructor"] === "number" &&
     typeof state.upgrades?.["extra-form"] === "number" &&
@@ -233,6 +232,10 @@ export function isValidGameState(value: unknown): value is GameState {
     Array.isArray(state.achievements) &&
     typeof state.narrative?.nextEventAt === "number" &&
     Array.isArray(state.narrative?.history) &&
+    Array.isArray(state.tutorial?.completedSceneIds) &&
+    state.tutorial.completedSceneIds.every((sceneId) => typeof sceneId === "string") &&
+    Array.isArray(state.tutorial?.skippedSceneIds) &&
+    state.tutorial.skippedSceneIds.every((sceneId) => typeof sceneId === "string") &&
     typeof state.shortGoal?.definitionId === "string" &&
     typeof state.shortGoal?.baseline === "number" &&
     typeof state.shortGoal?.target === "number" &&

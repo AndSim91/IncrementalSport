@@ -100,6 +100,32 @@ describe("EventsView", () => {
     expect(screen.queryByText(/persone →/)).not.toBeInTheDocument();
   });
 
+  it("shows the three-second duration only while the Events tutorial is pending", () => {
+    const initial = createInitialState(1_000);
+    const { rerender } = render(
+      <EventsView state={initial} onStart={() => undefined} />,
+    );
+    const tutorialRow = screen.getByRole("heading", { name: "Sparring al parco" })
+      .closest("article");
+    expect(within(tutorialRow!).getByText("3 secondi")).toBeVisible();
+
+    rerender(
+      <EventsView
+        state={{
+          ...initial,
+          tutorial: {
+            completedSceneIds: ["first-event"],
+            skippedSceneIds: [],
+          },
+        }}
+        onStart={() => undefined}
+      />,
+    );
+    const normalRow = screen.getByRole("heading", { name: "Sparring al parco" })
+      .closest("article");
+    expect(within(normalRow!).getByText("15 secondi")).toBeVisible();
+  });
+
   it("reveals higher potential events as the school gains members", () => {
     const initial = createInitialState(1_000);
     render(<EventsView state={{

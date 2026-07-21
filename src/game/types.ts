@@ -82,6 +82,8 @@ export interface PendingEmailOutcome {
   contactId: string;
   resolvesAt: number;
   result: "trialBooked" | "lost";
+  tutorialSceneId?: "first-event";
+  waitForTutorialEvent?: boolean;
 }
 
 export interface ScheduledTrial {
@@ -92,6 +94,7 @@ export interface ScheduledTrial {
   resultSeed: number;
   status: "scheduled" | "completed";
   secretLegendaryId?: SecretLegendaryId;
+  tutorialSceneId?: "first-event";
 }
 
 export interface InboxMessage {
@@ -146,6 +149,7 @@ export interface AcquisitionEvent {
   wearAdded: number;
   collaboratorId?: string;
   status: "running" | "completed";
+  tutorialSceneId?: "first-event";
 }
 
 export type UpgradeId =
@@ -197,7 +201,6 @@ export type UpgradeId =
   | "multi-site-coordination"
   | "instructor-versatility"
   | "technical-arena"
-  | "no-hard-feelings"
   | "promiscuous-instructor"
   | "extra-form"
   | "tiamat-instructor"
@@ -255,6 +258,11 @@ export interface ShortGoalProgress {
   target: number;
   startedAt: number;
   completedCount: number;
+}
+
+export interface TutorialProgress {
+  completedSceneIds: string[];
+  skippedSceneIds: string[];
 }
 
 export type SchoolSpecialization = "generale" | "redazione" | "eventi" | "accoglienza";
@@ -593,6 +601,7 @@ export interface GameState {
     nextEventAt: number;
     history: NarrativeEventRecord[];
   };
+  tutorial: TutorialProgress;
   shortGoal: ShortGoalProgress;
   statistics: Statistics;
   historyArchive: HistoryArchive;
@@ -619,6 +628,7 @@ export type GameAction =
   | { type: "BUY_UPGRADE"; upgradeId: UpgradeId; now: number }
   | { type: "MARK_MESSAGE_READ"; messageId: string }
   | { type: "MARK_ALL_MESSAGES_READ" }
+  | { type: "FINISH_TUTORIAL_SCENE"; sceneId: string; skipped: boolean }
   | { type: "MAINTAIN_EQUIPMENT"; now: number }
   | { type: "BUY_OFFICIAL_SWORD"; now: number }
   | {

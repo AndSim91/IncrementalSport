@@ -11,6 +11,10 @@ import {
   getEquipmentMaintenanceCost,
 } from "../../game/equipment";
 import { selectAvailableEventMembers, selectContactsAwaitingEmail } from "../../game/selectors";
+import {
+  FIRST_EVENT_TUTORIAL_SCENE_ID,
+  isTutorialScenePending,
+} from "../../game/tutorialProgress";
 import type { AcquisitionEvent, GameState } from "../../game/types";
 import { formatCurrency, formatTime } from "../../shared/formatters";
 
@@ -89,6 +93,10 @@ export function EventsView({
     ? `Ordina 1 Polaris · ${formatCurrency(GAME_CONFIG.officialSwordCost)}`
     : `Servono ${formatCurrency(GAME_CONFIG.officialSwordCost)}`;
   const showSupplier = isOfficialSwordSupplierVisible(state);
+  const usesTutorialSparringDuration = isTutorialScenePending(
+    state,
+    FIRST_EVENT_TUTORIAL_SCENE_ID,
+  );
   const visibleEvents = ACQUISITION_EVENTS.filter((definition) =>
     definition.unlockMembers <= state.school.historicMembers ||
     runningEvents.some((event) => event.definitionId === definition.id)
@@ -141,6 +149,11 @@ export function EventsView({
             damagedSwords > 0 &&
             availableSwords + damagedSwords >= definition.requiredSwords;
           const progress = matching ? getEventProgress(matching, now) : 0;
+          const displayedDurationMs = matching
+            ? matching.resolvesAt - matching.startedAt
+            : definition.id === "park-sparring" && usesTutorialSparringDuration
+              ? GAME_CONFIG.tutorialSparringDurationMs
+              : definition.durationMs;
           const remainingSeconds = matching
             ? Math.max(0, Math.ceil((matching.resolvesAt - now) / 1_000))
             : 0;
@@ -157,7 +170,7 @@ export function EventsView({
           return (
             <article className="event-row" key={definition.id}>
               <div className="event-copy">
-                <div className="event-meta"><span>{Math.round(definition.durationMs / 1_000)} secondi</span><span>Rischio {definition.risk.toLocaleLowerCase("it-IT")}</span><span>{memberRequirement(definition.requiredMembers)}</span><span>{definition.requiredSwords} spade</span></div>
+                <div className="event-meta"><span>{Math.round(displayedDurationMs / 1_000)} secondi</span><span>Rischio {definition.risk.toLocaleLowerCase("it-IT")}</span><span>{memberRequirement(definition.requiredMembers)}</span><span>{definition.requiredSwords} spade</span></div>
                 <h2>{definition.title}</h2>
                 <strong>{definition.location}</strong>
                 <p>{definition.description}</p>

@@ -67,10 +67,17 @@ export const SHORT_GOALS: Record<ShortGoalId, ShortGoalDefinition> = {
 };
 
 export function createInitialShortGoal(now: number): ShortGoalProgress {
+  return createInitialEmailMission(0, now);
+}
+
+export function createInitialEmailMission(
+  baseline: number,
+  now: number,
+): ShortGoalProgress {
   const definition = SHORT_GOALS[SHORT_GOAL_ORDER[0]];
   return {
     definitionId: definition.id,
-    baseline: 0,
+    baseline,
     target: definition.baseTarget,
     startedAt: now,
     completedCount: 0,

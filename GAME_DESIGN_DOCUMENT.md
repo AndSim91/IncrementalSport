@@ -877,22 +877,21 @@ Regole:
   `acquiredAt` più recente; a parità completa conserva l'ordine originale;
 - disattivare l'automazione del singolo Istruttore o riassegnarlo lascia
   terminare le lezioni già iniziate, ma non ne avvia altre;
-- acquistare il livello 1 di Arena Tecnica sblocca subito **Nessun Rancore**;
-  i livelli 2 e 3 di Arena restano acquistabili in parallelo e non bloccano il
-  resto del ramo;
-- **Nessun Rancore** è un potenziamento unico da **€2.500**. Mostra una X nella
-  riga di ogni persona nella schermata Iscritti e, dopo una conferma esplicita,
-  ne annulla definitivamente l'iscrizione senza rimborso e senza ridurre la
-  Fama della scuola. La formazione personale e le lezioni tenute dal
-  collaboratore rimosso vengono interrotte;
+- annullare manualmente un'iscrizione è disponibile fin dall'inizio. La X nella
+  riga di ogni persona nella schermata Iscritti richiede una conferma esplicita
+  e annulla definitivamente l'iscrizione senza rimborso e senza ridurre la Fama
+  della scuola. La formazione personale e le lezioni tenute dal collaboratore
+  rimosso vengono interrotte;
 - gli iscritti non leggendari rimossi non possono tornare, ma email ed eventi
   narrativi già avvenuti restano nello storico. I Leggendari conservano Forme,
   attestati, Maestria, Arena, Stile, esperienza nei tornei, Corsi Agonisti e
   anzianità; perdono soltanto incarico e automazione. I Leggendari ordinari
   tornano nel normale bacino di acquisizione, mentre i Leggendari Segreti
   devono essere nuovamente sconfitti nel rispettivo torneo;
-- **Polivalenza didattica** segue Nessun Rancore, ha due livelli e permette di
-  apprendere fino a tutti e tre i rami d'arma;
+- acquistare il livello 1 di Arena Tecnica sblocca subito **Polivalenza
+  didattica**; i livelli 2 e 3 di Arena restano acquistabili in parallelo e non
+  bloccano il resto del ramo. Polivalenza didattica ha due livelli e permette
+  di apprendere fino a tutti e tre i rami d'arma;
 - **Istruttore Promisquo** è un potenziamento unico e porta da uno a due gli
   allievi contemporanei di ogni Istruttore;
 - **Doppio Corso** è un potenziamento unico del ramo Istruttori e concede a ogni
@@ -906,9 +905,9 @@ Regole:
   cambiare l'incarico operativo; il livello 3 rende gratuiti tutte le Forme,
   tutti i corsi, tutti gli attestati e ogni altro costo di istruttoraggio;
 - dopo Arena Tecnica, il ramo è lineare: ogni potenziamento deve essere
-  completato prima di accedere al successivo. L'ordine è **Nessun Rancore →
-  Polivalenza didattica → Istruttore Promisquo → Doppio Corso → Istruttore
-  Tiamat → PagoSport → Tocco DiGilo**;
+  completato prima di accedere al successivo. L'ordine è **Polivalenza
+  didattica → Istruttore Promisquo → Doppio Corso → Istruttore Tiamat →
+  PagoSport → Tocco DiGilo**;
 - **Tocco DiGilo** è l'ultimo potenziamento del ramo Istruttori: costa
   **€1.000.000** e aumenta del **9999%** la velocità con cui un Istruttore
   insegna le Forme agli allievi;
@@ -1290,9 +1289,23 @@ Presentate come report di campagna:
 
 ---
 
-## 13. Tutorial diegetico
+## 13. Tutorial narrativo e interattivo
 
-Il tutorial avviene tramite email ricevute.
+Il tutorial combina le email ricevute con scene di dialogo attivate da condizioni
+di gioco. Le email restano parte del mondo narrativo; le scene servono a fermare
+il ritmo, spiegare il passaggio appena raggiunto e guidare l'azione successiva.
+
+Ogni scena è composta da due tipi di passaggio:
+
+- **dialogo**: mostra testi lineari senza scelte, mette in pausa il tempo di gioco
+  e permette soltanto di continuare o usare **Salta** nell'angolo della pagina;
+- **obiettivo guidato**: lascia interattive solo le aree necessarie e avanza
+  automaticamente quando rileva l'azione richiesta. Ogni scena dichiara se il
+  tempo debba restare fermo oppure ripartire durante l'obiettivo.
+
+Ogni passaggio dichiara quali aree dell'interfaccia restano a fuoco, quali vengono
+oscurate e sfocate e quali possono essere nascoste. Il completamento o il salto di
+una scena viene salvato, così la stessa scena non si ripete dopo il caricamento.
 
 ### Sequenza iniziale
 
@@ -1300,28 +1313,37 @@ Il tutorial avviene tramite email ricevute.
    Introduce il contesto e assegna i primi 5 contatti fittizi.
 
 2. **Prima campagna inviti**\
-   Chiede di scrivere premendo qualunque tasto. L'invio e l'apertura della mail
-   successiva sono automatici.
+   Chiede di scrivere premendo qualunque tasto mentre il tempo resta fermo. La
+   scena termina quando la bozza passa a “Invio in corso...”; a quel punto il
+   tempo riparte e inizia la missione di tre email ulteriori. Gli Eventi si
+   sbloccano soltanto al completamento di questa missione.
 
 3. **Configurazione campagna**\
    È la prima comunicazione di sistema manuale e sblocca Scrittura e Velocità.
 
-4. **Nuova lezione prenotata** Introduce il passaggio email → prova in palestra
+4. **Primi Eventi e attrezzatura**\
+   Dopo la missione dei tre inviti guida il giocatore ad aprire Eventi, spiega
+   che le attività possono usurare o danneggiare le spade e richiede di avviare
+   lo **Sparring al parco** gratuito. Il tutorial termina quando lo sparring è in
+   corso.
+
+5. **Nuova lezione prenotata** Introduce il passaggio email → prova in palestra
    → possibile iscrizione.
 
-5. **Primo bonus e quota associativa** Introduce il bonus immediato di €20, la
+6. **Primo bonus e quota associativa** Introduce il bonus immediato di €20, la
    quota mensile base di €40, il bonus di €5 per ogni Forma o corso permanente e
    il finanziamento dei potenziamenti.
 
-6. **Una mano in più** Il primo Ultra Raro che completa il Corso Y introduce
+7. **Una mano in più** Il primo Ultra Raro che completa il Corso Y introduce
    l'automazione.
 
-7. **Le spade non si sistemano da sole** Introduce attrezzatura e manutenzione.
+8. **Le spade non si sistemano da sole** Introduce attrezzatura e manutenzione.
    Più avanti si scopre che, tecnicamente, con abbastanza collaboratori si
    sistemano quasi da sole.
 
-Il tutorial non deve usare frecce luminose o overlay da gioco. Può evidenziare
-gli elementi con i normali stati di focus di Windows.
+L'evidenziazione deve restare coerente con l'interfaccia ispirata a Windows:
+niente frecce luminose o decorazioni estranee, ma contorni di focus, oscuramento
+e sfocatura controllata delle aree non necessarie.
 
 ---
 

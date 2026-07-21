@@ -1,11 +1,12 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { OfficialStatValue } from "../../components/common/OfficialStatValue";
 import { Icon } from "../../components/common/Icon";
 import { PERSON_RARITIES } from "../../content/rarities";
 import { getFormTrainingYear } from "../../game/calendar";
 import { getAthleteImmunityStatus } from "../../game/athleteImmunity";
-import { canCancelMemberEnrollment, getAnnualFormTrainingLimit } from "../../content/upgrades";
+import { getAnnualFormTrainingLimit } from "../../content/upgrades";
 import type { Collaborator, Contact, FormId, GameState } from "../../game/types";
+import { EnrollmentCancellationDialog } from "./EnrollmentCancellationDialog";
 import { FormLogoStrip, PersonName } from "./PersonPresentation";
 import { TrainingControl } from "./TrainingControl";
 import { formatFormPath, getMemberDepartureRiskLabel } from "./peoplePresentation";
@@ -116,10 +117,11 @@ export function MemberList({
   const [styleMinimum, setStyleMinimum] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [nextFormFilter, setNextFormFilter] = useState("all");
+  const [cancellationTarget, setCancellationTarget] = useState<Contact | null>(null);
+  const cancellationTriggerRef = useRef<HTMLButtonElement | null>(null);
   const deferredSearch = useDeferredValue(search);
   const currentMonth = state.school.currentMonth;
   const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
-  const cancellationEnabled = canCancelMemberEnrollment(state.upgrades);
   const foundedSchools = state.network.schools.length;
   const immunityContext = useMemo(() => ({
     currentMonth,
@@ -242,6 +244,16 @@ export function MemberList({
     setNextFormFilter("all");
     setRequestedPage(0);
   };
+  const closeCancellationDialog = useCallback(() => {
+    cancellationTriggerRef.current?.focus();
+    setCancellationTarget(null);
+  }, []);
+  const confirmCancellation = useCallback(() => {
+    if (!cancellationTarget) return;
+    const contactId = cancellationTarget.id;
+    setCancellationTarget(null);
+    onCancelEnrollment(contactId);
+  }, [cancellationTarget, onCancelEnrollment]);
 
   return (
     <section className="people-table member-development-list" aria-label="Iscritti">
@@ -280,6 +292,7 @@ export function MemberList({
           sort={sort}
           onSort={handleSort}
         />
+        <span className="member-actions-header" aria-hidden="true" />
       </div>
       <div className="member-filter-row" aria-label="Filtri iscritti">
         <label>
@@ -410,23 +423,6 @@ export function MemberList({
                   {contact.email}
                 </span>
               </span>
-              {cancellationEnabled ? (
-                <button
-                  type="button"
-                  className="member-cancel-enrollment"
-                  aria-label={`Annulla l'iscrizione di ${contact.firstName} ${contact.lastName}`}
-                  title="Annulla iscrizione"
-                  onClick={() => {
-                    if (window.confirm(
-                      `Vuoi annullare l'iscrizione di ${contact.firstName} ${contact.lastName}? L'azione non può essere annullata.`,
-                    )) {
-                      onCancelEnrollment(contact.id);
-                    }
-                  }}
-                >
-                  <Icon name="close" />
-                </button>
-              ) : null}
             </div>
             <span data-label="Rarità">
               <strong
@@ -485,6 +481,18 @@ export function MemberList({
                 />
               )}
             </div>
+            <button
+              type="button"
+              className="member-cancel-enrollment"
+              aria-label={`Annulla l'iscrizione di ${contact.firstName} ${contact.lastName}`}
+              title="Annulla iscrizione"
+              onClick={(event) => {
+                cancellationTriggerRef.current = event.currentTarget;
+                setCancellationTarget(contact);
+              }}
+            >
+              <Icon name="close" />
+            </button>
           </div>
         );
       })}
@@ -511,6 +519,13 @@ export function MemberList({
             Successiva
           </button>
         </nav>
+      ) : null}
+      {cancellationTarget ? (
+        <EnrollmentCancellationDialog
+          contact={cancellationTarget}
+          onClose={closeCancellationDialog}
+          onConfirm={confirmCancellation}
+        />
       ) : null}
     </section>
   );

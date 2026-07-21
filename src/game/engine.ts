@@ -126,7 +126,7 @@ function tick(state: GameState, now: number, gainMultiplier: number): GameState 
     }
   }
   for (const outcome of getPendingEmailOutcomes(nextState.pendingEmailOutcomes)) {
-    if (outcome.resolvesAt <= now) {
+    if (!outcome.waitForTutorialEvent && outcome.resolvesAt <= now) {
       nextState = resolveEmailOutcome(nextState, outcome, now);
     }
   }

@@ -6,7 +6,7 @@
 .settings-layout,
 .settings-network {
   width: 100%;
-  max-width: 1120px;
+  max-width: none;
 }
 
 .settings-layout {

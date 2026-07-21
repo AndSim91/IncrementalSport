@@ -10,7 +10,6 @@ import { Icon, type IconName } from "../../components/common/Icon";
 import {
   UPGRADE_CATEGORIES,
   UPGRADE_DEFINITIONS,
-  canCancelMemberEnrollment,
   getAnnualFormTrainingLimit,
   getFirstIncompleteUpgradePrerequisite,
   getUpgradeCost,
@@ -49,12 +48,6 @@ function formatUpgradePercentage(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
-function UpgradeTitle({ definition }: { definition: UpgradeDefinition }) {
-  return definition.id === "no-hard-feelings"
-    ? <>Nessun <em>Rancor</em>e</>
-    : definition.title;
-}
-
 function getUpgradeBenefitsSummary(state: GameState) {
   const benefits = [
     { label: "Caratteri per input", value: formatNumber(state.player.writingPower) },
@@ -85,9 +78,6 @@ function getUpgradeBenefitsSummary(state: GameState) {
   const agonistCourseTier = getUpgradeEffectTotal(state.upgrades, "agonistCourseTier");
   if (agonistCourseTier > 0) {
     benefits.push({ label: "Arena Tecnica", value: `livello ${agonistCourseTier}` });
-  }
-  if (canCancelMemberEnrollment(state.upgrades)) {
-    benefits.push({ label: "Annullamento iscrizioni", value: "Sbloccato" });
   }
   if (hasAutomaticInstructorCertificates(state.upgrades)) {
     benefits.push({ label: "Attestati collaboratori", value: "Automatici" });
@@ -176,7 +166,7 @@ function UpgradeNode({
           {status === "completed" ? <span className="upgrade-node-check">✓</span> : <Icon name={categoryIcons[definition.category]} />}
         </span>
         <span className="upgrade-node-level">Livello {level}/{definition.maxLevel}</span>
-        <strong><UpgradeTitle definition={definition} /></strong>
+        <strong>{definition.title}</strong>
       </button>
     </li>
   );
@@ -309,7 +299,7 @@ function UpgradeDetailsDialog({
           <div className="upgrade-dialog-icon"><Icon name={categoryIcons[definition.category]} /></div>
           <div>
             <span>{UPGRADE_CATEGORIES.find((category) => category.id === definition.category)?.title}</span>
-            <h2 id="upgrade-dialog-title"><UpgradeTitle definition={definition} /></h2>
+            <h2 id="upgrade-dialog-title">{definition.title}</h2>
           </div>
           <button ref={closeButtonRef} type="button" className="upgrade-dialog-close" onClick={onClose} aria-label="Chiudi dettagli">×</button>
         </header>
@@ -422,7 +412,7 @@ export function UpgradesView({
                 <h3 id="upgrade-recommendation-title">Upgrade raccomandato</h3>
                 {recommendedUpgrade ? (
                   <>
-                    <strong><UpgradeTitle definition={recommendedUpgrade.definition} /></strong>
+                    <strong>{recommendedUpgrade.definition.title}</strong>
                     <small>
                       Livello {state.upgrades[recommendedUpgrade.definition.id] + 1}
                       {" · "}{formatCurrency(recommendedUpgrade.cost)}

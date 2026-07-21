@@ -9,6 +9,11 @@ import { makeGameId } from "./ids";
 import { nextRandom, randomBetween } from "./random";
 import { addMessage } from "./stateUpdates";
 import { selectActiveEmail } from "./selectors";
+import {
+  FIRST_EVENT_TUTORIAL_SCENE_ID,
+  isTutorialSceneFinished,
+  isTutorialScenePending,
+} from "./tutorialProgress";
 import type {
   GameState,
   PendingEmailOutcome,
@@ -58,6 +63,10 @@ export function finalizeEmail(state: GameState, emailId: string, now: number): G
     GAME_CONFIG.emailOutcomeMaxMs,
   );
   const guaranteedTutorialBooking = state.statistics.emailsSent === 0;
+  const waitsForEventTutorial =
+    isTutorialSceneFinished(state, "first-invitation") &&
+    isTutorialScenePending(state, FIRST_EVENT_TUTORIAL_SCENE_ID);
+  const reservesBookingForEventTutorial = guaranteedTutorialBooking && waitsForEventTutorial;
   const recentEmailResults = state.emails
     .slice()
     .reverse()
@@ -80,6 +89,10 @@ export function finalizeEmail(state: GameState, emailId: string, now: number): G
     contactId: email.contactId,
     resolvesAt: now + outcomeDelay,
     result,
+    tutorialSceneId: reservesBookingForEventTutorial
+      ? FIRST_EVENT_TUTORIAL_SCENE_ID
+      : undefined,
+    waitForTutorialEvent: waitsForEventTutorial || undefined,
   };
 
   let nextState: GameState = {
@@ -103,15 +116,6 @@ export function finalizeEmail(state: GameState, emailId: string, now: number): G
       now,
       "Configurazione campagna completata",
       "Hai inviato la tua prima email! Il sistema registrerà eventuali risposte e appuntamenti automaticamente senza interrompere la stesura delle tue prossime email",
-      "system",
-    );
-  }
-  if (state.statistics.emailsSent === 2) {
-    nextState = addMessage(
-      nextState,
-      now + 1,
-      "Ufficio Eventi disponibile",
-      "La prima tornata di inviti è sufficiente per aprire l'organizzazione delle attività esterne. La nuova area è comparsa nella barra laterale.",
       "system",
     );
   }
@@ -166,6 +170,7 @@ export function resolveEmailOutcome(
     resolvesAt: startsAt + GAME_CONFIG.trialDurationMs,
     resultSeed: Math.floor(resultSeed * 2_147_483_647),
     status: "scheduled",
+    tutorialSceneId: outcome.tutorialSceneId,
   };
   nextState = {
     ...nextState,

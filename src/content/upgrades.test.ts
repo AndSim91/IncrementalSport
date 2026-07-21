@@ -67,7 +67,6 @@ describe("instructor branch", () => {
     );
     expect(instructors.map((definition) => definition.id)).toEqual([
       "technical-arena",
-      "no-hard-feelings",
       "instructor-versatility",
       "promiscuous-instructor",
       "extra-form",
@@ -76,7 +75,7 @@ describe("instructor branch", () => {
       "divine-touch",
     ]);
     expect(instructors.map((definition) => definition.requiredHistoricMembers)).toEqual([
-      15, 0, 0, 0, 0, 0, 0, 0,
+      15, 0, 0, 0, 0, 0, 0,
     ]);
     expect(instructors.map((definition) =>
       Array.from({ length: definition.maxLevel }, (_, level) =>
@@ -84,7 +83,6 @@ describe("instructor branch", () => {
       )
     )).toEqual([
       [2_000, 5_000, 10_000],
-      [2_500],
       [2_000, 4_000],
       [5_000],
       [10_000],

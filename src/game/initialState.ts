@@ -67,6 +67,10 @@ export function createInitialState(
       nextEventAt: now + GAME_CONFIG.narrativeEventMinMs,
       history: [],
     },
+    tutorial: {
+      completedSceneIds: [],
+      skippedSceneIds: [],
+    },
     shortGoal: createInitialShortGoal(now),
     activities: { nextSparringAt: now },
     equipment: {

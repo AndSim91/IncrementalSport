@@ -448,7 +448,7 @@
   display: flex;
   align-items: center;
   gap: 13px;
-  max-width: 1100px;
+  max-width: none;
   padding: 12px 15px;
   border: 1px solid #c7dcef;
   background: var(--blue-050);
@@ -457,7 +457,7 @@
 .event-capacity-note {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-width: 1100px;
+  max-width: none;
   border: 1px solid var(--line);
   border-top: 0;
   background: var(--surface-muted);
@@ -582,7 +582,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 1100px;
+  max-width: none;
   padding: 10px 15px;
   border: 1px solid var(--line);
   border-top: 0;
@@ -622,7 +622,7 @@
 }
 
 .event-list {
-  max-width: 1100px;
+  max-width: none;
   margin-top: 28px;
   border-top: 1px solid var(--line);
 }
@@ -706,7 +706,7 @@
 }
 
 .event-history {
-  max-width: 1100px;
+  max-width: none;
   margin-top: 32px;
 }
 

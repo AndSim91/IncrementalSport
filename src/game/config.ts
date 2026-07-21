@@ -1,7 +1,7 @@
 export const INITIAL_SAVE_COMPATIBILITY_VERSION = 1;
 
 export const GAME_CONFIG = {
-  version: 46,
+  version: 47,
   // Increment this only when a change cannot preserve the meaning of an old save.
   // A different value forces a fresh game instead of weakening the game design
   // to keep an incompatible save alive.
@@ -9,7 +9,6 @@ export const GAME_CONFIG = {
   initialContacts: 5,
   initialSwords: 6,
   profileNameMaxLength: 80,
-  eventsUnlockEmailsSent: 3,
   rarityOverviewEmailsSent: 10,
   socialUnlockMembers: 15,
   tournamentUnlockMembers: 6,
@@ -32,6 +31,8 @@ export const GAME_CONFIG = {
   gameMonthMs: 60_000,
   secretLegendaryTrialDurationMs: 150_000,
   sparringCooldownMs: 10_000,
+  tutorialSparringDurationMs: 3_000,
+  tutorialSparringMinimumContacts: 1,
   equipmentMaintenanceCost: 10,
   equipmentMaintenanceCostPerSword: 50,
   eventWearMultiplier: 1.5,

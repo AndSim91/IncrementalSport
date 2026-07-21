@@ -159,8 +159,17 @@ export function completeShortGoal(
   };
   const nextGoal = createNextShortGoal(rewarded, completedCount, now);
   const nextDefinition = SHORT_GOALS[nextGoal.definitionId];
+  const progressed = definition.id === "send-emails" && state.shortGoal.completedCount === 0
+    ? addMessage(
+        { ...rewarded, shortGoal: nextGoal },
+        now,
+        "Ufficio Eventi disponibile",
+        "Hai completato la missione dei tre inviti. L'area Eventi è ora disponibile nella barra laterale.",
+        "system",
+      )
+    : { ...rewarded, shortGoal: nextGoal };
   return addMessage(
-    { ...rewarded, shortGoal: nextGoal },
+    progressed,
     now,
     `Obiettivo completato: ${definition.title}`,
     `${definition.completionNarrative} Premio operativo: ${formatCurrency(reward)}. Prossima priorità: ${nextDefinition.title}.`,

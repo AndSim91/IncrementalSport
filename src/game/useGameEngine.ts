@@ -15,11 +15,14 @@ import type { GameSaveStatus } from "./saveStatus";
 import { getNextGameTickDelay } from "./gameScheduler";
 import type { GameAction } from "./types";
 
+type PauseReason = "manual" | "tutorial";
+
 export function useGameEngine() {
   const [state, dispatch] = useReducer(gameReducer, undefined, () => loadGame());
   const stateRef = useRef(state);
   const observedStateRef = useRef(state);
   const pausedAtRef = useRef<number | null>(null);
+  const pauseReasonsRef = useRef(new Set<PauseReason>());
   const saveSchedulerRef = useRef<SaveScheduler | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [saveStatus, setSaveStatus] = useState<GameSaveStatus>(() => ({
@@ -134,21 +137,42 @@ export function useGameEngine() {
     [],
   );
 
-  const togglePause = useCallback(() => {
+  const setPauseReason = useCallback((reason: PauseReason, shouldPause: boolean) => {
+    const reasons = pauseReasonsRef.current;
+    const wasPaused = reasons.size > 0;
+    if (shouldPause) {
+      if (reasons.has(reason)) return;
+      reasons.add(reason);
+    } else {
+      if (!reasons.delete(reason)) return;
+    }
+
+    const remainsPaused = reasons.size > 0;
+    if (wasPaused === remainsPaused) return;
+
     const now = Date.now();
     const pausedAt = pausedAtRef.current;
 
-    if (pausedAt === null) {
+    if (remainsPaused && pausedAt === null) {
       dispatchAction({ type: "TICK", now });
       pausedAtRef.current = now;
       setIsPaused(true);
       return;
     }
 
+    if (pausedAt === null) return;
     dispatchAction({ type: "RESUME_FROM_PAUSE", now, elapsedMs: now - pausedAt });
     pausedAtRef.current = null;
     setIsPaused(false);
   }, [dispatchAction]);
+
+  const togglePause = useCallback(() => {
+    setPauseReason("manual", !pauseReasonsRef.current.has("manual"));
+  }, [setPauseReason]);
+
+  const setTutorialPaused = useCallback((paused: boolean) => {
+    setPauseReason("tutorial", paused);
+  }, [setPauseReason]);
 
   return {
     state,
@@ -156,6 +180,7 @@ export function useGameEngine() {
     getGameNow,
     isPaused,
     togglePause,
+    setTutorialPaused,
     saveStatus,
     saveNow,
   };

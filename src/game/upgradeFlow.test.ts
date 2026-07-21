@@ -23,7 +23,7 @@ describe("buyUpgrade prerequisites", () => {
     expect(upgradedState.school.euros).toBeLessThan(eligibleState.school.euros);
   });
 
-  it("opens Nessun Rancore after Arena Tecnica level one", () => {
+  it("opens Polivalenza didattica after Arena Tecnica level one", () => {
     const initial = createInitialState(1_000);
     const funded = {
       ...initial,
@@ -32,9 +32,9 @@ describe("buyUpgrade prerequisites", () => {
 
     const arena = buyUpgrade(funded, "technical-arena");
     expect(arena.upgrades["technical-arena"]).toBe(1);
-    const noHardFeelings = buyUpgrade(arena, "no-hard-feelings");
-    expect(noHardFeelings.upgrades["no-hard-feelings"]).toBe(1);
-    expect(noHardFeelings.upgrades["technical-arena"]).toBe(1);
+    const versatility = buyUpgrade(arena, "instructor-versatility");
+    expect(versatility.upgrades["instructor-versatility"]).toBe(1);
+    expect(versatility.upgrades["technical-arena"]).toBe(1);
   });
 
   it("grants every existing collaborator certificate at PagoSport level two", () => {
