@@ -327,8 +327,9 @@ non possono riservare tutte le spade richieste, senza consumare denaro, tempo o
 capienza dell'Istruttore. Una lezione di prova viene invece annullata allo
 scadere dell'attesa; un evento non può essere avviato.
 
-Il carico viene applicato soltanto alla conclusione riuscita dell'attività ed è
-aggregato. Ogni 100 punti rompe una spada; più soglie superate rompono più spade
+Il carico viene applicato alla conclusione riuscita dell'attività ed è
+aggregato. Se un evento in corso viene annullato, si applica metà del carico
+previsto e non si ottengono contatti. Ogni 100 punti rompe una spada; più soglie superate rompono più spade
 e tutto il carico eccedente viene conservato. La manutenzione preventiva costa
 €2 per punto, mentre una spada già rotta costa €250 e torna da 100 a 0.
 
@@ -348,7 +349,8 @@ blocco da 100 punti per ogni spada della scuola. Il rosso indica una spada
 rotta, il grigio una spada riservata e temporaneamente non riparabile, l'oro il
 carico normale ancora rimovibile e lo spazio vuoto la condizione sana residua.
 Il riepilogo numerico mostra l'usura totale includendo 100 punti per ogni spada
-rotta.
+rotta. Fino a 20 spade i blocchi restano individuali; da 21 spade in poi la
+barra diventa continua e aggrega proporzionalmente le quattro condizioni.
 
 Gli imprevisti narrativi dell'Attrezzatura sostituiscono quelli precedenti:
 
@@ -497,7 +499,7 @@ Per il primo prototipo:
 
 | Passaggio                        |                                                                  Tempo suggerito |
 | -------------------------------- | -------------------------------------------------------------------------------: |
-| Esito dell'email                 |                                                              20 secondi–3 minuti |
+| Esito dell'email                 |                                                                       10 secondi |
 | Attesa della lezione in palestra |                                                                       1–5 minuti |
 | Esito della lezione              |                                                             immediato al termine |
 | Bonus di iscrizione              |                                                                  immediato (€20) |

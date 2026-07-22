@@ -56,6 +56,21 @@ function getTournamentSummary(result: TournamentResult): {
   detail: string;
   phase: "positive" | "neutral";
 } {
+  if (result.level === "school") {
+    const arenaWinner = result.participants.find(
+      (participant) => participant.id === result.arenaRanking[0],
+    );
+    const styleWinner = result.participants.find(
+      (participant) => participant.id === result.styleRanking[0],
+    );
+    if (arenaWinner && styleWinner) {
+      return {
+        detail: `1° posto Arena: ${arenaWinner.firstName} ${arenaWinner.lastName} | 1° posto Stile: ${styleWinner.firstName} ${styleWinner.lastName}`,
+        phase: "positive",
+      };
+    }
+  }
+
   const ownedParticipantIds = new Set(
     result.participants
       .filter((participant) => participant.ownedContactId)

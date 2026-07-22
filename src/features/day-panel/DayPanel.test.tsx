@@ -29,31 +29,41 @@ function stateWithTrial(
 }
 
 function tournamentResult(completedAt: number): TournamentResult {
+  const arenaWinner: TournamentResult["participants"][number] = {
+    id: "arena-winner",
+    ownedContactId: "contact-1",
+    firstName: "Ada",
+    lastName: "Arena",
+    schoolName: "Ordine delle Onde",
+    city: "Genova",
+    rarity: "rare",
+    numericForms: 2,
+    experience: 1,
+    arenaBase: 10,
+    styleBase: 10,
+    arenaPreparation: 20,
+    stylePreparation: 20,
+    condition: 1,
+  };
   return {
     id: "tournament-day-panel",
     level: "school",
     season: 1,
     completedAt,
-    participants: [{
-      id: "owned-athlete",
-      ownedContactId: "contact-1",
-      firstName: "Ada",
-      lastName: "Arena",
-      schoolName: "Ordine delle Onde",
-      city: "Genova",
-      rarity: "rare",
-      numericForms: 2,
-      experience: 1,
-      arenaBase: 10,
-      styleBase: 10,
-      arenaPreparation: 20,
-      stylePreparation: 20,
-      condition: 1,
-    }],
+    participants: [
+      arenaWinner,
+      {
+        ...arenaWinner,
+        id: "style-winner",
+        ownedContactId: "contact-2",
+        firstName: "Stella",
+        lastName: "Stile",
+      },
+    ],
     matches: [],
     groupStandings: [],
-    arenaRanking: ["owned-athlete"],
-    styleRanking: ["owned-athlete"],
+    arenaRanking: ["arena-winner", "style-winner"],
+    styleRanking: ["style-winner", "arena-winner"],
     arenaPodium: [],
     stylePodium: [],
     qualifiers: [],
@@ -188,7 +198,7 @@ describe("DayPanel", () => {
     expect(screen.getByText("Nuovo atleta entrato senza lezione di prova")).toBeVisible();
   });
 
-  it("shows tournament results with the best school placements", () => {
+  it("shows the Arena and Stile winners for a completed school tournament", () => {
     vi.useFakeTimers();
     vi.setSystemTime(55_000);
     const initial = createInitialState(10_000);
@@ -199,7 +209,9 @@ describe("DayPanel", () => {
     }} />);
 
     expect(screen.getByText("Torneo Scolastico completato")).toBeVisible();
-    expect(screen.getByText("Miglior piazzamento: Arena 1° · Stile 1°.")).toBeVisible();
+    expect(screen.getByText(
+      "1° posto Arena: Ada Arena | 1° posto Stile: Stella Stile",
+    )).toBeVisible();
   });
 
   it("shows important events and lets their notification expire", () => {

@@ -144,6 +144,39 @@ describe("EventsView", () => {
     expect(container.querySelectorAll(".equipment-sword-cell.is-available")).toHaveLength(3);
   });
 
+  it("switches to one aggregate bar above twenty swords", () => {
+    const initial = createInitialState(1_000);
+    const { container } = render(
+      <EventsView
+        state={{
+          ...initial,
+          equipment: {
+            ...initial.equipment,
+            totalSwords: 100,
+            availableSwords: 99,
+            damagedSwords: 0,
+            wear: 38,
+          },
+        }}
+        onStart={() => undefined}
+      />,
+    );
+
+    const bar = screen.getByRole("progressbar", {
+      name: "Usura complessiva attrezzatura",
+    });
+    expect(bar).toHaveClass("is-aggregate");
+    expect(bar).toHaveAttribute("aria-valuemax", "10000");
+    expect(bar).toHaveAttribute("aria-valuenow", "38");
+    expect(container.querySelectorAll(".equipment-sword-cell")).toHaveLength(0);
+    expect(container.querySelector(".equipment-condition-segment.is-reserved"))
+      .toHaveStyle({ width: "1%" });
+    expect(container.querySelector(".equipment-condition-segment.is-load"))
+      .toHaveStyle({ width: "0.38%" });
+    expect(container.querySelector(".equipment-condition-segment.is-healthy"))
+      .toHaveStyle({ width: "98.62%" });
+  });
+
   it("shows the three-second duration only while the Events tutorial is pending", () => {
     const initial = createInitialState(1_000);
     const { rerender } = render(
@@ -227,6 +260,39 @@ describe("EventsView", () => {
     expect(screen.getByText("3/5 iscritti disponibili")).toBeVisible();
     const equipmentPanel = screen.getByRole("region", { name: "Risorse disponibili per gli eventi" });
     expect(within(equipmentPanel).getByText("2/6 spade disponibili")).toBeVisible();
+  });
+
+  it("offers cancellation for a running event", () => {
+    const initial = createInitialState(1_000);
+    const event: AcquisitionEvent = {
+      id: "running-public-demo",
+      definitionId: "public-demo",
+      title: "Dimostrazione pubblica",
+      location: "Piazza De Ferrari",
+      startedAt: 2_000,
+      resolvesAt: 47_000,
+      cost: 120,
+      peopleMet: 10,
+      demonstrationsGiven: 4,
+      contactReward: 3,
+      membersUsed: 2,
+      equipmentUsed: 4,
+      wearAdded: 10,
+      status: "running",
+    };
+    const onCancel = vi.fn();
+
+    render(
+      <EventsView
+        state={{ ...initial, acquisitionEvents: [event] }}
+        onStart={() => undefined}
+        onCancel={onCancel}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Annulla evento" }));
+
+    expect(onCancel).toHaveBeenCalledWith(event.id);
   });
 
   it("marks damaged swords as unavailable until maintenance", () => {

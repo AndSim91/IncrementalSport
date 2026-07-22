@@ -1,6 +1,7 @@
 import { addLegendaryEncounters, createAcquiredContacts, mergeAcquiredContacts } from "./contacts";
 import { GAME_CONFIG } from "./config";
 import { roundCurrency } from "./economy";
+import { synchronizeEquipmentAvailability } from "./equipment";
 import { startNextCampaign } from "./emailFlow";
 import { makeGameId } from "./ids";
 import { getAvailableStandardLegendaryProfiles } from "./legendaryAvailability";
@@ -120,6 +121,26 @@ export function addAdminEuros(state: GameState, amount: number): GameState {
   return Number.isFinite(euros)
     ? { ...state, school: { ...state.school, euros } }
     : state;
+}
+
+export function addAdminSwords(state: GameState, rawAmount: number): GameState {
+  const amount = Math.trunc(rawAmount);
+  if (!Number.isSafeInteger(amount) || amount === 0) return state;
+
+  const totalSwords = state.equipment.totalSwords + amount;
+  const availableSwords = state.equipment.availableSwords + amount;
+  if (!Number.isSafeInteger(totalSwords) || !Number.isSafeInteger(availableSwords)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    equipment: synchronizeEquipmentAvailability({
+      ...state.equipment,
+      totalSwords,
+      availableSwords,
+    }),
+  };
 }
 
 export function scheduleAdminLegendaryTrial(state: GameState, now: number): GameState {

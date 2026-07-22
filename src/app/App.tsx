@@ -23,6 +23,7 @@ import { DayPanel } from "../features/day-panel/DayPanel";
 import { TutorialLayer } from "../features/tutorial/TutorialLayer";
 import { useTutorialController } from "../features/tutorial/useTutorialController";
 import { GameTimeProvider } from "../game/GameTimeProvider";
+import { getAvailableSwords } from "../game/equipment";
 import { useGameEngine } from "../game/useGameEngine";
 import { getAvailableStandardLegendaryProfiles } from "../game/legendaryAvailability";
 import { isGameAreaUnlocked } from "../game/progression";
@@ -240,6 +241,9 @@ export function App() {
             onStart={(definitionId) =>
               dispatch({ type: "START_ACQUISITION_EVENT", definitionId, now: getGameNow() })
             }
+            onCancel={(eventId) =>
+              dispatch({ type: "CANCEL_ACQUISITION_EVENT", eventId, now: getGameNow() })
+            }
             onMaintainEquipment={() =>
               dispatch({ type: "MAINTAIN_EQUIPMENT", now: getGameNow() })
             }
@@ -316,6 +320,9 @@ export function App() {
             availableContacts={selectAvailableContacts(state)}
             activeMembers={state.school.activeMembers}
             euros={state.school.euros}
+            totalSwords={state.equipment.totalSwords}
+            availableSwords={getAvailableSwords(state.equipment)}
+            damagedSwords={state.equipment.damagedSwords}
             currentMonth={state.school.currentMonth}
             availableLegendaryProfiles={
               getAvailableStandardLegendaryProfiles(state, getGameNow()).length
@@ -323,6 +330,7 @@ export function App() {
             onAddContacts={(amount) => dispatch({ type: "ADMIN_ADD_CONTACTS", amount })}
             onAddMembers={(amount) => dispatch({ type: "ADMIN_ADD_MEMBERS", amount })}
             onAddEuros={(amount) => dispatch({ type: "ADMIN_ADD_EUROS", amount })}
+            onAddSwords={(amount) => dispatch({ type: "ADMIN_ADD_SWORDS", amount })}
             onAdvanceMonth={() => dispatch({
               type: "ADMIN_ADVANCE_MONTH",
               now: getGameNow(),

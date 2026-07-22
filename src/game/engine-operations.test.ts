@@ -130,6 +130,30 @@ describe("game engine: operations", () => {
     expect(completed.messages[0].subject).toBe("Attività operative disponibili");
   });
 
+  it("cancels a running event with half wear and no contacts", () => {
+    const state = createInitialState(1_000);
+    const started = gameReducer(state, {
+      type: "START_ACQUISITION_EVENT",
+      definitionId: "park-sparring",
+      now: 2_000,
+    });
+    const event = started.acquisitionEvents[0];
+
+    const cancelled = gameReducer(started, {
+      type: "CANCEL_ACQUISITION_EVENT",
+      eventId: event.id,
+      now: 3_000,
+    });
+
+    expect(cancelled.acquisitionEvents).toHaveLength(0);
+    expect(cancelled.contacts).toEqual(started.contacts);
+    expect(cancelled.statistics.eventsCompleted).toBe(0);
+    expect(cancelled.equipment.availableSwords).toBe(6);
+    expect(cancelled.equipment.wear).toBe(event.wearAdded / 2);
+    expect(cancelled.activities.nextSparringAt).toBe(3_000);
+    expect(cancelled.school.euros).toBe(started.school.euros);
+  });
+
   it("requires enough school fame and euros for outdoor lessons", () => {
     const state = createInitialState(1_000);
     const notFamousEnough = {

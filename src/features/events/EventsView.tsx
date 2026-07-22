@@ -47,11 +47,13 @@ const EVENT_HISTORY_PAGE_SIZE = 100;
 export function EventsView({
   state,
   onStart,
+  onCancel = () => undefined,
   onMaintainEquipment = () => undefined,
   onBuyOfficialSword = () => undefined,
 }: {
   state: GameState;
   onStart: (definitionId: AcquisitionEvent["definitionId"]) => void;
+  onCancel?: (eventId: string) => void;
   onMaintainEquipment?: () => void;
   onBuyOfficialSword?: () => void;
 }) {
@@ -163,9 +165,9 @@ export function EventsView({
           const remainingSeconds = matching
             ? Math.max(0, Math.ceil((matching.resolvesAt - now) / 1_000))
             : 0;
-          const disabled = Boolean(matching || onCooldown || lacksFunds || lacksAvailableMembers || lacksEquipment);
+          const disabled = !matching && Boolean(onCooldown || lacksFunds || lacksAvailableMembers || lacksEquipment);
           let action = definition.cost === 0 ? "Partecipa gratis" : `Partecipa · ${formatCurrency(definition.cost)}`;
-          if (matching) action = "Attività in corso…";
+          if (matching) action = "Annulla evento";
           else if (onCooldown) action = `Di nuovo tra ${Math.ceil(cooldown / 1_000)} s`;
           else if (lacksMembers) action = `Richiede ${memberRequirement(definition.requiredMembers)}`;
           else if (lacksAvailableMembers) action = `Servono ${memberRequirement(definition.requiredMembers)} liberi`;
@@ -201,13 +203,14 @@ export function EventsView({
                 ) : null}
               </div>
               <button
+                className={matching ? "event-cancel-button" : undefined}
                 type="button"
                 disabled={disabled}
                 data-tutorial-region={definition.id === "park-sparring"
                   ? "park-sparring-action"
                   : undefined}
                 data-tutorial-target={definition.id === "park-sparring" ? "true" : undefined}
-                onClick={() => onStart(definition.id)}
+                onClick={() => matching ? onCancel(matching.id) : onStart(definition.id)}
               >
                 {action}
               </button>

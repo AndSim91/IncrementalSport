@@ -646,6 +646,7 @@ export type GameAction =
   | { type: "ADMIN_ADD_CONTACTS"; amount: number }
   | { type: "ADMIN_ADD_MEMBERS"; amount: number }
   | { type: "ADMIN_ADD_EUROS"; amount: number }
+  | { type: "ADMIN_ADD_SWORDS"; amount: number }
   | { type: "ADMIN_ADVANCE_MONTH"; now: number }
   | { type: "ADMIN_SCHEDULE_LEGENDARY_TRIAL"; now: number }
   | { type: "UPDATE_PROFILE_NAME"; displayName: string }
@@ -685,6 +686,11 @@ export type GameAction =
   | {
       type: "START_ACQUISITION_EVENT";
       definitionId: AcquisitionEvent["definitionId"];
+      now: number;
+    }
+  | {
+      type: "CANCEL_ACQUISITION_EVENT";
+      eventId: string;
       now: number;
     }
   | { type: "START_CHRONICLES_TOURNAMENT"; contactIds: string[]; now: number }

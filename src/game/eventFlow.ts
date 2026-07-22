@@ -154,6 +154,32 @@ export function cancelAutomatedEventForCollaborator(
   };
 }
 
+export function cancelAcquisitionEvent(
+  state: GameState,
+  eventId: string,
+  now: number,
+): GameState {
+  const event = state.acquisitionEvents.find((candidate) =>
+    candidate.id === eventId && candidate.status === "running"
+  );
+  if (!event) return state;
+
+  return {
+    ...state,
+    equipment: completeEquipmentUse(
+      state.equipment,
+      event.equipmentUsed,
+      event.wearAdded / 2,
+    ),
+    acquisitionEvents: state.acquisitionEvents.filter(
+      (candidate) => candidate.id !== event.id,
+    ),
+    activities: event.definitionId === "park-sparring"
+      ? { ...state.activities, nextSparringAt: now }
+      : state.activities,
+  };
+}
+
 export function resolveAcquisitionEvent(
   state: GameState,
   event: AcquisitionEvent,

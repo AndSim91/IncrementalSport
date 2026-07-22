@@ -8,11 +8,15 @@ interface AdminEmailViewProps {
   availableContacts: number;
   activeMembers: number;
   euros: number;
+  totalSwords: number;
+  availableSwords: number;
+  damagedSwords: number;
   currentMonth: number;
   availableLegendaryProfiles: number;
   onAddContacts: (amount: number) => void;
   onAddMembers: (amount: number) => void;
   onAddEuros: (amount: number) => void;
+  onAddSwords: (amount: number) => void;
   onAdvanceMonth: () => void;
   onScheduleLegendaryTrial: () => void;
 }
@@ -22,24 +26,31 @@ export function AdminEmailView({
   availableContacts,
   activeMembers,
   euros,
+  totalSwords,
+  availableSwords,
+  damagedSwords,
   currentMonth,
   availableLegendaryProfiles,
   onAddContacts,
   onAddMembers,
   onAddEuros,
+  onAddSwords,
   onAdvanceMonth,
   onScheduleLegendaryTrial,
 }: AdminEmailViewProps) {
   const [contactAmount, setContactAmount] = useState("1");
   const [memberAmount, setMemberAmount] = useState("1");
   const [euroAmount, setEuroAmount] = useState("1000");
+  const [swordAmount, setSwordAmount] = useState("1");
 
   const parsedContactAmount = Number(contactAmount);
   const parsedMemberAmount = Number(memberAmount);
   const parsedEuroAmount = Number(euroAmount);
+  const parsedSwordAmount = Number(swordAmount);
   const canAddContacts = Number.isSafeInteger(parsedContactAmount) && parsedContactAmount !== 0;
   const canAddMembers = Number.isSafeInteger(parsedMemberAmount) && parsedMemberAmount !== 0;
   const canAddEuros = Number.isFinite(parsedEuroAmount) && parsedEuroAmount !== 0;
+  const canAddSwords = Number.isSafeInteger(parsedSwordAmount) && parsedSwordAmount !== 0;
   const currentMonthName = getGameMonthName(currentMonth);
   const nextMonthName = getGameMonthName(currentMonth + 1);
 
@@ -118,6 +129,27 @@ export function AdminEmailView({
           </label>
           <button type="submit" disabled={!canAddEuros}>Modifica Euro</button>
           <small>Attuali: {formatCurrency(euros)}</small>
+        </form>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canAddSwords) onAddSwords(parsedSwordAmount);
+          }}
+        >
+          <label htmlFor="admin-sword-amount">
+            Spade
+            <input
+              id="admin-sword-amount"
+              type="number"
+              step="1"
+              value={swordAmount}
+              onChange={(event) => setSwordAmount(event.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={!canAddSwords}>Modifica spade</button>
+          <small>
+            Totali: {totalSwords} &middot; disponibili: {availableSwords} &middot; danneggiate: {damagedSwords}
+          </small>
         </form>
       </section>
 

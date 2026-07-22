@@ -44,6 +44,28 @@ describe("admin resource actions", () => {
     expect(state.statistics.eurosEarned).toBe(0);
   });
 
+  it("adds or removes school swords while keeping equipment counts valid", () => {
+    const initial = createInitialState(1_000);
+    const added = gameReducer(initial, { type: "ADMIN_ADD_SWORDS", amount: 3 });
+    const reduced = gameReducer({
+      ...added,
+      equipment: {
+        ...added.equipment,
+        availableSwords: 4,
+        damagedSwords: 2,
+      },
+    }, { type: "ADMIN_ADD_SWORDS", amount: -2 });
+
+    expect(added.equipment).toMatchObject({ totalSwords: 9, availableSwords: 9 });
+    expect(reduced.equipment).toMatchObject({
+      totalSwords: 7,
+      availableSwords: 2,
+      damagedSwords: 2,
+    });
+    expect(reduced.equipment.availableSwords + reduced.equipment.damagedSwords)
+      .toBeLessThanOrEqual(reduced.equipment.totalSwords);
+  });
+
   it("advances one month through the same pipeline as a natural monthly deadline", () => {
     const initial = gameReducer(createInitialState(1_000), {
       type: "ADMIN_ADD_MEMBERS",

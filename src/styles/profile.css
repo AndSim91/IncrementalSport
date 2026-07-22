@@ -437,6 +437,15 @@
   background: #115ea3;
 }
 
+.event-row > button.event-cancel-button {
+  border-color: #a4262c;
+  background: #a4262c;
+}
+
+.event-row > button.event-cancel-button:hover:not(:disabled) {
+  background: #8f1d24;
+}
+
 .upgrade-row button:disabled,
 .event-row > button:disabled {
   border-color: var(--line-strong);
@@ -541,6 +550,41 @@
   width: 100%;
   height: 14px;
   gap: 2px;
+}
+
+.equipment-condition-bar.is-aggregate {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--equipment-healthy);
+}
+
+.equipment-condition-segment {
+  display: block;
+  height: 100%;
+  flex: 0 0 auto;
+}
+
+.equipment-condition-segment.is-broken {
+  background: var(--equipment-broken);
+}
+
+.equipment-condition-segment.is-reserved {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--equipment-reserved) 82%, transparent) 0 4px,
+      var(--equipment-reserved) 4px 8px
+    );
+}
+
+.equipment-condition-segment.is-load {
+  background: var(--equipment-load);
+}
+
+.equipment-condition-segment.is-healthy {
+  background: var(--equipment-healthy);
 }
 
 .equipment-sword-cell {

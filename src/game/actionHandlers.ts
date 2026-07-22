@@ -2,10 +2,11 @@ import {
   addAdminContacts,
   addAdminEuros,
   addAdminMembers,
+  addAdminSwords,
   scheduleAdminLegendaryTrial,
 } from "./adminFlow";
 import { buyOfficialSword, maintainEquipment } from "./equipment";
-import { startAcquisitionEvent } from "./eventFlow";
+import { cancelAcquisitionEvent, startAcquisitionEvent } from "./eventFlow";
 import { markAllMessagesRead, markMessageRead } from "./inboxFlow";
 import { cancelMemberEnrollment } from "./membershipFlow";
 import { toggleMemberFavorite } from "./memberPreferences";
@@ -85,6 +86,7 @@ export function createGameActionHandlers(
     ADMIN_ADD_CONTACTS: (state, action) => addAdminContacts(state, action.amount),
     ADMIN_ADD_MEMBERS: (state, action) => addAdminMembers(state, action.amount),
     ADMIN_ADD_EUROS: (state, action) => addAdminEuros(state, action.amount),
+    ADMIN_ADD_SWORDS: (state, action) => addAdminSwords(state, action.amount),
     ADMIN_ADVANCE_MONTH: (state, action) => Number.isFinite(action.now)
       ? dependencies.tick({
           ...state,
@@ -144,6 +146,11 @@ export function createGameActionHandlers(
     START_ACQUISITION_EVENT: (state, action) => startAcquisitionEvent(
       state,
       action.definitionId,
+      action.now,
+    ),
+    CANCEL_ACQUISITION_EVENT: (state, action) => cancelAcquisitionEvent(
+      state,
+      action.eventId,
       action.now,
     ),
     START_CHRONICLES_TOURNAMENT: (state, action) => startChroniclesTournament(
