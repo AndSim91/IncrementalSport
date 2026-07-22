@@ -16,7 +16,7 @@ const HIDDEN_MESSAGE_SUBJECTS = new Set([
   "Stiamo finendo i contatti",
   "Contatti terminati",
 ]);
-const HIDDEN_MESSAGE_PREFIXES = ["Eseguito Corso Agonisti | Potenziale totale +"];
+const HIDDEN_MESSAGE_PREFIXES = ["Corso Agonisti | Potenziale totale +"];
 
 function isHiddenMessageSubject(subject: string): boolean {
   return HIDDEN_MESSAGE_SUBJECTS.has(subject) ||

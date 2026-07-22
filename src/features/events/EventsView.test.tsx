@@ -23,9 +23,12 @@ describe("EventsView", () => {
       />,
     );
 
-    expect(screen.getByText("Manutenzione consigliata")).toBeVisible();
+    expect(screen.queryByText("Manutenzione consigliata")).not.toBeInTheDocument();
+    expect(screen.getByText("Usura")).toBeVisible();
+    expect(screen.getByText(/Disponibile/)).toBeVisible();
+    expect(screen.queryByText("455 pt")).not.toBeInTheDocument();
     expect(screen.getByText("5/6 spade disponibili")).toBeVisible();
-    expect(screen.getByText("Usura complessiva 45/600")).toBeVisible();
+    expect(screen.queryByText("Usura complessiva 45/600")).not.toBeInTheDocument();
     expect(screen.getByRole("progressbar", {
       name: "Usura complessiva attrezzatura",
     })).toHaveAttribute("aria-valuenow", "45");
@@ -48,7 +51,7 @@ describe("EventsView", () => {
       />,
     );
 
-    expect(screen.getByText("Danno da riparare")).toBeVisible();
+    expect(screen.queryByText("Danno da riparare")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Esegui manutenzione/ }));
     expect(onMaintainEquipment).toHaveBeenCalledOnce();
   });
@@ -66,6 +69,8 @@ describe("EventsView", () => {
     );
 
     expect(screen.getByText("Fornitura ufficiale · LamaDiLuce")).toBeVisible();
+    expect(screen.getByText("Polaris EVO Basic")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "lamadiluce.it" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Ordina 1 Polaris/ }));
     expect(onBuyOfficialSword).toHaveBeenCalledOnce();
   });
@@ -136,7 +141,7 @@ describe("EventsView", () => {
     expect(bar).toHaveAttribute("aria-valuenow", "145");
     expect(bar).toHaveAttribute(
       "aria-valuetext",
-      "1 spada rotta, 2 spade riservate, 45 punti di carico normale, 255 punti sani riparabili",
+      "1 spada rotta, 2 spade riservate, 45 punti di usura normale, 255 punti disponibili",
     );
     expect(container.querySelectorAll(".equipment-sword-cell")).toHaveLength(6);
     expect(container.querySelectorAll(".equipment-sword-cell.is-broken")).toHaveLength(1);

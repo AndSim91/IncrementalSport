@@ -209,7 +209,7 @@ describe("Corso Agonisti", () => {
     expect(firstCompleted.contacts[0].agonistCourseCompletions).toBe(1);
     expect(firstCompleted.collaborators[0].mastery?.instructor).toBe(10);
     expect(firstCompleted.messages.some(
-      (message) => message.subject.startsWith("Eseguito Corso Agonisti |"),
+      (message) => message.subject.startsWith("Corso Agonisti |"),
     )).toBe(false);
     expect(getContactBaseStats(secondCompleted.contacts[0])).toEqual({
       arena: initialStats.arena + 2,
@@ -219,7 +219,7 @@ describe("Corso Agonisti", () => {
     expect(secondCompleted.contacts[0].agonistCourseArenaBonus).toBe(2);
     expect(secondCompleted.contacts[0].agonistCourseStyleBonus).toBe(2);
     expect(secondCompleted.messages.some(
-      (message) => message.subject.startsWith("Eseguito Corso Agonisti |"),
+      (message) => message.subject.startsWith("Corso Agonisti |"),
     )).toBe(false);
   });
 

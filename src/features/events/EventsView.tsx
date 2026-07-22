@@ -28,14 +28,6 @@ function memberRequirement(count: number) {
   return quantityLabel(count, "iscritto", "iscritti");
 }
 
-function equipmentCondition(wear: number, damagedSwords: number) {
-  if (damagedSwords > 0) return "Danno da riparare";
-  if (wear === 0) return "Ottime condizioni";
-  if (wear < 35) return "Usura leggera";
-  if (wear < 70) return "Manutenzione consigliata";
-  return "Manutenzione urgente";
-}
-
 function getEventProgress(event: AcquisitionEvent, now: number) {
   const duration = event.resolvesAt - event.startedAt;
   if (duration <= 0) return 100;
@@ -80,10 +72,6 @@ export function EventsView({
   const availableMembers = selectAvailableEventMembers(state);
   const availableSwords = getAvailableSwords(state.equipment);
   const damagedSwords = getEffectiveDamagedSwords(state.equipment);
-  const totalEquipmentLoad =
-    damagedSwords * GAME_CONFIG.equipmentBreakLoad + state.equipment.wear;
-  const totalEquipmentCapacity =
-    state.equipment.totalSwords * GAME_CONFIG.equipmentBreakLoad;
   const maintenanceCost = getEquipmentMaintenanceCost(state.equipment);
   const minimumMaintenanceCost = getEquipmentMinimumMaintenanceCost(state.equipment);
   const needsMaintenance = state.equipment.wear > 0 || damagedSwords > 0;
@@ -122,21 +110,17 @@ export function EventsView({
         <div className="event-equipment-summary">
           <Icon name="settings" />
           <div className="event-equipment-content">
-            <div className="event-equipment-heading">
-              <strong>{availableSwords}/{state.equipment.totalSwords} spade disponibili</strong>
-              <div className="event-equipment-details">
-                <small>{equipmentCondition(state.equipment.wear, damagedSwords)}</small>
-                <small>Usura complessiva {Math.round(totalEquipmentLoad)}/{totalEquipmentCapacity}</small>
-                {damagedSwords > 0 ? <small>{quantityLabel(damagedSwords, "spada danneggiata", "spade danneggiate")} · ripara per usarle agli eventi</small> : null}
-              </div>
-            </div>
-            <EquipmentConditionBar equipment={state.equipment} />
+            <EquipmentConditionBar
+              equipment={state.equipment}
+              title={`${availableSwords}/${state.equipment.totalSwords} spade disponibili`}
+            />
+            {damagedSwords > 0 ? <div className="event-equipment-details"><small>{quantityLabel(damagedSwords, "spada danneggiata", "spade danneggiate")} · ripara per usarle agli eventi</small></div> : null}
             <div className="event-equipment-actions">
               <button className="event-equipment-maintenance" type="button" disabled={!canMaintain} onClick={onMaintainEquipment}>{maintenanceLabel}</button>
               {showSupplier ? <div className="event-equipment-supplier">
                 <div>
                   <strong>Fornitura ufficiale · LamaDiLuce</strong>
-                  <small>Polaris EVO Basic · <a href="https://lamadiluce.it/" target="_blank" rel="noreferrer">lamadiluce.it</a></small>
+                  <small>Polaris EVO Basic</small>
                 </div>
                 <button type="button" disabled={!canBuyOfficialSword} onClick={onBuyOfficialSword}>{swordPurchaseLabel}</button>
               </div> : null}

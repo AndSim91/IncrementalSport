@@ -701,7 +701,7 @@ describe("PeopleView", () => {
       .closest(".member-row");
     expect(athleteRow).not.toBeNull();
     const courseMessage = within(athleteRow as HTMLElement).getByText(
-      "Eseguito Corso Agonisti | Arena +3 · Stile +3 · Potenziale totale +6",
+      "Corso Agonisti | Arena +3 · Stile +3 · Potenziale totale +6",
     );
     expect(courseMessage).toBeVisible();
     expect(courseMessage.closest(".member-training-cell")).not.toBeNull();

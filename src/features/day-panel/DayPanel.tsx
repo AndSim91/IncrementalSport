@@ -4,6 +4,7 @@ import {
   getShortGoalReward,
 } from "../../content/shortGoals";
 import { GAME_CONFIG } from "../../game/config";
+import { useState } from "react";
 import { useGameTime } from "../../game/GameTimeContext";
 import type { GameState } from "../../game/types";
 import { getRarityClassName } from "../../shared/rarityPresentation";
@@ -76,10 +77,14 @@ function DayNotificationEntry({
   notification,
   now,
   isTutorialTrial,
+  onPause,
+  onResume,
 }: {
   notification: DayNotification;
   now: number;
   isTutorialTrial: boolean;
+  onPause: () => void;
+  onResume: () => void;
 }) {
   const timing = getTiming(notification, now);
   const expiryRemainingMs = notification.expiresAt === undefined
@@ -118,6 +123,8 @@ function DayNotificationEntry({
       className={`appointment-entry appointment-entry-${notification.phase} day-notification-${notification.kind}`}
       data-tutorial-region={isTutorialTrial ? "first-trial-row" : undefined}
       data-tutorial-target={isTutorialTrial ? "true" : undefined}
+      onMouseEnter={onPause}
+      onMouseLeave={onResume}
     >
       <div
         className={`appointment appointment-${notification.phase}`}
@@ -151,7 +158,26 @@ function DayNotificationEntry({
 
 export function DayPanel({ state }: { state: GameState }) {
   const now = useGameTime(true, GAME_CONFIG.progressUpdateIntervalMs);
-  const notifications = selectDayNotifications(state, now);
+  const [pausedNotification, setPausedNotification] = useState<{
+    id: string;
+    now: number;
+  } | null>(null);
+  const liveNotifications = selectDayNotifications(state, now);
+  const pausedNotificationSnapshot = pausedNotification
+    ? selectDayNotifications(state, pausedNotification.now).find(
+        (notification) => notification.id === pausedNotification.id,
+      )
+    : undefined;
+  const notifications = pausedNotificationSnapshot
+    ? [
+        ...liveNotifications.filter(
+          (notification) => notification.id !== pausedNotificationSnapshot.id,
+        ),
+        pausedNotificationSnapshot,
+      ].sort((left, right) =>
+        left.timestamp - right.timestamp || left.id.localeCompare(right.id)
+      )
+    : liveNotifications;
   const tutorialTrialNotificationId = state.scheduledTrials.find(
     (trial) => trial.tutorialSceneId === "first-event",
   )?.id;
@@ -170,8 +196,10 @@ export function DayPanel({ state }: { state: GameState }) {
         <DayNotificationEntry
           key={notification.id}
           notification={notification}
-          now={now}
+          now={pausedNotification?.id === notification.id ? pausedNotification.now : now}
           isTutorialTrial={notification.id === `trial-${tutorialTrialNotificationId}`}
+          onPause={() => setPausedNotification({ id: notification.id, now })}
+          onResume={() => setPausedNotification(null)}
         />
       ))}
     </aside>

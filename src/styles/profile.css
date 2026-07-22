@@ -516,16 +516,11 @@
   gap: 6px;
 }
 
-.event-equipment-heading,
 .event-equipment-actions,
 .event-equipment-supplier {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.event-equipment-heading {
-  justify-content: space-between;
 }
 
 .event-equipment-details {
@@ -534,15 +529,15 @@
   gap: 2px;
 }
 
-.event-equipment-heading small {
-  color: var(--ink-muted);
-  text-align: right;
-}
-
 .equipment-condition {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 6px;
+}
+
+.equipment-condition-title {
+  line-height: 1.2;
 }
 
 .equipment-condition-bar {
@@ -633,7 +628,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px 14px;
+  justify-content: flex-start;
+  gap: 3px 10px;
   color: var(--ink-muted);
   font-size: 10px;
 }
@@ -641,7 +637,9 @@
 .equipment-condition-legend > span {
   display: inline-flex;
   align-items: center;
+  flex-direction: row;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .equipment-condition-legend i {
@@ -697,11 +695,15 @@
 }
 
 .event-equipment-supplier {
+  min-width: 0;
+  flex: 1 1 330px;
+  justify-content: flex-end;
   margin-left: auto;
 }
 
 .event-equipment-supplier > div {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 2px;
 }

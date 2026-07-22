@@ -46,15 +46,6 @@
     border-left: 0;
   }
 
-  .event-equipment-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .event-equipment-heading small {
-    text-align: left;
-  }
-
   .event-equipment-supplier {
     margin-left: 0;
   }

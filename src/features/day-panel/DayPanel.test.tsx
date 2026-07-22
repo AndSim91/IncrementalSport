@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../../game/engine";
 import type { ContactStatus, GameState, TournamentResult } from "../../game/types";
@@ -176,6 +176,48 @@ describe("DayPanel", () => {
 
     expect(screen.queryByText(label)).not.toBeInTheDocument();
     expect(screen.getByText("Nessuna attività in corso")).toBeVisible();
+  });
+
+  it("pauses a trial countdown while hovering its notification", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(15_000);
+
+    render(<DayPanel state={stateWithTrial("trialScheduled", "scheduled")} />);
+
+    const trialRow = screen.getByText("00:05").closest(".appointment-entry");
+    expect(trialRow).not.toBeNull();
+    fireEvent.mouseEnter(trialRow!);
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(screen.getByText("00:05")).toBeVisible();
+
+    fireEvent.mouseLeave(trialRow!);
+    expect(screen.getByText("In corso…")).toBeVisible();
+  });
+
+  it("pauses a notification expiry bar while hovering its notification", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(55_000);
+
+    render(<DayPanel state={stateWithTrial("enrolled", "completed")} />);
+
+    const notificationRow = screen.getByText("Iscritto").closest(".appointment-entry");
+    expect(notificationRow).not.toBeNull();
+    fireEvent.mouseEnter(notificationRow!);
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(screen.getByText("Iscritto")).toBeVisible();
+    expect(screen.getByRole("progressbar", { name: /Tempo residuo/ }))
+      .toHaveAttribute("aria-valuetext", "5 secondi rimanenti");
+
+    fireEvent.mouseLeave(notificationRow!);
+    expect(screen.queryByText("Iscritto")).not.toBeInTheDocument();
   });
 
   it("shows an athlete enrolled without a trial", () => {

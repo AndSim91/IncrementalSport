@@ -180,16 +180,16 @@
     "body": "Ciao {{firstName}},\nIl mercoledì non ha personalità, quindi gli abbiamo dato le spadde luminose. Adesso è quasi epico e sicuramente meno mercoledì. Vieni a controllare.\n\n{{senderName}}"
   },
   "0:coordinazione-caffe": {
-    "subject": "Il caffè non aggiusta i tuoi riflessi",
-    "body": "Ciao {{firstName}},\nBere il quarto caffè non aumenta la coordinazione, fa solo tremare meglio. Noi abbiamo esercizzi apposta e anche l'acqua. Vieni a provare senza rovesciarla.\n\n{{senderName}}"
+    "subject": "Il caffè non migliora i tuoi riflessi",
+    "body": "Ciao {{firstName}},\nBere il dodicesimo caffè non aumenta la coordinazione, fa solo vibrare meglio. Noi abbiamo esercizzi appositi e anche dell'acqua. Vieni a provare senza farti venire un infarto.\n\n{{senderName}}"
   },
   "0:nessun-prescelto": {
     "subject": "Il prescelto non ha risposto, proviamo con te",
-    "body": "Ciao {{firstName}},\nNon cerchiamo eroi della galassia, ci bastano principanti puntuali o quasi. Se non hai poteri speciali meglio, così non dobbiamo cambiare assicurazione.\n\n{{senderName}}"
+    "body": "Ciao {{firstName}},\nNon cerchiamo eroi della galassia, ci bastano principanti capaci di rispondere alle telefonate. Se non hai poteri speciali meglio, così non dobbiamo cambiare assicurazione.\n\n{{senderName}}"
   },
   "0:manuale-non-incluso": {
     "subject": "Manuale perso ma sappiamo le cose",
-    "body": "Ciao {{firstName}},\nIl manuale non te lo diamo perchè nessuno sa dov'è, però gli istruttori spiegano tutto a voce e con gesti enormi. Funziona dal 2016 circa. Prova gratis.\n\n{{senderName}}"
+    "body": "Ciao {{firstName}},\nIl manuale non te lo diamo perchè nessuno sa se esiste, però gli istruttori spiegano tutto a voce e con gesti enormi. Funziona dal 2006 circa. Fidati di noi!\n\n{{senderName}}"
   },
   "0:spazio-personale": {
     "subject": "Spazio personale difeso con eleganza",

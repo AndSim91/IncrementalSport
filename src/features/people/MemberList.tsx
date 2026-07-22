@@ -477,11 +477,7 @@ export function MemberList({
               )}
               {(contact.agonistCourseCompletions ?? 0) > 0 ? (
                 <small className="member-agonist-course-message">
-                  Eseguito Corso Agonisti | Arena +{
-                    contact.agonistCourseArenaBonus ?? contact.agonistCourseCompletions
-                  } · Stile +{
-                    contact.agonistCourseStyleBonus ?? contact.agonistCourseCompletions
-                  } · Potenziale totale +{
+                  Corso Agonisti | Potenziale totale +{
                     (contact.agonistCourseArenaBonus ?? contact.agonistCourseCompletions ?? 0) +
                     (contact.agonistCourseStyleBonus ?? contact.agonistCourseCompletions ?? 0)
                   }

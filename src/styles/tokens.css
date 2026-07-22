@@ -20,7 +20,7 @@
   --equipment-load: #c99324;
   --equipment-broken: #b42318;
   --equipment-reserved: #8a8886;
-  --equipment-healthy: #ffffff;
+  --equipment-healthy: #107c10;
   --shadow-flyout: 0 4px 16px rgb(0 0 0 / 14%);
   --radius-sm: 3px;
   --radius-md: 5px;
@@ -97,7 +97,7 @@
   --equipment-load: #e7b84b;
   --equipment-broken: #e5484d;
   --equipment-reserved: #718092;
-  --equipment-healthy: #111a24;
+  --equipment-healthy: #6ed38a;
   --shadow-flyout: 0 12px 32px rgb(0 0 0 / 38%);
 
   --rarity-common-name: #edf4fb;

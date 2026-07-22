@@ -34,13 +34,19 @@ function getSwordConditions(equipment: EquipmentState): SwordCondition[] {
 
 function getSwordTitle(condition: SwordCondition, index: number): string {
   const label = `Spada ${index + 1}`;
-  if (condition.kind === "broken") return `${label}: rotta, 100/100 carico`;
+  if (condition.kind === "broken") return `${label}: rotta, 100/100 usura`;
   if (condition.kind === "reserved") return `${label}: riservata e non riparabile`;
-  if (condition.load > 0) return `${label}: ${Math.round(condition.load)}/100 carico`;
-  return `${label}: sana`;
+  if (condition.load > 0) return `${label}: ${Math.round(condition.load)}/100 usura`;
+  return `${label}: disponibile`;
 }
 
-function EquipmentConditionBarView({ equipment }: { equipment: EquipmentState }) {
+function EquipmentConditionBarView({
+  equipment,
+  title,
+}: {
+  equipment: EquipmentState;
+  title: string;
+}) {
   const totalSwords = Math.max(0, Math.floor(equipment.totalSwords));
   const showIndividualSwords = totalSwords <= INDIVIDUAL_SWORD_LIMIT;
   const conditions = showIndividualSwords ? getSwordConditions(equipment) : [];
@@ -71,12 +77,13 @@ function EquipmentConditionBarView({ equipment }: { equipment: EquipmentState })
   const valueText = [
     `${damagedSwords} ${damagedSwords === 1 ? "spada rotta" : "spade rotte"}`,
     `${reservedSwords} ${reservedSwords === 1 ? "spada riservata" : "spade riservate"}`,
-    `${Math.round(normalLoad)} punti di carico normale`,
-    `${Math.round(healthyCapacity)} punti sani riparabili`,
+    `${Math.round(normalLoad)} punti di usura normale`,
+    `${Math.round(healthyCapacity)} punti disponibili`,
   ].join(", ");
 
   return (
     <div className="equipment-condition">
+      <strong className="equipment-condition-title">{title}</strong>
       <div
         className={`equipment-condition-bar${showIndividualSwords ? "" : " is-aggregate"}`}
         role="progressbar"
@@ -113,22 +120,22 @@ function EquipmentConditionBarView({ equipment }: { equipment: EquipmentState })
               />
               <span
                 className="equipment-condition-segment is-load"
-                title={`Carico normale: ${Math.round(loadCapacity)} punti`}
+                title={`Usura normale: ${Math.round(loadCapacity)} punti`}
                 style={{ width: capacityPercentage(loadCapacity) }}
               />
               <span
                 className="equipment-condition-segment is-healthy"
-                title={`Capacità sana: ${Math.round(aggregateHealthyCapacity)} punti`}
+                title={`Capacità disponibile: ${Math.round(aggregateHealthyCapacity)} punti`}
                 style={{ width: capacityPercentage(aggregateHealthyCapacity) }}
               />
             </>
           )}
       </div>
       <div className="equipment-condition-legend" aria-hidden="true">
-        <span className="is-load"><i />Carico <strong>{Math.round(normalLoad)} pt</strong></span>
+        <span className="is-load"><i />Usura <strong>{Math.round(normalLoad)} pt</strong></span>
         <span className="is-broken"><i />Rotte <strong>{damagedSwords}</strong></span>
         <span className="is-reserved"><i />Riservate <strong>{reservedSwords}</strong></span>
-        <span className="is-healthy"><i />Sano <strong>{Math.round(healthyCapacity)} pt</strong></span>
+        <span className="is-healthy"><i />Disponibile</span>
       </div>
     </div>
   );
