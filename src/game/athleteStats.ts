@@ -64,6 +64,42 @@ export function getContactBaseStats(contact: Contact): { arena: number; style: n
   return createStableFallbackStats(contact.id, contact.rarity, contact.specialProfileId);
 }
 
+export interface AthleteTournamentStats {
+  base: { arena: number; style: number };
+  numericForms: number;
+  tournamentExperience: number;
+  formMultiplier: number;
+  experienceMultiplier: number;
+  arena: number;
+  style: number;
+}
+
+/**
+ * Composes the authoritative Arena and Style values used by tournament-facing
+ * features. Permanent training gains are already stored in arenaBase/styleBase;
+ * every future school-wide modifier must be added here so lists, preliminaries
+ * and the tournament simulation cannot diverge.
+ */
+export function getAthleteTournamentStats(
+  contact: Contact,
+  forms: readonly FormId[] = contact.forms,
+): AthleteTournamentStats {
+  const base = getContactBaseStats(contact);
+  const numericForms = getNumericFormCount(forms);
+  const tournamentExperience = getContactTournamentExperience(contact);
+  const formMultiplier = 1 + numericForms * 0.1;
+  const experienceMultiplier = 1 + Math.min(20, tournamentExperience) * 0.03;
+  return {
+    base,
+    numericForms,
+    tournamentExperience,
+    formMultiplier,
+    experienceMultiplier,
+    arena: getPreparation(base.arena, numericForms, tournamentExperience),
+    style: getPreparation(base.style, numericForms, tournamentExperience),
+  };
+}
+
 export function rollAthleteBaseStats(
   seed: number,
   rarity: PersonRarity,
@@ -116,12 +152,10 @@ export function createStableFallbackStats(
 }
 
 export function getContactPreparation(contact: Contact, forms: readonly FormId[] = contact.forms) {
-  const stats = getContactBaseStats(contact);
-  const numericForms = getNumericFormCount(forms);
-  const experience = getContactTournamentExperience(contact);
+  const stats = getAthleteTournamentStats(contact, forms);
   return {
-    arena: getPreparation(stats.arena, numericForms, experience),
-    style: getPreparation(stats.style, numericForms, experience),
+    arena: stats.arena,
+    style: stats.style,
   };
 }
 

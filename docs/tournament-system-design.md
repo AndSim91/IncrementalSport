@@ -248,12 +248,28 @@ Se il requisito non è soddisfatto:
 - Accademico, Nazionale e Champion's non vengono disputati;
 - nessuno ottiene immunità o esperienza.
 
-Quando si attiva partecipano tutti gli iscritti idonei, senza limite massimo.
+Quando gli idonei sono al massimo 64 partecipano tutti. Oltre questa soglia si
+disputano preliminari aggregate che selezionano i 64 partecipanti effettivi
+usando i valori Arena e Stile comprensivi di tutti i modificatori acquisiti.
 
-### 7.1 Gironi variabili
+### 7.1 Preliminari aggregate
+
+- i migliori 32 atleti per Arena entrano nel torneo;
+- la graduatoria Stile aggiunge i migliori atleti non già selezionati fino a 64;
+- a parità prevale l'altra statistica e poi l'ordine stabile del roster;
+- non viene aggiunta casualità: condizione e variazioni degli incontri vengono
+  generate soltanto per il torneo effettivo;
+- il risultato conserva il numero totale di idonei e le due selezioni.
+
+Le preliminari usano la stessa funzione autorevole di composizione delle
+statistiche usata dal torneo. Preparazione atletica e Corso Agonisti sono già
+registrati nei valori base; Forme ed esperienza applicano i rispettivi
+moltiplicatori.
+
+### 7.2 Gironi variabili
 
 - vengono creati al massimo otto gironi;
-- fino a 64 partecipanti ogni girone contiene al massimo otto persone; oltre questa soglia i gironi diventano più numerosi internamente;
+- ogni girone contiene al massimo otto persone;
 - i partecipanti vengono distribuiti nel modo più uniforme possibile;
 - i gironi differiscono al massimo di una persona;
 - passano i primi quattro di ogni girone;
@@ -267,7 +283,7 @@ Esempi:
 - 10 partecipanti: due gironi da 5, 8 qualificati;
 - 17 partecipanti: gironi 6/6/5, 12 qualificati, tabellone da 16 con 4 bye;
 - 64 partecipanti: 8 gironi da 8, 32 qualificati;
-- 100 partecipanti: 8 gironi bilanciati da 12 o 13 persone, 32 qualificati.
+- 100 idonei: preliminari aggregate, poi 8 gironi da 8 con i 64 selezionati.
 
 ## 8. Tornei superiori
 

@@ -308,6 +308,7 @@ export function TournamentResults({
         <h2>{TOURNAMENT_DEFINITIONS[result.level].label}</h2>
         <span>Stagione {result.season}</span><i aria-hidden="true" />
         <span>{result.participants.length} partecipanti</span><i aria-hidden="true" />
+        {result.schoolPreliminary ? <><span>{result.schoolPreliminary.eligibleCount} idonei alle preliminari</span><i aria-hidden="true" /></> : null}
         <strong>Completato</strong>
         <label><span>Cambia torneo</span><select aria-label="Cambia torneo" value={result.id} onChange={(event) => onSelectResult(event.target.value)}>{[...results].reverse().map((entry) => <option key={entry.id} value={entry.id}>{levelShortLabel[entry.level]} · Stagione {entry.season}</option>)}</select></label>
         <b aria-hidden="true" />

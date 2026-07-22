@@ -10,7 +10,10 @@ import {
   hasCompletedCourseX,
 } from "../../game/athleteStats";
 import { GAME_CONFIG } from "../../game/config";
-import { getEligibleSchoolContactsFromRoster } from "../../game/tournamentSimulation";
+import {
+  getEligibleSchoolContactsFromRoster,
+  selectSchoolTournamentEntrantsFromRoster,
+} from "../../game/tournamentSimulation";
 import { useGameTime } from "../../game/GameTimeContext";
 import type { GameState, TournamentResult } from "../../game/types";
 import {
@@ -35,10 +38,17 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
   const upcomingDefinition = upcoming ? TOURNAMENT_DEFINITIONS[upcoming.level] : undefined;
   const qualification = state.tournaments.qualification;
   const delegationContactIds = getUpcomingDelegationContactIds(state, upcoming);
-  const schoolEntrantCount = useMemo(
-    () => getEligibleSchoolContactsFromRoster(state.contacts, state.collaborators).length,
-    [state.collaborators, state.contacts],
-  );
+  const schoolTournamentEntry = useMemo(() => {
+    const eligibleCount = getEligibleSchoolContactsFromRoster(
+      state.contacts,
+      state.collaborators,
+    ).length;
+    const selection = selectSchoolTournamentEntrantsFromRoster(
+      state.contacts,
+      state.collaborators,
+    );
+    return { eligibleCount, selection };
+  }, [state.collaborators, state.contacts]);
   const collaboratorsByContactId = useMemo(
     () => new Map(state.collaborators.map((entry) => [entry.contactId, entry])),
     [state.collaborators],
@@ -68,9 +78,13 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
   const missingQualificationLabel = qualificationTarget?.level
     ? `Nessun atleta qualificato per il ${TOURNAMENT_DEFINITIONS[qualificationTarget.level].label} anno ${qualificationTarget.season}.`
     : "Nessuna qualificazione disponibile.";
-  const participationCount = upcoming?.level === "school" ? schoolEntrantCount : delegation.length;
+  const participationCount = upcoming?.level === "school"
+    ? schoolTournamentEntry.selection.selectedContacts.length
+    : delegation.length;
   const participationLabel = upcoming?.level === "school"
-    ? `${participationCount} iscritt${participationCount === 1 ? "o" : "i"}`
+    ? schoolTournamentEntry.selection.preliminary
+      ? `${participationCount} convocati`
+      : `${participationCount} iscritt${participationCount === 1 ? "o" : "i"}`
     : `${participationCount} qualificat${participationCount === 1 ? "o" : "i"}`;
 
   return (
@@ -93,7 +107,9 @@ export function TournamentOverview({ state, onOpenResult }: TournamentOverviewPr
         <div className="next-tournament-participation">
           <span aria-hidden="true"><Icon name="people" /></span>
           <strong>{participationLabel}</strong>
-          <small>{upcomingDefinition ? `al ${upcomingDefinition.label}` : "al prossimo torneo"}</small>
+          <small>{upcoming?.level === "school" && schoolTournamentEntry.selection.preliminary
+            ? `su ${schoolTournamentEntry.eligibleCount} idonei · preliminari aggregate`
+            : upcomingDefinition ? `al ${upcomingDefinition.label}` : "al prossimo torneo"}</small>
         </div>
       </section>
 

@@ -17,9 +17,7 @@ import {
   type TournamentTier,
 } from "../content/tournaments";
 import {
-  getContactBaseStats,
-  getContactTournamentExperience,
-  getNumericFormCount,
+  getAthleteTournamentStats,
   getPreparation,
   getStyleVote,
   hasCompletedFormOne,
@@ -38,6 +36,7 @@ import type {
   TournamentParticipant,
   TournamentQualifier,
   TournamentResult,
+  SchoolTournamentPreliminary,
 } from "./types";
 
 export const ARENA_DECISIVENESS = 18;
@@ -132,9 +131,7 @@ function createOwnedParticipants(
   return contacts.map((contact) => {
     const collaborator = collaboratorsByContactId.get(contact.id);
     const forms = collaborator?.forms ?? contact.forms;
-    const stats = getContactBaseStats(contact);
-    const numericForms = getNumericFormCount(forms);
-    const experience = getContactTournamentExperience(contact);
+    const stats = getAthleteTournamentStats(contact, forms);
     return {
       id: `owned-${contact.id}`,
       ownedContactId: contact.id,
@@ -144,15 +141,73 @@ function createOwnedParticipants(
       schoolName: state.school.name,
       city: state.school.city,
       rarity: contact.secretLegendaryId ? "secret-legendary" : contact.rarity,
-      numericForms,
-      experience,
-      arenaBase: stats.arena,
-      styleBase: stats.style,
-      arenaPreparation: getPreparation(stats.arena, numericForms, experience),
-      stylePreparation: getPreparation(stats.style, numericForms, experience),
+      numericForms: stats.numericForms,
+      experience: stats.tournamentExperience,
+      arenaBase: stats.base.arena,
+      styleBase: stats.base.style,
+      arenaPreparation: stats.arena,
+      stylePreparation: stats.style,
       condition: triangularCondition(cursor),
     };
   });
+}
+
+export interface SchoolTournamentSelection {
+  selectedContacts: Contact[];
+  preliminary?: SchoolTournamentPreliminary;
+}
+
+export function selectSchoolTournamentEntrantsFromRoster(
+  contacts: readonly Contact[],
+  collaborators: GameState["collaborators"],
+): SchoolTournamentSelection {
+  const eligibleContacts = getEligibleSchoolContactsFromRoster(contacts, collaborators);
+  if (eligibleContacts.length <= SCHOOL_TOURNAMENT_FIELD_SIZE) {
+    return { selectedContacts: eligibleContacts };
+  }
+
+  const collaboratorsByContactId = getCollaboratorsByContactId(collaborators);
+  const ranked = eligibleContacts.map((contact, rosterIndex) => {
+    const forms = collaboratorsByContactId.get(contact.id)?.forms ?? contact.forms;
+    return {
+      contact,
+      rosterIndex,
+      stats: getAthleteTournamentStats(contact, forms),
+    };
+  });
+  const compareBy = (primary: "arena" | "style", secondary: "arena" | "style") =>
+    (left: (typeof ranked)[number], right: (typeof ranked)[number]) =>
+      right.stats[primary] - left.stats[primary] ||
+      right.stats[secondary] - left.stats[secondary] ||
+      left.rosterIndex - right.rosterIndex;
+
+  const arenaSlotCount = SCHOOL_TOURNAMENT_FIELD_SIZE / 2;
+  const arenaSelectedContactIds = [...ranked]
+    .sort(compareBy("arena", "style"))
+    .slice(0, arenaSlotCount)
+    .map((entry) => entry.contact.id);
+  const selectedIds = new Set(arenaSelectedContactIds);
+  const styleSelectedContactIds: string[] = [];
+  for (const entry of [...ranked].sort(compareBy("style", "arena"))) {
+    if (selectedIds.has(entry.contact.id)) continue;
+    selectedIds.add(entry.contact.id);
+    styleSelectedContactIds.push(entry.contact.id);
+    if (selectedIds.size === SCHOOL_TOURNAMENT_FIELD_SIZE) break;
+  }
+  const selectedContacts = eligibleContacts.filter((contact) => selectedIds.has(contact.id));
+  return {
+    selectedContacts,
+    preliminary: {
+      eligibleCount: eligibleContacts.length,
+      selectedContactIds: selectedContacts.map((contact) => contact.id),
+      arenaSelectedContactIds,
+      styleSelectedContactIds,
+    },
+  };
+}
+
+export function selectSchoolTournamentEntrants(state: GameState): SchoolTournamentSelection {
+  return selectSchoolTournamentEntrantsFromRoster(state.contacts, state.collaborators);
 }
 
 function getRarityMinimum(rarity: Exclude<PersonRarity, "legendary">): number {
@@ -655,7 +710,7 @@ function findDefeatedSecretLegendaries(
 }
 
 export function getEligibleSchoolContactsFromRoster(
-  contacts: GameState["contacts"],
+  contacts: readonly Contact[],
   collaborators: GameState["collaborators"],
 ): Contact[] {
   const collaboratorsByContactId = getCollaboratorsByContactId(collaborators);
@@ -680,16 +735,18 @@ export function simulateTournament(
 ): SimulatedTournament {
   const cursor: RandomCursor = { seed: state.randomSeed };
   const definition = TOURNAMENT_DEFINITIONS[level];
-  // A school can eventually contain thousands of athletes. Keeping the local
-  // field at eight groups of eight prevents round-robin matches and save size
-  // from growing quadratically while preserving the historical roster order.
+  // A school can eventually contain thousands of athletes. Aggregate
+  // preliminaries select the field before the quadratic group simulation.
+  const schoolSelection = level === "school"
+    ? selectSchoolTournamentEntrantsFromRoster(ownedContacts, state.collaborators)
+    : undefined;
   const chroniclesLegendaryIds = level === "chronicles"
     ? getChroniclesLegendaryIds().filter(
         (id) => state.network.secretLegendaries[id]?.status === "external",
       )
     : [];
   const entrants = level === "school"
-    ? ownedContacts.slice(0, SCHOOL_TOURNAMENT_FIELD_SIZE)
+    ? schoolSelection!.selectedContacts
     : level === "chronicles"
       ? ownedContacts.slice(0, Math.max(0, definition.fieldSize! - chroniclesLegendaryIds.length))
       : ownedContacts;
@@ -841,6 +898,7 @@ export function simulateTournament(
       qualifiers,
       rewards,
       secretLegendaryDefeatedIds,
+      schoolPreliminary: schoolSelection?.preliminary,
     },
   };
 }

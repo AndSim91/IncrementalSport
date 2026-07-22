@@ -57,6 +57,38 @@ describe("TournamentsView", () => {
     expect(view.queryByRole("tab", { name: "Atleti" })).not.toBeInTheDocument();
   });
 
+  it("shows aggregate preliminaries when more than 64 athletes are eligible", () => {
+    const state = createStateWithForms(80);
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    expect(view.getByText("64 convocati")).toBeVisible();
+    expect(view.getByText("su 80 idonei · preliminari aggregate")).toBeVisible();
+    expect(view.queryByText("80 iscritti")).not.toBeInTheDocument();
+  });
+
+  it("keeps the preliminary population in the completed tournament result", () => {
+    const initial = createStateWithForms(80);
+    const simulation = simulateTournament(
+      initial,
+      "school",
+      1,
+      181_000,
+      getEligibleSchoolContacts(initial),
+    );
+    const state = {
+      ...initial,
+      tournaments: { ...initial.tournaments, results: [simulation.result] },
+    };
+    const { container } = render(<TournamentsView state={state} />);
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Risultati" }));
+
+    expect(view.getByText("64 partecipanti")).toBeVisible();
+    expect(view.getByText("80 idonei alle preliminari")).toBeVisible();
+  });
+
   it("lists only the athletes in the current official qualification", () => {
     const { state: completed, result } = createCompletedTournamentState();
     const qualifiedContacts = completed.contacts

@@ -457,6 +457,13 @@ export interface TournamentReward {
   bonus?: TournamentRewardBonus;
 }
 
+export interface SchoolTournamentPreliminary {
+  eligibleCount: number;
+  selectedContactIds: string[];
+  arenaSelectedContactIds: string[];
+  styleSelectedContactIds: string[];
+}
+
 export interface TournamentResult {
   id: string;
   level: TournamentLevel;
@@ -472,6 +479,7 @@ export interface TournamentResult {
   qualifiers: TournamentQualifier[];
   rewards: TournamentReward[];
   secretLegendaryDefeatedIds: SecretLegendaryId[];
+  schoolPreliminary?: SchoolTournamentPreliminary;
 }
 
 export interface SecretLegendaryProgress {

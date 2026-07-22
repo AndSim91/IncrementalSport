@@ -2,7 +2,7 @@ import { TOURNAMENT_DEFINITIONS, TOURNAMENT_LEVEL_ORDER } from "../../content/to
 import { GAME_CONFIG } from "../../game/config";
 import { getTournamentSeason } from "../../game/tournamentFlow";
 import {
-  getEligibleSchoolContactsFromRoster,
+  selectSchoolTournamentEntrantsFromRoster,
 } from "../../game/tournamentSimulation";
 import type {
   GameState,
@@ -114,8 +114,8 @@ export function getUpcomingDelegationContactIdsFromRoster(
 ): string[] {
   if (!upcoming) return [];
   if (upcoming.level === "school") {
-    return getEligibleSchoolContactsFromRoster(contacts, collaborators)
-      .slice(0, GAME_CONFIG.tournamentMinimumMembers)
+    return selectSchoolTournamentEntrantsFromRoster(contacts, collaborators)
+      .selectedContacts
       .map((contact) => contact.id);
   }
   if (qualification?.level !== upcoming.level || qualification.season !== upcoming.season) return [];

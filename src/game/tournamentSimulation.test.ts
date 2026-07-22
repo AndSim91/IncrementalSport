@@ -6,17 +6,20 @@ import {
 import { getTournamentSchool } from "../content/tournamentSchools";
 import { addAdminMembers } from "./adminFlow";
 import {
+  getAthleteTournamentStats,
   getContactBaseStats,
   getContactPreparation,
   getPreparation,
   getStyleVote,
 } from "./athleteStats";
 import { createInitialState, gameReducer } from "./engine";
+import { GAME_CONFIG } from "./config";
 import { getAthleteImmunityStatus } from "./athleteImmunity";
 import { departMembers } from "./membershipFlow";
 import {
   getEligibleSchoolContacts,
   SCHOOL_TOURNAMENT_FIELD_SIZE,
+  selectSchoolTournamentEntrants,
   simulateTournament,
 } from "./tournamentSimulation";
 
@@ -47,6 +50,33 @@ describe("athlete tournament statistics", () => {
       expect(stats.style).toBeLessThanOrEqual(100);
       expect(getContactPreparation(contact).arena).toBe(stats.arena);
     }
+  });
+
+  it("composes permanent values, forms and experience in one authoritative result", () => {
+    const contact = {
+      ...createInitialState(1_000).contacts[0],
+      arenaBase: 52,
+      styleBase: 41,
+      tournamentExperience: 10,
+      forms: [
+        "form-1" as const,
+        "form-2" as const,
+        "form-3-long" as const,
+        "form-4-long" as const,
+        "form-5-long" as const,
+        "form-6" as const,
+        "form-7" as const,
+      ],
+    };
+    const stats = getAthleteTournamentStats(contact, contact.forms);
+
+    expect(stats.base).toEqual({ arena: 52, style: 41 });
+    expect(stats.numericForms).toBe(7);
+    expect(stats.tournamentExperience).toBe(10);
+    expect(stats.formMultiplier).toBeCloseTo(1.7);
+    expect(stats.experienceMultiplier).toBeCloseTo(1.3);
+    expect(stats.arena).toBeCloseTo(114.92);
+    expect(stats.style).toBeCloseTo(90.61);
   });
 });
 
@@ -151,6 +181,12 @@ describe("tournament simulation", () => {
 
     expect(standingsByGroup.size).toBe(8);
     expect(simulation.result.participants).toHaveLength(SCHOOL_TOURNAMENT_FIELD_SIZE);
+    expect(simulation.result.schoolPreliminary).toMatchObject({
+      eligibleCount: 160,
+    });
+    expect(simulation.result.schoolPreliminary?.arenaSelectedContactIds).toHaveLength(32);
+    expect(simulation.result.schoolPreliminary?.styleSelectedContactIds).toHaveLength(32);
+    expect(new Set(simulation.result.schoolPreliminary?.selectedContactIds).size).toBe(64);
     expect([...standingsByGroup.values()].map((group) => group.length)).toEqual([
       8, 8, 8, 8, 8, 8, 8, 8,
     ]);
@@ -161,6 +197,60 @@ describe("tournament simulation", () => {
     expect(roundOf32Ids).toEqual(qualifiedIds);
     expect(simulation.result.matches.some((match) => match.stage === "round64")).toBe(false);
     expect(simulation.result.matches.length).toBeLessThanOrEqual(256);
+  });
+
+  it("selects 32 athletes through Arena and 32 distinct athletes through Style", () => {
+    const initial = createTournamentSchool(80);
+    const enrolledIds = initial.contacts
+      .filter((contact) => contact.status === "enrolled")
+      .map((contact) => contact.id);
+    const state = {
+      ...initial,
+      contacts: initial.contacts.map((contact) => {
+        const index = enrolledIds.indexOf(contact.id);
+        if (index < 0) return contact;
+        return index < 40
+          ? { ...contact, arenaBase: 200 - index, styleBase: 1 }
+          : { ...contact, arenaBase: 1, styleBase: 200 - (index - 40) };
+      }),
+    };
+    const selection = selectSchoolTournamentEntrants(state);
+
+    expect(selection.preliminary?.arenaSelectedContactIds).toEqual(enrolledIds.slice(0, 32));
+    expect(selection.preliminary?.styleSelectedContactIds).toEqual(enrolledIds.slice(40, 72));
+    expect(selection.selectedContacts).toHaveLength(64);
+    expect(new Set(selection.selectedContacts.map((contact) => contact.id)).size).toBe(64);
+  });
+
+  it("uses Form and experience modifiers when choosing preliminary entrants", () => {
+    const initial = createTournamentSchool(65);
+    const enrolled = initial.contacts.filter((contact) => contact.status === "enrolled");
+    const enhancedId = enrolled.at(-1)!.id;
+    const state = {
+      ...initial,
+      contacts: initial.contacts.map((contact) => contact.status !== "enrolled"
+        ? contact
+        : contact.id === enhancedId
+          ? {
+              ...contact,
+              arenaBase: 70,
+              styleBase: 70,
+              tournamentExperience: 20,
+              forms: [
+                "form-1" as const,
+                "form-2" as const,
+                "form-3-long" as const,
+                "form-4-long" as const,
+                "form-5-long" as const,
+                "form-6" as const,
+                "form-7" as const,
+              ],
+            }
+          : { ...contact, arenaBase: 100, styleBase: 100 }),
+    };
+
+    expect(selectSchoolTournamentEntrants(state).selectedContacts.map((contact) => contact.id))
+      .toContain(enhancedId);
   });
 
   it("is deterministic from the saved seed", () => {
@@ -190,7 +280,11 @@ describe("tournament calendar and immunity", () => {
     const state = createTournamentSchool();
     const december = {
       ...state,
-      school: { ...state.school, currentMonth: 12, nextFeeAt: 61_000 },
+      school: {
+        ...state.school,
+        currentMonth: 12,
+        nextFeeAt: 61_000,
+      },
     };
     const processed = gameReducer(december, { type: "TICK", now: 61_000 });
     expect(processed.tournaments.results).toHaveLength(1);
@@ -203,7 +297,12 @@ describe("tournament calendar and immunity", () => {
     const state = createTournamentSchool(5);
     const december = {
       ...state,
-      school: { ...state.school, currentMonth: 12, nextFeeAt: 61_000 },
+      school: {
+        ...state.school,
+        currentMonth: 12,
+        nextFeeAt: 61_000,
+        historicMembers: GAME_CONFIG.tournamentUnlockMembers,
+      },
     };
     const processed = gameReducer(december, { type: "TICK", now: 61_000 });
     expect(processed.tournaments.results).toHaveLength(0);
