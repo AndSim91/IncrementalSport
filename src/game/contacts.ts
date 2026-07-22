@@ -169,6 +169,8 @@ export function createInitialContacts(
       styleBase: retained?.styleBase ?? athleteStats.style,
       tournamentExperience: retained?.tournamentExperience ?? 0,
       agonistCourseCompletions: retained?.agonistCourseCompletions ?? 0,
+      agonistCourseArenaBonus: retained?.agonistCourseArenaBonus ?? 0,
+      agonistCourseStyleBonus: retained?.agonistCourseStyleBonus ?? 0,
       lastAgonistCourseYear: retained?.lastAgonistCourseYear,
       formBranchPreferences: [...(retained?.formBranchPreferences ?? [])],
       lastFormTrainingYear: retained?.lastFormTrainingYear,
@@ -273,6 +275,10 @@ export function createAcquiredContacts(
         retained?.tournamentExperience ?? returningContact?.tournamentExperience ?? 0,
       agonistCourseCompletions:
         retained?.agonistCourseCompletions ?? returningContact?.agonistCourseCompletions ?? 0,
+      agonistCourseArenaBonus:
+        retained?.agonistCourseArenaBonus ?? returningContact?.agonistCourseArenaBonus ?? 0,
+      agonistCourseStyleBonus:
+        retained?.agonistCourseStyleBonus ?? returningContact?.agonistCourseStyleBonus ?? 0,
       lastAgonistCourseYear:
         retained?.lastAgonistCourseYear ?? returningContact?.lastAgonistCourseYear,
       formBranchPreferences: [...(retained?.formBranchPreferences ?? [])],

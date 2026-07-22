@@ -42,6 +42,8 @@ export function recruitCollaborator(
     lastFormTrainingYear: retained?.lastFormTrainingYear ?? contact.lastFormTrainingYear,
     formTrainingYearCount:
       retained?.formTrainingYearCount ?? contact.formTrainingYearCount,
+    lastAgonistCourseYear:
+      retained?.lastAgonistCourseYear ?? contact.lastAgonistCourseYear,
   };
   const nextState: GameState = {
     ...state,

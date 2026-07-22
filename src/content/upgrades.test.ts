@@ -3,6 +3,7 @@ import {
   UPGRADE_DEFINITIONS,
   createInitialUpgradeLevels,
   getAnnualFormTrainingLimit,
+  getAgonistCourseMaximumStatGain,
   getUpgradeCost,
   getUpgradeEffectTotal,
   hasAutomaticInstructorCertificates,
@@ -67,6 +68,7 @@ describe("instructor branch", () => {
     );
     expect(instructors.map((definition) => definition.id)).toEqual([
       "technical-arena",
+      "agonist-course-intensity",
       "instructor-versatility",
       "promiscuous-instructor",
       "extra-form",
@@ -75,7 +77,7 @@ describe("instructor branch", () => {
       "divine-touch",
     ]);
     expect(instructors.map((definition) => definition.requiredHistoricMembers)).toEqual([
-      15, 0, 0, 0, 0, 0, 0,
+      15, 0, 0, 0, 0, 0, 0, 0,
     ]);
     expect(instructors.map((definition) =>
       Array.from({ length: definition.maxLevel }, (_, level) =>
@@ -83,6 +85,7 @@ describe("instructor branch", () => {
       )
     )).toEqual([
       [2_000, 5_000, 10_000],
+      [5_000, 10_000, 20_000, 40_000],
       [2_000, 4_000],
       [5_000],
       [10_000],
@@ -99,6 +102,14 @@ describe("instructor branch", () => {
     };
 
     expect(getUpgradeEffectTotal(levels, "instructorTeachingSpeed")).toBe(99.99);
+  });
+
+  it("raises the Corso Agonisti maximum gain from one to five", () => {
+    const base = createInitialUpgradeLevels();
+    const maximum = { ...base, "agonist-course-intensity": 4 };
+
+    expect(getAgonistCourseMaximumStatGain(base)).toBe(1);
+    expect(getAgonistCourseMaximumStatGain(maximum)).toBe(5);
   });
 
   it("gives PagoSport one annual slot, automatic certificates and free training", () => {

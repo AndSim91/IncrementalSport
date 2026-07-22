@@ -4,6 +4,7 @@ import { getContactBaseStats } from "./athleteStats";
 import { gameReducer } from "./engine";
 import { createInitialState } from "./initialState";
 import { getAgonistCourseCost, startAgonistCourse } from "./trainingFlow";
+import { nextRandom } from "./random";
 import type { Collaborator, Contact, GameState } from "./types";
 
 const completedPath = FORM_DEFINITIONS.map((definition) => definition.id);
@@ -104,7 +105,7 @@ describe("Corso Agonisti", () => {
     expect(free.school.euros).toBe(2_000);
   });
 
-  it("uses one annual slot and cannot repeat in the same year", () => {
+  it("uses every remaining annual slot and cannot repeat in the same year", () => {
     const initial = arenaState(1);
     const expandedPlan = {
       ...initial,
@@ -129,9 +130,54 @@ describe("Corso Agonisti", () => {
     );
 
     expect(started.contacts[0].lastFormTrainingYear).toBe(1);
-    expect(started.contacts[0].formTrainingYearCount).toBe(1);
+    expect(started.contacts[0].formTrainingYearCount).toBe(3);
     expect(started.contacts[0].lastAgonistCourseYear).toBe(1);
+    expect(started.contacts[0].training?.agonistCourseSlotsConsumed).toBe(3);
     expect(repeated).toBe(completed);
+  });
+
+  it("consumes and multiplies every slot left after another formation", () => {
+    const initial = arenaState(1);
+    const initialStats = getContactBaseStats(initial.contacts[0]);
+    let doubleGainSeed = 0;
+    while (true) {
+      const [arenaRoll, afterArena] = nextRandom(doubleGainSeed);
+      const [styleRoll] = nextRandom(afterArena);
+      if (arenaRoll >= 0.5 && styleRoll >= 0.5) break;
+      doubleGainSeed += 1;
+    }
+    const expandedPlan = {
+      ...initial,
+      randomSeed: doubleGainSeed,
+      contacts: [{
+        ...initial.contacts[0],
+        lastFormTrainingYear: 1,
+        formTrainingYearCount: 1,
+      }],
+      upgrades: {
+        ...initial.upgrades,
+        "extra-form": 1,
+        pagosport: 1,
+        "agonist-course-intensity": 1,
+      },
+    };
+
+    const started = startAgonistCourse(
+      expandedPlan,
+      expandedPlan.contacts[0].id,
+      expandedPlan.collaborators[0].id,
+      2_000,
+    );
+
+    expect(started.contacts[0].training?.formId).toBe("agonist-course");
+    expect(started.contacts[0].training?.agonistCourseSlotsConsumed).toBe(2);
+    expect(started.contacts[0].formTrainingYearCount).toBe(3);
+
+    const completed = gameReducer(started, { type: "TICK", now: 17_000 });
+    expect(getContactBaseStats(completed.contacts[0])).toEqual({
+      arena: initialStats.arena + 4,
+      style: initialStats.style + 4,
+    });
   });
 
   it("adds one Arena and one Style without limiting future annual improvements", () => {
@@ -170,9 +216,103 @@ describe("Corso Agonisti", () => {
       style: initialStats.style + 2,
     });
     expect(secondCompleted.contacts[0].agonistCourseCompletions).toBe(2);
+    expect(secondCompleted.contacts[0].agonistCourseArenaBonus).toBe(2);
+    expect(secondCompleted.contacts[0].agonistCourseStyleBonus).toBe(2);
     expect(secondCompleted.messages.some(
       (message) => message.subject.startsWith("Eseguito Corso Agonisti |"),
     )).toBe(false);
+  });
+
+  it("allows a collaborator without teachable Forms to complete the course", () => {
+    const initial = arenaState(1);
+    const collaboratorContact: Contact = {
+      ...initial.contacts[0],
+      id: "collaborator-contact",
+      rarity: "legendary",
+    };
+    const student: Collaborator = {
+      id: "collaborator-student",
+      contactId: collaboratorContact.id,
+      displayName: "Collaboratore Allievo",
+      joinedAt: 900,
+      forms: completedPath,
+      instructorForms: [],
+      formBranchPreferences: ["Spada Lunga"],
+      assignment: "lessons",
+      rarity: "legendary",
+    };
+    const ready = {
+      ...initial,
+      contacts: [collaboratorContact],
+      collaborators: [initial.collaborators[0], student],
+    };
+
+    const started = gameReducer(ready, { type: "TICK", now: 2_000 });
+    expect(started.collaborators[1].training?.formId).toBe("agonist-course");
+    expect(started.collaborators[1].lastAgonistCourseYear).toBe(1);
+
+    const completed = gameReducer(started, { type: "TICK", now: 17_000 });
+    expect(completed.collaborators[1].training).toBeUndefined();
+    expect(completed.contacts[0].agonistCourseCompletions).toBe(1);
+    expect(getContactBaseStats(completed.contacts[0])).toEqual({
+      arena: getContactBaseStats(collaboratorContact).arena + 1,
+      style: getContactBaseStats(collaboratorContact).style + 1,
+    });
+  });
+
+  it("allows a fully trained Instructor collaborator to use the course", () => {
+    const initial = arenaState(1);
+    const instructorContact: Contact = {
+      ...initial.contacts[0],
+      id: "instructor-athlete-contact",
+      rarity: "legendary",
+    };
+    const instructorStudent: Collaborator = {
+      ...initial.collaborators[0],
+      id: "instructor-athlete",
+      contactId: instructorContact.id,
+      forms: completedPath,
+      instructorForms: completedPath,
+      formBranchPreferences: ["Spada Lunga", "Staffa", "Doppia spada corta"],
+      assignment: "instructor",
+      rarity: "legendary",
+    };
+    const ready = {
+      ...initial,
+      contacts: [instructorContact],
+      collaborators: [instructorStudent],
+    };
+
+    const started = gameReducer(ready, { type: "TICK", now: 2_000 });
+
+    expect(started.collaborators[0].training).toMatchObject({
+      formId: "agonist-course",
+      instructorId: instructorStudent.id,
+    });
+  });
+
+  it("uses deterministic random gains up to five with maximum intensity", () => {
+    const initial = arenaState(1);
+    const boosted = {
+      ...initial,
+      upgrades: { ...initial.upgrades, "agonist-course-intensity": 4 },
+    };
+    const [arenaRoll, afterArena] = nextRandom(boosted.randomSeed);
+    const [styleRoll, expectedSeed] = nextRandom(afterArena);
+    const initialStats = getContactBaseStats(boosted.contacts[0]);
+    const started = startAgonistCourse(
+      boosted,
+      boosted.contacts[0].id,
+      boosted.collaborators[0].id,
+      2_000,
+    );
+    const completed = gameReducer(started, { type: "TICK", now: 17_000 });
+
+    expect(getContactBaseStats(completed.contacts[0])).toEqual({
+      arena: initialStats.arena + 1 + Math.floor(arenaRoll * 5),
+      style: initialStats.style + 1 + Math.floor(styleRoll * 5),
+    });
+    expect(completed.randomSeed).toBe(expectedSeed);
   });
 
   it("can use an Instructor who is already in formation", () => {

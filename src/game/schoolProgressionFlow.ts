@@ -37,6 +37,13 @@ function prepareLegendaryProgressForNewSchool(
         ...(collaborator?.formBranchPreferences ?? contact.formBranchPreferences ?? []),
       ],
       joinedAt: collaborator?.joinedAt ?? contact.acquiredAt,
+      arenaBase: contact.arenaBase,
+      styleBase: contact.styleBase,
+      agonistCourseCompletions: contact.agonistCourseCompletions,
+      agonistCourseArenaBonus: contact.agonistCourseArenaBonus,
+      agonistCourseStyleBonus: contact.agonistCourseStyleBonus,
+      lastAgonistCourseYear:
+        collaborator?.lastAgonistCourseYear ?? contact.lastAgonistCourseYear,
       lastFormTrainingYear:
         collaborator?.lastFormTrainingYear ?? contact.lastFormTrainingYear,
       formTrainingYearCount:

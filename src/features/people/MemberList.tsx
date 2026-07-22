@@ -454,11 +454,6 @@ export function MemberList({
             </span>
             <span className="member-status" data-label="Stato">
               <span>{CONTACT_STATUS_LABELS[contact.status]}</span>
-              {(contact.agonistCourseCompletions ?? 0) > 0 ? (
-                <small className="member-agonist-course-message">
-                  Eseguito Corso Agonisti | Potenziale totale +{contact.agonistCourseCompletions}
-                </small>
-              ) : null}
               <small>
                 {immunity.message ?? getMemberDepartureRiskLabel(
                   memberForms,
@@ -480,6 +475,18 @@ export function MemberList({
                   onStartTraining={onStartTraining}
                 />
               )}
+              {(contact.agonistCourseCompletions ?? 0) > 0 ? (
+                <small className="member-agonist-course-message">
+                  Eseguito Corso Agonisti | Arena +{
+                    contact.agonistCourseArenaBonus ?? contact.agonistCourseCompletions
+                  } · Stile +{
+                    contact.agonistCourseStyleBonus ?? contact.agonistCourseCompletions
+                  } · Potenziale totale +{
+                    (contact.agonistCourseArenaBonus ?? contact.agonistCourseCompletions ?? 0) +
+                    (contact.agonistCourseStyleBonus ?? contact.agonistCourseCompletions ?? 0)
+                  }
+                </small>
+              ) : null}
             </div>
             <button
               type="button"

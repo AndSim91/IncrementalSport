@@ -42,6 +42,8 @@ describe("manual enrollment cancellation", () => {
       styleBase: 87,
       tournamentExperience: 6,
       agonistCourseCompletions: 3,
+      agonistCourseArenaBonus: 5,
+      agonistCourseStyleBonus: 7,
     };
     const collaborator: Collaborator = {
       id: "eva-collaborator",
@@ -98,6 +100,8 @@ describe("manual enrollment cancellation", () => {
       styleBase: 87,
       tournamentExperience: 6,
       agonistCourseCompletions: 3,
+      agonistCourseArenaBonus: 5,
+      agonistCourseStyleBonus: 7,
     });
 
     const allOtherLegendaryIds = SPECIAL_COLLABORATORS
@@ -119,6 +123,8 @@ describe("manual enrollment cancellation", () => {
       styleBase: 87,
       tournamentExperience: 6,
       agonistCourseCompletions: 3,
+      agonistCourseArenaBonus: 5,
+      agonistCourseStyleBonus: 7,
     });
   });
 

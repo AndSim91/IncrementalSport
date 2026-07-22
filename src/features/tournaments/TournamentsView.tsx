@@ -1,17 +1,23 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "../../components/common/Icon";
 import { TabButton } from "../../components/common/TabButton";
 import { TOURNAMENT_DEFINITIONS } from "../../content/tournaments";
-import type { GameState, RockPaperScissorsChoice, TournamentDiscipline, TournamentParticipant, TournamentResult } from "../../game/types";
+import type {
+  GameState,
+  RockPaperScissorsChoice,
+  TournamentDiscipline,
+  TournamentParticipant,
+  TournamentResult,
+} from "../../game/types";
 import { ChroniclesView } from "./ChroniclesView";
+import {
+  CHRONICLES_TOURNAMENT_LOADING_MS,
+  ChroniclesTournamentLoading,
+} from "./ChroniclesTournamentLoading";
 import { TournamentOverview } from "./TournamentOverview";
 import { TournamentResults } from "./TournamentResults";
 import { useVirtualRows } from "../../shared/useVirtualRows";
-import {
-  levelShortLabel,
-  participantName,
-  type TournamentTab,
-} from "./tournamentPresentation";
+import { levelShortLabel, participantName, type TournamentTab } from "./tournamentPresentation";
 
 const TOURNAMENT_HALL_ROW_HEIGHT = 274;
 
@@ -35,7 +41,9 @@ function buildTournamentHallDiscipline(
   result: GameState["tournaments"]["results"][number],
   discipline: TournamentDiscipline,
 ): TournamentHallWinner[] {
-  const participantById = new Map(result.participants.map((participant) => [participant.id, participant]));
+  const participantById = new Map(
+    result.participants.map((participant) => [participant.id, participant]),
+  );
   const podium = discipline === "arena" ? result.arenaPodium : result.stylePodium;
   return podium
     .map((entry): TournamentHallWinner | undefined => {
@@ -51,9 +59,7 @@ function buildTournamentHallDiscipline(
     .filter((entry): entry is TournamentHallWinner => Boolean(entry));
 }
 
-function getTournamentHallRows(
-  results: GameState["tournaments"]["results"],
-): TournamentHallRow[] {
+function getTournamentHallRows(results: GameState["tournaments"]["results"]): TournamentHallRow[] {
   return [...results].reverse().map((result) => ({
     id: result.id,
     label: TOURNAMENT_DEFINITIONS[result.level].label,
@@ -88,7 +94,9 @@ function TournamentHallDiscipline({
             </li>
           ))}
         </ol>
-      ) : <p className="tournament-hall-empty-discipline">Nessun vincitore della scuola</p>}
+      ) : (
+        <p className="tournament-hall-empty-discipline">Nessun vincitore della scuola</p>
+      )}
     </section>
   );
 }
@@ -101,7 +109,10 @@ const TournamentsHall = memo(function TournamentsHall({
   schoolName: string;
 }) {
   const entries = useMemo(() => getTournamentHallRows(results), [results]);
-  const winnerCount = entries.reduce((total, entry) => total + entry.arena.length + entry.style.length, 0);
+  const winnerCount = entries.reduce(
+    (total, entry) => total + entry.arena.length + entry.style.length,
+    0,
+  );
   const virtualRows = useVirtualRows({
     count: entries.length,
     rowHeight: TOURNAMENT_HALL_ROW_HEIGHT,
@@ -116,12 +127,13 @@ const TournamentsHall = memo(function TournamentsHall({
         </div>
         <span>{winnerCount} piazzamenti</span>
       </header>
-      <div
-        className="virtualized-tournament-hall"
-        onScroll={virtualRows.onScroll}
-      >
+      <div className="virtualized-tournament-hall" onScroll={virtualRows.onScroll}>
         {virtualRows.paddingTop > 0 ? (
-          <div className="virtual-list-spacer" style={{ height: virtualRows.paddingTop }} aria-hidden="true" />
+          <div
+            className="virtual-list-spacer"
+            style={{ height: virtualRows.paddingTop }}
+            aria-hidden="true"
+          />
         ) : null}
         {renderedEntries.map((entry) => (
           <article key={entry.id} className="tournament-hall-tournament">
@@ -130,7 +142,9 @@ const TournamentsHall = memo(function TournamentsHall({
                 <Icon name="trophy" />
                 <div>
                   <h3>{entry.label}</h3>
-                  <small>Livello {entry.level} · Stagione {entry.season}</small>
+                  <small>
+                    Livello {entry.level} · Stagione {entry.season}
+                  </small>
                 </div>
               </div>
               <em>{schoolName}</em>
@@ -142,9 +156,15 @@ const TournamentsHall = memo(function TournamentsHall({
           </article>
         ))}
         {virtualRows.paddingBottom > 0 ? (
-          <div className="virtual-list-spacer" style={{ height: virtualRows.paddingBottom }} aria-hidden="true" />
+          <div
+            className="virtual-list-spacer"
+            style={{ height: virtualRows.paddingBottom }}
+            aria-hidden="true"
+          />
         ) : null}
-        {entries.length === 0 ? <p className="empty-tournaments">L'Albo d'Oro è ancora vuoto.</p> : null}
+        {entries.length === 0 ? (
+          <p className="empty-tournaments">L'Albo d'Oro è ancora vuoto.</p>
+        ) : null}
       </div>
     </section>
   );
@@ -163,10 +183,18 @@ export function TournamentsView({
 }) {
   const [tab, setTab] = useState<TournamentTab>("overview");
   const [selectedResultId, setSelectedResultId] = useState<string>();
+  const [chroniclesLoading, setChroniclesLoading] = useState(false);
+  const [showChroniclesResult, setShowChroniclesResult] = useState(false);
+  const chroniclesStartTimerRef = useRef<number | undefined>(undefined);
+  const onStartChroniclesRef = useRef(onStartChronicles);
   const chroniclesUnlocked = state.tournaments.chronicles.unlocked;
   const visibleTab = tab === "chronicles" && !chroniclesUnlocked ? "overview" : tab;
   const latestResult = state.tournaments.results.at(-1);
-  const selectedResult = state.tournaments.results.find((result) => result.id === selectedResultId) ?? latestResult;
+  const selectedResult =
+    state.tournaments.results.find((result) => result.id === selectedResultId) ?? latestResult;
+  const latestChroniclesResult = [...state.tournaments.results]
+    .reverse()
+    .find((result) => result.level === "chronicles");
   const knownFormsByContactId = useMemo(
     () => new Map(state.contacts.map((contact) => [contact.id, contact.forms] as const)),
     [state.contacts],
@@ -175,21 +203,63 @@ export function TournamentsView({
     setSelectedResultId(result.id);
     setTab("results");
   };
+  useEffect(() => {
+    onStartChroniclesRef.current = onStartChronicles;
+  }, [onStartChronicles]);
+
+  useEffect(
+    () => () => {
+      if (chroniclesStartTimerRef.current !== undefined) {
+        window.clearTimeout(chroniclesStartTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const startChronicles = (contactIds: string[]) => {
+    if (chroniclesLoading) return;
+    const pendingContactIds = [...contactIds];
+    setChroniclesLoading(true);
+    chroniclesStartTimerRef.current = window.setTimeout(() => {
+      chroniclesStartTimerRef.current = undefined;
+      onStartChroniclesRef.current(pendingContactIds);
+      setSelectedResultId(undefined);
+      setTab("chronicles");
+      setShowChroniclesResult(true);
+      setChroniclesLoading(false);
+    }, CHRONICLES_TOURNAMENT_LOADING_MS);
+  };
 
   return (
     <main className="overview-view tournaments-view">
-      <header><div><h1>Tornei</h1><p>Segui la stagione, prepara la squadra, conquista la Champion’s Arena</p></div></header>
+      <header>
+        <div>
+          <h1>Tornei</h1>
+          <p>Segui la stagione, prepara la squadra, conquista la Champion’s Arena</p>
+        </div>
+      </header>
       <div className="people-tabs tournament-tabs" role="tablist" aria-label="Sezioni tornei">
-        <TabButton active={visibleTab === "overview"} onClick={() => setTab("overview")}>Panoramica</TabButton>
-        <TabButton active={visibleTab === "results"} onClick={() => setTab("results")}>Risultati</TabButton>
-        <TabButton active={visibleTab === "hall"} onClick={() => setTab("hall")}>Albo d'oro</TabButton>
+        <TabButton active={visibleTab === "overview"} onClick={() => setTab("overview")}>
+          Panoramica
+        </TabButton>
+        <TabButton active={visibleTab === "results"} onClick={() => setTab("results")}>
+          Risultati
+        </TabButton>
+        <TabButton active={visibleTab === "hall"} onClick={() => setTab("hall")}>
+          Albo d'oro
+        </TabButton>
         {chroniclesUnlocked ? (
-          <TabButton active={visibleTab === "chronicles"} onClick={() => setTab("chronicles")}>Chronicles</TabButton>
+          <TabButton active={visibleTab === "chronicles"} onClick={() => setTab("chronicles")}>
+            Chronicles
+          </TabButton>
         ) : null}
       </div>
 
-      {visibleTab === "overview" ? <TournamentOverview state={state} onOpenResult={openResult} /> : null}
-      {visibleTab === "results" ? (
+      {chroniclesLoading ? <ChroniclesTournamentLoading /> : null}
+      {!chroniclesLoading && visibleTab === "overview" ? (
+        <TournamentOverview state={state} onOpenResult={openResult} />
+      ) : null}
+      {!chroniclesLoading && visibleTab === "results" ? (
         selectedResult ? (
           <TournamentResults
             result={selectedResult}
@@ -199,15 +269,38 @@ export function TournamentsView({
             onViewQualified={onOpenAthletes}
             knownFormsByContactId={knownFormsByContactId}
           />
-        ) : <p className="empty-tournaments tournament-empty-page">Nessun torneo disputato.</p>
+        ) : (
+          <p className="empty-tournaments tournament-empty-page">Nessun torneo disputato.</p>
+        )
       ) : null}
-      {visibleTab === "hall" ? <TournamentsHall results={state.tournaments.results} schoolName={state.school.name} /> : null}
-      {visibleTab === "chronicles" && chroniclesUnlocked ? (
-        <ChroniclesView
-          state={state}
-          onStartTournament={onStartChronicles}
-          onPlayHand={onPlayChroniclesHand}
-        />
+      {!chroniclesLoading && visibleTab === "hall" ? (
+        <TournamentsHall results={state.tournaments.results} schoolName={state.school.name} />
+      ) : null}
+      {!chroniclesLoading && visibleTab === "chronicles" && chroniclesUnlocked ? (
+        showChroniclesResult && latestChroniclesResult ? (
+          <TournamentResults
+            result={latestChroniclesResult}
+            results={[latestChroniclesResult]}
+            onSelectResult={() => undefined}
+            onBackToOverview={() => setTab("overview")}
+            onViewQualified={onOpenAthletes}
+            knownFormsByContactId={knownFormsByContactId}
+            continuationAction={{
+              label:
+                state.tournaments.chronicles.activeChallenge?.tournamentResultId ===
+                latestChroniclesResult.id
+                  ? "Sfida Finale"
+                  : "Prossimo Torneo",
+              onClick: () => setShowChroniclesResult(false),
+            }}
+          />
+        ) : (
+          <ChroniclesView
+            state={state}
+            onStartTournament={startChronicles}
+            onPlayHand={onPlayChroniclesHand}
+          />
+        )
       ) : null}
     </main>
   );

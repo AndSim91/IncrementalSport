@@ -592,9 +592,13 @@
   white-space: normal;
 }
 
-.member-status > .member-agonist-course-message {
+.member-training-cell > .member-agonist-course-message {
+  display: block;
+  margin-top: 4px;
   color: var(--success);
   font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .people-row > * {

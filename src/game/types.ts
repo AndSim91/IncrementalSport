@@ -27,6 +27,7 @@ export interface FormTraining {
   instructorId?: string;
   includesInstructorCertification?: boolean;
   instructorTrainingDurationMultiplier?: number;
+  agonistCourseSlotsConsumed?: number;
 }
 
 export interface Contact {
@@ -50,6 +51,8 @@ export interface Contact {
   formTrainingYearCount?: number;
   lastAgonistCourseYear?: number;
   agonistCourseCompletions?: number;
+  agonistCourseArenaBonus?: number;
+  agonistCourseStyleBonus?: number;
   enrolledMonth?: number;
   favorite?: boolean;
 }
@@ -195,6 +198,7 @@ export type UpgradeId =
   | "multi-site-coordination"
   | "instructor-versatility"
   | "technical-arena"
+  | "agonist-course-intensity"
   | "promiscuous-instructor"
   | "extra-form"
   | "tiamat-instructor"
@@ -318,6 +322,7 @@ export interface Collaborator {
   training?: FormTraining;
   lastFormTrainingYear?: number;
   formTrainingYearCount?: number;
+  lastAgonistCourseYear?: number;
 }
 
 export interface RetainedLegendaryProgress {
@@ -330,6 +335,8 @@ export interface RetainedLegendaryProgress {
   styleBase?: number;
   tournamentExperience?: number;
   agonistCourseCompletions?: number;
+  agonistCourseArenaBonus?: number;
+  agonistCourseStyleBonus?: number;
   lastAgonistCourseYear?: number;
   lastFormTrainingYear?: number;
   formTrainingYearCount?: number;

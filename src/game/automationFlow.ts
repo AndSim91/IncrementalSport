@@ -1,4 +1,5 @@
 import {
+  FORM_DEFINITIONS,
   canTrainForm,
   getCollaboratorProductivity,
   getFormDefinition,
@@ -354,7 +355,6 @@ export function processAutomaticTeaching(
       getFormTrainingCount(contact, trainingYear) < annualTrainingLimit
     ),
     ...state.collaborators.filter((collaborator) =>
-      collaborator.assignment !== "instructor" &&
       !collaborator.training &&
       getFormTrainingCount(collaborator, trainingYear) < annualTrainingLimit
     ),
@@ -398,6 +398,23 @@ export function processAutomaticTeaching(
       );
     }),
   ]));
+  const instructorsWithAvailablePersonalForms = new Set(
+    state.collaborators.filter((collaborator) => {
+      if (collaborator.assignment !== "instructor") return false;
+      const branchCapacity = Math.min(
+        3,
+        1 + (state.upgrades["instructor-versatility"] ?? 0),
+      );
+      return FORM_DEFINITIONS.some((definition) => canTrainForm(
+        collaborator,
+        definition,
+        trainingYear,
+        branchCapacity,
+        false,
+        annualTrainingLimit,
+      ));
+    }).map((collaborator) => collaborator.id),
+  );
   const automaticFormOrder: FormId[] = [
     "form-1",
     "course-x",
@@ -467,6 +484,8 @@ export function processAutomaticTeaching(
   });
   for (const student of students) {
     const qualifiedCandidates = qualifiedFormCandidates.get(student.id) ?? [];
+    const instructorStudent = !("acquiredAt" in student) &&
+      student.assignment === "instructor";
     const candidate = qualifiedCandidates.find((formId) => {
       const definition = getFormDefinition(formId);
       const instructor = instructorsByForm.get(formId)?.find(
@@ -483,7 +502,7 @@ export function processAutomaticTeaching(
         )
       );
     });
-    if (candidate) {
+    if (candidate && !instructorStudent) {
       const startedState = startFormTraining(nextState, student.id, candidate, now);
       nextState = startedState;
       const startedStudent = "acquiredAt" in student
@@ -499,8 +518,8 @@ export function processAutomaticTeaching(
 
     if (
       qualifiedCandidates.length > 0 ||
-      (nextState.upgrades["technical-arena"] ?? 0) < 1 ||
-      !("acquiredAt" in student)
+      instructorsWithAvailablePersonalForms.has(student.id) ||
+      (nextState.upgrades["technical-arena"] ?? 0) < 1
     ) continue;
     const instructor = nextState.collaborators.find((candidate) =>
       candidate.assignment === "instructor" &&
@@ -514,7 +533,9 @@ export function processAutomaticTeaching(
       instructor.id,
       now,
     );
-    const startedStudent = startedState.contacts.find((contact) => contact.id === student.id);
+    const startedStudent = "acquiredAt" in student
+      ? startedState.contacts.find((contact) => contact.id === student.id)
+      : startedState.collaborators.find((collaborator) => collaborator.id === student.id);
     if (!startedStudent?.training) continue;
     nextState = startedState;
     instructorLoads.set(instructor.id, (instructorLoads.get(instructor.id) ?? 0) + 1);

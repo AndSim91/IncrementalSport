@@ -867,19 +867,24 @@ Regole:
   **Fama della scuola 15** e al livello 1 sblocca il **Corso Agonisti**
   automatico, che da quel momento resta sempre attivo e non può essere
   disabilitato separatamente;
-- l'automazione propone il Corso Agonisti a un atleta vulnerabile che non ha
-  ancora iniziato una formazione nell'anno quando ha completato il proprio
-  percorso oppure nessun Istruttore automatico possiede le qualifiche per le sue
-  prossime Forme;
-- iniziare il Corso Agonisti consuma un solo slot formativo annuale e protegge
-  subito l'atleta dal controllo degli abbandoni. Lo stesso atleta non può
+- l'automazione propone il Corso Agonisti a un atleta o a un collaboratore
+  inserito nella coda automatica quando ha ancora uno slot
+  formativo libero e ha completato il proprio percorso oppure nessun Istruttore
+  automatico possiede le qualifiche per le sue prossime Forme;
+- iniziare il Corso Agonisti consuma **tutti gli slot formativi annuali ancora
+  disponibili** e protegge subito l'atleta dal controllo degli abbandoni. Lo
+  stesso atleta non può
   iniziarlo più di una volta nello stesso periodo luglio–giugno, anche quando i
   potenziamenti gli concedono altri slot;
-- completare il Corso Agonisti aumenta permanentemente di **+1 Arena** e **+1
-  Stile** i valori base dell'atleta. Il bonus si accumula senza limite negli
-  anni successivi; la riga dell'atleta nella schermata Iscritti mostra
-  `Eseguito Corso Agonisti | Potenziale totale +X`, senza creare notifiche o
-  messaggi nell'inbox;
+- completare il Corso Agonisti aumenta permanentemente Arena e Stile. Senza
+  potenziamenti assegna **+1 Arena** e **+1 Stile**; **Intensità agonistica** ha
+  quattro livelli e aumenta il massimo casuale di entrambe le caratteristiche
+  fino a **+5**, mantenendo +1 come minimo. Il risultato casuale di ciascuna
+  caratteristica viene moltiplicato per il numero di slot residui consumati dal
+  corso. I bonus effettivi e il numero di completamenti si accumulano senza
+  limite negli anni successivi e sono
+  registrati nella riga dell'atleta, senza creare notifiche o messaggi
+  nell'inbox;
 - il corso ha un costo base manuale di €1.000 e, quando viene svolto sotto
   Istruttore, costa il 25% del costo base (€250). Arena Tecnica al livello 2
   porta la sua durata base da 15 a 10 secondi; al livello 3 lo rende gratuito.
@@ -906,6 +911,9 @@ Regole:
   didattica**; i livelli 2 e 3 di Arena restano acquistabili in parallelo e non
   bloccano il resto del ramo. Polivalenza didattica ha due livelli e permette di
   apprendere fino a tutti e tre i rami d'arma;
+- lo stesso livello sblocca **Intensità agonistica**, un potenziamento parallelo
+  in quattro livelli che porta il bonus massimo casuale del Corso Agonisti da
+  +1 a +5 per ciascuna caratteristica senza bloccare gli altri potenziamenti;
 - **Istruttore Promisquo** è un potenziamento unico e porta da uno a due gli
   allievi contemporanei di ogni Istruttore;
 - **Doppio Corso** è un potenziamento unico del ramo Istruttori e concede a ogni
@@ -918,7 +926,8 @@ Regole:
   Forme già apprese e lo assegna automaticamente per ogni nuova Forma, senza
   cambiare l'incarico operativo; il livello 3 rende gratuiti tutte le Forme,
   tutti i corsi, tutti gli attestati e ogni altro costo di istruttoraggio;
-- dopo Arena Tecnica, il ramo è lineare: ogni potenziamento deve essere
+- esclusa Intensità agonistica, che resta parallela, dopo Arena Tecnica il ramo
+  è lineare: ogni potenziamento deve essere
   completato prima di accedere al successivo. L'ordine è **Polivalenza didattica
   → Istruttore Promisquo → Doppio Corso → Istruttore Tiamat → PagoSport → Tocco
   DiGilo**;

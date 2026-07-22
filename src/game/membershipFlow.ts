@@ -65,6 +65,8 @@ export function departMembers(
       styleBase: member.styleBase,
       tournamentExperience: member.tournamentExperience,
       agonistCourseCompletions: member.agonistCourseCompletions,
+      agonistCourseArenaBonus: member.agonistCourseArenaBonus,
+      agonistCourseStyleBonus: member.agonistCourseStyleBonus,
       lastAgonistCourseYear: member.lastAgonistCourseYear,
       lastFormTrainingYear:
         collaborator?.lastFormTrainingYear ?? member.lastFormTrainingYear,

@@ -74,6 +74,16 @@ function getUpgradeBenefitsSummary(state: GameState) {
   addAmount("Rami per Istruttore", "instructorBranchCapacity");
   addAmount("Allievi per Istruttore", "instructorStudentCapacity");
   addPercentage("Velocità insegnamento", "instructorTeachingSpeed");
+  const agonistCourseMaximum = 1 + getUpgradeEffectTotal(
+    state.upgrades,
+    "agonistCourseStatMaximum",
+  );
+  if (agonistCourseMaximum > 1) {
+    benefits.push({
+      label: "Bonus Corso Agonisti",
+      value: `da +1 a +${agonistCourseMaximum} per caratteristica`,
+    });
+  }
 
   const agonistCourseTier = getUpgradeEffectTotal(state.upgrades, "agonistCourseTier");
   if (agonistCourseTier > 0) {
@@ -106,7 +116,7 @@ function getCategorySummary(state: GameState, category: UpgradeCategory) {
     case "organization":
       return `+${Math.round(getUpgradeEffectTotal(state.upgrades, "automationMultiplier") * 100)}% automazione`;
     case "instructors":
-      return `Forme annue ${getAnnualFormTrainingLimit(state.upgrades)}/${1 + getUpgradeEffectMaximum("annualFormCapacity")} · Polivalenza ${state.upgrades["instructor-versatility"]}/2`;
+      return `Forme annue ${getAnnualFormTrainingLimit(state.upgrades)}/${1 + getUpgradeEffectMaximum("annualFormCapacity")} · Corso Agonisti fino a +${1 + getUpgradeEffectTotal(state.upgrades, "agonistCourseStatMaximum")}`;
   }
 }
 

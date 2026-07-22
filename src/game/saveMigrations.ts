@@ -9,6 +9,7 @@ import { migrateTournamentState } from "./saveMigrations/tournaments";
 import { migrateTrainingState } from "./saveMigrations/training";
 import { migrateChroniclesState } from "./saveMigrations/chronicles";
 import { migrateTutorialState } from "./saveMigrations/tutorial";
+import { migrateAgonistCourseState } from "./saveMigrations/agonistCourse";
 import type { MigratableState, SaveMigrationStage } from "./saveMigrations/types";
 
 const SAVE_MIGRATION_STAGES: SaveMigrationStage[] = [
@@ -21,6 +22,7 @@ const SAVE_MIGRATION_STAGES: SaveMigrationStage[] = [
   migrateTrainingState,
   migrateChroniclesState,
   migrateTutorialState,
+  migrateAgonistCourseState,
 ];
 
 export function migrate(value: unknown): unknown {

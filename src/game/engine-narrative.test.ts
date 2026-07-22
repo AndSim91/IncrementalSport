@@ -139,6 +139,11 @@ describe("game engine: narrative", () => {
             rarity: "legendary" as const,
             specialProfileId: "eva-parodi" as const,
             forms: ["form-1" as const],
+            arenaBase: 91,
+            styleBase: 87,
+            agonistCourseCompletions: 2,
+            agonistCourseArenaBonus: 4,
+            agonistCourseStyleBonus: 6,
             enrolledMonth: 1,
           }
         : contact),
@@ -178,6 +183,11 @@ describe("game engine: narrative", () => {
       forms: ["form-1"],
       instructorForms: ["form-1"],
       joinedAt: 500,
+      arenaBase: 91,
+      styleBase: 87,
+      agonistCourseCompletions: 2,
+      agonistCourseArenaBonus: 4,
+      agonistCourseStyleBonus: 6,
     });
     expect(founded.legendaryCollaborators.encounteredProfileIds).toEqual(
       expect.arrayContaining(initial.legendaryCollaborators.encounteredProfileIds),

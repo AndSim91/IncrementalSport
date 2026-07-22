@@ -40,6 +40,8 @@ export function createSecretLegendaryContact(
     styleBase: retained?.styleBase ?? profile.styleBase,
     tournamentExperience: retained?.tournamentExperience ?? profile.externalExperience,
     agonistCourseCompletions: retained?.agonistCourseCompletions ?? 0,
+    agonistCourseArenaBonus: retained?.agonistCourseArenaBonus ?? 0,
+    agonistCourseStyleBonus: retained?.agonistCourseStyleBonus ?? 0,
     lastAgonistCourseYear: retained?.lastAgonistCourseYear,
   };
 }

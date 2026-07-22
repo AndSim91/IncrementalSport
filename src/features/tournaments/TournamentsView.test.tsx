@@ -1,9 +1,10 @@
-import { fireEvent, render, within } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { FORM_DEFINITIONS } from "../../content/forms";
 import { addAdminMembers } from "../../game/adminFlow";
 import { createInitialState } from "../../game/engine";
 import { getEligibleSchoolContacts, simulateTournament } from "../../game/tournamentSimulation";
+import "../../styles/tournaments.css";
 import { TournamentsView } from "./TournamentsView";
 
 function createStateWithForms(memberCount = 6) {
@@ -499,6 +500,31 @@ describe("TournamentsView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps tournament cards at their fixed height with a long virtualized history", () => {
+    const { state, result } = createCompletedTournamentState();
+    const results = Array.from({ length: 24 }, (_, index) => ({
+      ...result,
+      id: `${result.id}-${index}`,
+      season: index + 1,
+    }));
+    const { container } = render(
+      <TournamentsView
+        state={{
+          ...state,
+          tournaments: { ...state.tournaments, results },
+        }}
+      />,
+    );
+    const view = within(container);
+
+    fireEvent.click(view.getByRole("tab", { name: "Albo d'oro" }));
+
+    const cards = container.querySelectorAll<HTMLElement>(".tournament-hall-tournament");
+    expect(cards).toHaveLength(18);
+    expect(getComputedStyle(cards[0]).flexShrink).toBe("0");
+    expect(getComputedStyle(cards[0]).flexBasis).toBe("274px");
+  });
+
   it("keeps Chronicles completely hidden until it is unlocked", () => {
     const { container } = render(<TournamentsView state={createStateWithForms()} />);
     const view = within(container);
@@ -508,32 +534,234 @@ describe("TournamentsView", () => {
     expect(view.getByText("Calendario della stagione")).toBeVisible();
   });
 
-  it("selects exactly six athletes and starts Chronicles with a key", () => {
-    const initial = createStateWithForms();
+  it("selects exactly six athletes and dispatches Chronicles only after five seconds", () => {
+    vi.useFakeTimers();
+    try {
+      const initial = createStateWithForms();
+      const state = {
+        ...initial,
+        tournaments: {
+          ...initial.tournaments,
+          chronicles: { unlocked: true, keys: 1 },
+        },
+      };
+      const onStartChronicles = vi.fn();
+      const { container } = render(
+        <TournamentsView state={state} onStartChronicles={onStartChronicles} />,
+      );
+      const view = within(container);
+
+      expect(view.getByRole("tab", { name: "Chronicles" })).toBeVisible();
+      fireEvent.click(view.getByRole("tab", { name: "Chronicles" }));
+      view.getAllByRole("checkbox").forEach((checkbox) => fireEvent.click(checkbox));
+      expect(view.getByText("6 / 6")).toBeVisible();
+      fireEvent.click(view.getByRole("button", { name: "Avvia le Chronicles" }));
+
+      expect(view.getByRole("status")).toHaveTextContent("Il torneo è in corso");
+      expect(onStartChronicles).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(4_999));
+      expect(onStartChronicles).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(1));
+
+      const startedIds = onStartChronicles.mock.calls[0][0];
+      expect(startedIds).toHaveLength(6);
+      expect(startedIds).toEqual(
+        expect.arrayContaining(
+          state.contacts
+            .filter((contact) => contact.status === "enrolled")
+            .map((contact) => contact.id),
+        ),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sorts Chronicles athletes by Arena or Style and shows ten per page", () => {
+    const initial = createStateWithForms(14);
+    const enrolledContacts = initial.contacts.filter((contact) => contact.status === "enrolled");
     const state = {
       ...initial,
+      contacts: initial.contacts.map((contact) => {
+        const index = enrolledContacts.findIndex((candidate) => candidate.id === contact.id);
+        return index < 0
+          ? contact
+          : {
+              ...contact,
+              forms: ["form-1" as const, "course-x" as const],
+              arenaBase: index + 1,
+              styleBase: enrolledContacts.length - index,
+            };
+      }),
       tournaments: {
         ...initial.tournaments,
         chronicles: { unlocked: true, keys: 1 },
       },
     };
-    const onStartChronicles = vi.fn();
-    const { container } = render(
-      <TournamentsView state={state} onStartChronicles={onStartChronicles} />,
-    );
+    const { container } = render(<TournamentsView state={state} />);
     const view = within(container);
-
-    expect(view.getByRole("tab", { name: "Chronicles" })).toBeVisible();
     fireEvent.click(view.getByRole("tab", { name: "Chronicles" }));
-    view.getAllByRole("checkbox").forEach((checkbox) => fireEvent.click(checkbox));
-    fireEvent.click(view.getByRole("button", { name: "Avvia le Chronicles" }));
 
-    expect(view.getByText("6 / 6")).toBeVisible();
-    expect(onStartChronicles).toHaveBeenCalledWith(
-      state.contacts
-        .filter((contact) => contact.status === "enrolled")
-        .map((contact) => contact.id),
+    const availableRows = () => [
+      ...container.querySelectorAll<HTMLElement>(".chronicles-roster-list label"),
+    ];
+    expect(availableRows()).toHaveLength(10);
+    expect(availableRows()[0]).toHaveTextContent(
+      `${enrolledContacts.at(-1)!.firstName} ${enrolledContacts.at(-1)!.lastName}`,
     );
+    expect(view.getByRole("columnheader", { name: "Arena" })).toHaveAttribute(
+      "aria-sort",
+      "descending",
+    );
+
+    fireEvent.click(view.getByRole("button", { name: "Ordina per Stile" }));
+    expect(availableRows()[0]).toHaveTextContent(
+      `${enrolledContacts[0].firstName} ${enrolledContacts[0].lastName}`,
+    );
+    fireEvent.click(view.getByRole("button", { name: "Successiva" }));
+    expect(availableRows()).toHaveLength(4);
+    expect(view.getByText("Pagina 2 di 2")).toBeVisible();
+  });
+
+  it("opens the themed Chronicles result inside Chronicles and returns to athlete selection", () => {
+    vi.useFakeTimers();
+    try {
+      const initial = createStateWithForms();
+      const state = {
+        ...initial,
+        tournaments: {
+          ...initial.tournaments,
+          chronicles: { unlocked: true, keys: 1 },
+        },
+      };
+      const simulation = simulateTournament(
+        state,
+        "chronicles",
+        1,
+        181_000,
+        getEligibleSchoolContacts(state),
+      );
+      const onStartChronicles = vi.fn();
+      const { container, rerender } = render(
+        <TournamentsView state={state} onStartChronicles={onStartChronicles} />,
+      );
+      const view = within(container);
+      fireEvent.click(view.getByRole("tab", { name: "Chronicles" }));
+      view.getAllByRole("checkbox").forEach((checkbox) => fireEvent.click(checkbox));
+      fireEvent.click(view.getByRole("button", { name: "Avvia le Chronicles" }));
+
+      const activePhase = () =>
+        container.querySelector<HTMLElement>(".chronicles-loading-progress .is-active");
+      expect(activePhase()).toHaveTextContent("Gironi");
+      expect(onStartChronicles).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(1_667));
+      expect(activePhase()).toHaveTextContent("Eliminazione");
+      expect(onStartChronicles).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(1_667));
+      expect(activePhase()).toHaveTextContent("Classifica");
+      expect(onStartChronicles).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(1_665));
+      expect(onStartChronicles).not.toHaveBeenCalled();
+      expect(view.getByRole("status")).toBeVisible();
+
+      act(() => vi.advanceTimersByTime(1));
+      expect(onStartChronicles).toHaveBeenCalledTimes(1);
+      expect(view.queryByRole("status")).not.toBeInTheDocument();
+      expect(view.getByRole("tab", { name: "Chronicles" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+
+      rerender(
+        <TournamentsView
+          state={{
+            ...state,
+            tournaments: {
+              ...state.tournaments,
+              results: [simulation.result],
+              chronicles: { unlocked: true, keys: 0 },
+            },
+          }}
+          onStartChronicles={onStartChronicles}
+        />,
+      );
+      expect(view.getByRole("tab", { name: "Chronicles" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(container.querySelector(".tournament-results-view")).toHaveClass("is-chronicles");
+      expect(view.getByRole("heading", { name: "Chronicles of Ludosport" })).toBeVisible();
+      fireEvent.click(view.getByRole("button", { name: "Prossimo Torneo" }));
+      expect(view.getByRole("heading", { name: "Atleti disponibili" })).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("continues from a Chronicles victory result to the Legendary final challenge", () => {
+    vi.useFakeTimers();
+    try {
+      const initial = createStateWithForms();
+      const state = {
+        ...initial,
+        tournaments: {
+          ...initial.tournaments,
+          chronicles: { unlocked: true, keys: 1 },
+        },
+      };
+      const simulation = simulateTournament(
+        state,
+        "chronicles",
+        1,
+        181_000,
+        getEligibleSchoolContacts(state),
+      );
+      const onStartChronicles = vi.fn();
+      const { container, rerender } = render(
+        <TournamentsView state={state} onStartChronicles={onStartChronicles} />,
+      );
+      const view = within(container);
+      fireEvent.click(view.getByRole("tab", { name: "Chronicles" }));
+      view.getAllByRole("checkbox").forEach((checkbox) => fireEvent.click(checkbox));
+      fireEvent.click(view.getByRole("button", { name: "Avvia le Chronicles" }));
+      act(() => vi.advanceTimersByTime(5_000));
+
+      rerender(
+        <TournamentsView
+          state={{
+            ...state,
+            tournaments: {
+              ...state.tournaments,
+              results: [simulation.result],
+              chronicles: {
+                unlocked: true,
+                keys: 0,
+                activeChallenge: {
+                  legendaryId: "enrico-giovanetti" as const,
+                  tournamentResultId: simulation.result.id,
+                  discipline: "arena" as const,
+                  queuedDisciplines: [],
+                  playerWins: 0,
+                  legendaryWins: 0,
+                  hands: [],
+                },
+              },
+            },
+          }}
+          onStartChronicles={onStartChronicles}
+        />,
+      );
+
+      expect(container.querySelector(".tournament-results-view")).toHaveClass("is-chronicles");
+      fireEvent.click(view.getByRole("button", { name: "Sfida Finale" }));
+      expect(view.getByRole("heading", { name: "Sfida leggendaria" })).toBeVisible();
+      expect(view.getByText("Enrico Giovanetti")).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders the persistent Legendary duel and sends a hand choice", () => {

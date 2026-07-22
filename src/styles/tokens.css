@@ -69,7 +69,7 @@
   --official-stat-150: #986700;
   --official-stat-225: #b42318;
   --official-stat-300: #0697b8;
-  --official-stat-outline: #d49c04;
+  --official-stat-outline: #4bdafd;
 }
 
 :root[data-theme="dark"] {
@@ -115,5 +115,5 @@
   --official-stat-150: #ffd979;
   --official-stat-225: #ffb4ab;
   --official-stat-300: #69d2e7;
-  --official-stat-outline: #ffd979;
+  --official-stat-outline: #0753c5;
 }

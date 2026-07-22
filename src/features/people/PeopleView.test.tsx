@@ -566,7 +566,7 @@ describe("PeopleView", () => {
     expect(rows[2]).toHaveTextContent("Carla Base");
   });
 
-  it("shows Arena Tecnica as always active and every collaborator automation progress", () => {
+  it("shows every collaborator automation progress without the Corso Agonisti box", () => {
     const initial = createInitialState(1_000);
     const assignments = ["writing", "events", "lessons", "social", "equipment"] as const;
     const collaborators = assignments.map((assignment, index) => ({
@@ -619,8 +619,7 @@ describe("PeopleView", () => {
       />,
     );
 
-    expect(screen.getByText("Corso Agonisti")).toBeVisible();
-    expect(screen.getByText("Sempre attivo · una volta l'anno · +1 Arena e +1 Stile.")).toBeVisible();
+    expect(screen.queryByText("Corso Agonisti")).not.toBeInTheDocument();
     expect(screen.getByText(initial.emails[0].subject)).toBeVisible();
     expect(screen.getByText("Lezioni all'aperto")).toBeVisible();
     expect(screen.getByText("Ultimo atleta migliorato: Mario Rossi")).toBeVisible();
@@ -683,6 +682,8 @@ describe("PeopleView", () => {
       ...initial.contacts[0],
       status: "enrolled" as const,
       agonistCourseCompletions: 3,
+      agonistCourseArenaBonus: 3,
+      agonistCourseStyleBonus: 3,
     };
     render(
       <PeopleView
@@ -699,9 +700,12 @@ describe("PeopleView", () => {
     const athleteRow = screen.getByText(`${athlete.firstName} ${athlete.lastName}`)
       .closest(".member-row");
     expect(athleteRow).not.toBeNull();
-    expect(within(athleteRow as HTMLElement).getByText(
-      "Eseguito Corso Agonisti | Potenziale totale +3",
-    )).toBeVisible();
+    const courseMessage = within(athleteRow as HTMLElement).getByText(
+      "Eseguito Corso Agonisti | Arena +3 · Stile +3 · Potenziale totale +6",
+    );
+    expect(courseMessage).toBeVisible();
+    expect(courseMessage.closest(".member-training-cell")).not.toBeNull();
+    expect(courseMessage.closest(".member-status")).toBeNull();
   });
 
   it("shows the assigned student's condensed training progress for an instructor", () => {

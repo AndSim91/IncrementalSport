@@ -28,7 +28,8 @@ describe("UpgradesView", () => {
     expect(screen.queryByRole("button", { name: /Apri dettagli Nessun Rancore/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Apri dettagli Doppio Corso/ })).toBeVisible();
     expect(screen.getByRole("button", { name: /Apri dettagli PagoSport/ })).toBeVisible();
-    expect(screen.getAllByRole("button", { name: /^Apri dettagli/ })).toHaveLength(53);
+    expect(screen.getByRole("button", { name: /Apri dettagli Intensità agonistica/ })).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /^Apri dettagli/ })).toHaveLength(54);
   });
 
   it("shows requirements, effect and disabled level-up action for a locked node", () => {

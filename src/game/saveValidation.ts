@@ -149,7 +149,11 @@ export function isValidGameState(value: unknown): value is GameState {
       (contact.lastAgonistCourseYear === undefined ||
         (Number.isSafeInteger(contact.lastAgonistCourseYear) && contact.lastAgonistCourseYear >= 1)) &&
       (contact.agonistCourseCompletions === undefined ||
-        isNonNegativeSafeInteger(contact.agonistCourseCompletions))
+        isNonNegativeSafeInteger(contact.agonistCourseCompletions)) &&
+      (contact.agonistCourseArenaBonus === undefined ||
+        isNonNegativeSafeInteger(contact.agonistCourseArenaBonus)) &&
+      (contact.agonistCourseStyleBonus === undefined ||
+        isNonNegativeSafeInteger(contact.agonistCourseStyleBonus))
     ) &&
     Array.isArray(state.emails) &&
     state.emails.every((email) =>
@@ -181,6 +185,10 @@ export function isValidGameState(value: unknown): value is GameState {
         progress &&
         isUniqueFormIdList(progress.forms) &&
         isUniqueFormIdList(progress.instructorForms) &&
+        (progress.agonistCourseArenaBonus === undefined ||
+          isNonNegativeSafeInteger(progress.agonistCourseArenaBonus)) &&
+        (progress.agonistCourseStyleBonus === undefined ||
+          isNonNegativeSafeInteger(progress.agonistCourseStyleBonus)) &&
         (progress.mastery === undefined || (
           typeof progress.mastery === "object" &&
           progress.mastery !== null &&
@@ -197,6 +205,9 @@ export function isValidGameState(value: unknown): value is GameState {
       isUniqueFormIdList(collaborator.forms) &&
       isUniqueFormIdList(collaborator.instructorForms) &&
       Array.isArray(collaborator.formBranchPreferences) &&
+      (collaborator.lastAgonistCourseYear === undefined ||
+        (Number.isSafeInteger(collaborator.lastAgonistCourseYear) &&
+          collaborator.lastAgonistCourseYear >= 1)) &&
       typeof collaborator.autoTeachingEnabled === "boolean" &&
       typeof collaborator.mastery === "object" &&
       collaborator.mastery !== null &&
@@ -208,6 +219,7 @@ export function isValidGameState(value: unknown): value is GameState {
     hasValidLegendaryAssignments(state) &&
     typeof state.upgrades?.["instructor-versatility"] === "number" &&
     typeof state.upgrades?.["technical-arena"] === "number" &&
+    typeof state.upgrades?.["agonist-course-intensity"] === "number" &&
     typeof state.upgrades?.["promiscuous-instructor"] === "number" &&
     typeof state.upgrades?.["tiamat-instructor"] === "number" &&
     typeof state.upgrades?.["extra-form"] === "number" &&

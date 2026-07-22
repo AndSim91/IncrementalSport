@@ -233,15 +233,6 @@ export function CollaboratorList({
 
   return (
     <section className="collaborator-list" aria-label="Collaboratori delle Onde">
-      {(state.upgrades["technical-arena"] ?? 0) >= 1 ? (
-        <div className="agonist-course-setting">
-          <span>
-            <strong>Corso Agonisti</strong>
-            <small>Sempre attivo · una volta l'anno · +1 Arena e +1 Stile.</small>
-          </span>
-        </div>
-      ) : null}
-
       {state.collaborators.length === 0 ? (
         <div className="people-empty">
           <Icon name="contact" />

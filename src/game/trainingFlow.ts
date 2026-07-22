@@ -16,17 +16,16 @@ import {
 } from "../content/forms";
 import { COLLABORATOR_MASTERY_XP } from "../content/mastery";
 import {
+  getAgonistCourseMaximumStatGain,
   getAnnualFormTrainingLimit,
   getUpgradeEffectTotal,
   hasAutomaticInstructorCertificates,
   hasFreeFormTraining,
 } from "../content/upgrades";
 import { getFormTrainingYear, isSummerBreak } from "./calendar";
-import { getAthleteImmunityStatus } from "./athleteImmunity";
 import { getContactBaseStats } from "./athleteStats";
 import { nextRandom } from "./random";
 import { GAME_CONFIG } from "./config";
-import { getMemberAnnualDepartureChance } from "./formulas";
 import { roundCurrency } from "./economy";
 import { cancelAutomatedEventForCollaborator } from "./eventFlow";
 import { processAutomaticEvents } from "./eventAutomationFlow";
@@ -141,40 +140,36 @@ export function startAgonistCourse(
     isSummerBreak(state.school.currentMonth)
   ) return state;
 
-  const collaboratorContactIds = new Set(
-    state.collaborators.map((collaborator) => collaborator.contactId),
-  );
-  const student = state.contacts.find((contact) =>
+  const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
+  const member = state.contacts.find((contact) =>
     contact.id === personId &&
     contact.status === "enrolled" &&
-    !collaboratorContactIds.has(contact.id)
+    !state.collaborators.some((existing) => existing.contactId === contact.id)
   );
+  const student = collaborator ?? member;
+  const athleteContact = collaborator
+    ? state.contacts.find((contact) =>
+        contact.id === collaborator.contactId && contact.status === "enrolled"
+      )
+    : member;
   const instructor = state.collaborators.find((collaborator) =>
     collaborator.id === instructorId &&
     collaborator.assignment === "instructor" &&
     collaborator.autoTeachingEnabled !== false
   );
   const trainingYear = getFormTrainingYear(state.school.currentMonth);
+  const annualTrainingLimit = getAnnualFormTrainingLimit(state.upgrades);
+  const usedAnnualSlots = student ? getFormTrainingCount(student, trainingYear) : 0;
+  const remainingAnnualSlots = annualTrainingLimit - usedAnnualSlots;
   const capacity = selectInstructorCapacity(state);
   const cost = getAgonistCourseCost(state, true);
-  const immunity = student
-    ? getAthleteImmunityStatus({
-        currentMonth: state.school.currentMonth,
-        tournamentQualification: state.tournaments.qualification,
-      }, student)
-    : undefined;
   if (
     !student ||
+    !athleteContact ||
     !instructor ||
     student.training ||
-    immunity?.annualRollout ||
-    getFormTrainingCount(student, trainingYear) !== 0 ||
+    remainingAnnualSlots <= 0 ||
     student.lastAgonistCourseYear === trainingYear ||
-    getMemberAnnualDepartureChance(
-      student.forms,
-      student.rarity,
-      state.network.schools.length,
-    ) <= 0 ||
     selectInstructorTeachingCount(state, instructor.id) >= capacity ||
     state.school.euros < cost
   ) return state;
@@ -191,19 +186,33 @@ export function startAgonistCourse(
       Math.round(baseDuration / trainingSpeed),
     ),
     instructorId: instructor.id,
+    agonistCourseSlotsConsumed: remainingAnnualSlots,
   };
   return refreshInstructorTrainingDurations({
     ...state,
     school: { ...state.school, euros: roundCurrency(state.school.euros - cost) },
-    contacts: state.contacts.map((contact) => contact.id === student.id
+    contacts: state.contacts.map((contact) => contact.id === athleteContact.id
       ? {
           ...contact,
-          training,
-          lastFormTrainingYear: trainingYear,
-          formTrainingYearCount: getFormTrainingCount(student, trainingYear) + 1,
+          training: collaborator ? contact.training : training,
+          lastFormTrainingYear: collaborator ? contact.lastFormTrainingYear : trainingYear,
+          formTrainingYearCount: collaborator
+            ? contact.formTrainingYearCount
+            : annualTrainingLimit,
           lastAgonistCourseYear: trainingYear,
         }
-        : contact),
+      : contact),
+    collaborators: collaborator
+      ? state.collaborators.map((candidate) => candidate.id === collaborator.id
+        ? {
+            ...candidate,
+            training,
+            lastFormTrainingYear: trainingYear,
+            formTrainingYearCount: annualTrainingLimit,
+            lastAgonistCourseYear: trainingYear,
+          }
+        : candidate)
+      : state.collaborators,
   }, now);
 }
 
@@ -485,21 +494,41 @@ export function resolveFormTraining(
   if (!student?.training || student.training.completesAt > now) return state;
   const completedFormId = student.training.formId;
   if (isAgonistCourse(completedFormId)) {
-    const baseStats = member ? getContactBaseStats(member) : undefined;
-    const totalCompletions = (member?.agonistCourseCompletions ?? 0) + 1;
+    const athleteContact = collaborator
+      ? state.contacts.find((contact) => contact.id === collaborator.contactId)
+      : member;
+    if (!athleteContact) return state;
+    const baseStats = getContactBaseStats(athleteContact);
+    const maximumGain = getAgonistCourseMaximumStatGain(state.upgrades);
+    const [arenaRoll, afterArena] = nextRandom(state.randomSeed);
+    const [styleRoll, nextSeed] = nextRandom(afterArena);
+    const slotsConsumed = Math.max(1, student.training.agonistCourseSlotsConsumed ?? 1);
+    const arenaGain = (1 + Math.floor(arenaRoll * maximumGain)) * slotsConsumed;
+    const styleGain = (1 + Math.floor(styleRoll * maximumGain)) * slotsConsumed;
+    const totalCompletions = (athleteContact.agonistCourseCompletions ?? 0) + 1;
     let nextState: GameState = {
       ...state,
-      contacts: member
-        ? state.contacts.map((contact) => contact.id === member.id
+      randomSeed: nextSeed,
+      contacts: state.contacts.map((contact) => contact.id === athleteContact.id
           ? {
               ...contact,
-              training: undefined,
-              arenaBase: (baseStats?.arena ?? 0) + 1,
-              styleBase: (baseStats?.style ?? 0) + 1,
+              training: collaborator ? contact.training : undefined,
+              arenaBase: baseStats.arena + arenaGain,
+              styleBase: baseStats.style + styleGain,
               agonistCourseCompletions: totalCompletions,
+              agonistCourseArenaBonus:
+                (contact.agonistCourseArenaBonus ?? contact.agonistCourseCompletions ?? 0) +
+                arenaGain,
+              agonistCourseStyleBonus:
+                (contact.agonistCourseStyleBonus ?? contact.agonistCourseCompletions ?? 0) +
+                styleGain,
             }
-          : contact)
-        : state.contacts,
+          : contact),
+      collaborators: collaborator
+        ? state.collaborators.map((candidate) => candidate.id === collaborator.id
+          ? { ...candidate, training: undefined }
+          : candidate)
+        : state.collaborators,
     };
     const instructorId = student.training.instructorId ??
       (collaborator && student.training.includesInstructorCertification

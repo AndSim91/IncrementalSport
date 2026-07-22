@@ -15,6 +15,7 @@ import {
 import { formatCurrency } from "../../shared/formatters";
 import { knockoutStageLabel, levelShortLabel, participantName } from "./tournamentPresentation";
 import { SchoolPreliminaryResults } from "./SchoolPreliminaryResults";
+import { ChroniclesKeyIcon } from "./ChroniclesIcons";
 
 const KNOCKOUT_STAGE_ORDER: TournamentMatch["stage"][] = [
   "round64",
@@ -32,6 +33,10 @@ interface TournamentResultsProps {
   onBackToOverview: () => void;
   onViewQualified: () => void;
   knownFormsByContactId: ReadonlyMap<string, readonly FormId[]>;
+  continuationAction?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 function groupLetter(groupIndex: number): string {
@@ -291,6 +296,7 @@ export function TournamentResults({
   onBackToOverview,
   onViewQualified,
   knownFormsByContactId,
+  continuationAction,
 }: TournamentResultsProps) {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [selectedMatchId, setSelectedMatchId] = useState<string>();
@@ -365,11 +371,18 @@ export function TournamentResults({
   };
 
   return (
-    <div className="tournament-results-view">
+    <div
+      className={`tournament-results-view${result.level === "chronicles" ? " is-chronicles" : ""}`}
+    >
       <section className="results-context">
         <button type="button" className="back-to-calendar" onClick={onBackToOverview}>
           <span aria-hidden="true">‹</span> Calendario
         </button>
+        {result.level === "chronicles" ? (
+          <span className="chronicles-results-emblem" aria-hidden="true">
+            <ChroniclesKeyIcon />
+          </span>
+        ) : null}
         <h2>{TOURNAMENT_DEFINITIONS[result.level].label}</h2>
         <span>Stagione {result.season}</span>
         <i aria-hidden="true" />
@@ -664,6 +677,13 @@ export function TournamentResults({
           <TournamentRewards result={result} participantById={participantById} />
         </div>
       )}
+      {continuationAction ? (
+        <footer className="tournament-results-continuation">
+          <button type="button" onClick={continuationAction.onClick}>
+            {continuationAction.label}
+          </button>
+        </footer>
+      ) : null}
     </div>
   );
 }
