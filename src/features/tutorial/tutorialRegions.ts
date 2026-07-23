@@ -22,6 +22,7 @@ const REGION_SELECTORS: Record<TutorialRegionId, string> = {
   "day-panel": ".day-panel",
   "first-trial-row": '[data-tutorial-region="first-trial-row"]',
   "collaborator-social-assignment": '[data-tutorial-region="collaborator-social-assignment"]',
+  "collaborator-sectors": '[data-tutorial-region="collaborator-sectors"]',
   status: ".status-bar",
 };
 

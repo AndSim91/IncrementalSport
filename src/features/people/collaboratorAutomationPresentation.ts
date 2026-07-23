@@ -143,7 +143,7 @@ export function getCollaboratorAutomationPresentation({
       : Math.min(100, Math.round((activeEmail.revealedCharacters / length) * 100));
     return {
       title: activeEmail.subject,
-      detail: "Scrittura email in corso",
+      detail: "Scrittura email in corso...",
       progress,
       progressLabel: `Scrittura di ${activeEmail.subject}`,
       durationMs: length / Math.max(
@@ -189,12 +189,12 @@ export function getCollaboratorAutomationPresentation({
   if (assignment === "equipment") {
     const damagedSwords = getEffectiveDamagedSwords(state.equipment);
     if (state.equipment.wear <= 0 && damagedSwords <= 0) {
-      return { title: "Carico attrezzatura: 0/100", detail: "In attesa" };
+      return { title: "Usura attrezzatura: 0/100", detail: "In attesa" };
     }
     const repairTarget = getEquipmentAutomaticRepairTarget(state.equipment);
     if (!repairTarget) {
       return {
-        title: `Carico attrezzatura: ${Math.round(state.equipment.wear)}/100`,
+        title: `Usura attrezzatura: ${Math.round(state.equipment.wear)}/100`,
         detail: "In attesa: tutte le spade sane sono in uso",
       };
     }
@@ -211,10 +211,10 @@ export function getCollaboratorAutomationPresentation({
     return {
       title: isRepairingSword
         ? `Spade danneggiate: ${damagedSwords}`
-        : `Carico attrezzatura: ${Math.round(state.equipment.wear)}/100`,
+        : `Usura attrezzatura: ${Math.round(state.equipment.wear)}`,
       detail: isRepairingSword
-        ? "150 punti-lavoro per riportare una spada a piena efficienza"
-        : "Riduzione del carico in corso",
+        ? "Riparazione spade in corso..."
+        : "Cura dell'attrezzatura in corso...",
       progress,
       progressLabel: isRepairingSword
         ? "Progresso riparazione spada"

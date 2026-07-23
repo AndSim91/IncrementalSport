@@ -264,6 +264,12 @@ export function App() {
                 now: getGameNow(),
               })
             }
+            onSaveCollaboratorPreset={(presetId, targets) =>
+              dispatch({ type: "SAVE_COLLABORATOR_PRESET", presetId, targets })
+            }
+            onApplyCollaboratorPreset={(presetId) =>
+              dispatch({ type: "APPLY_COLLABORATOR_PRESET", presetId })
+            }
             onStartTraining={(personId, formId) =>
               dispatch({
                 type: "START_FORM_TRAINING",

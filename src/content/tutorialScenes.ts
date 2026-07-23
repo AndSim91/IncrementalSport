@@ -21,6 +21,7 @@ export const TUTORIAL_REGION_IDS = [
   "day-panel",
   "first-trial-row",
   "collaborator-social-assignment",
+  "collaborator-sectors",
   "status",
 ] as const;
 
@@ -32,6 +33,7 @@ export const TUTORIAL_SCENE_IDS = [
   "first-trial",
   "first-legendary",
   "first-enrollment",
+  "collaborator-sectors",
   "social-evolution",
 ] as const;
 
@@ -310,6 +312,49 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
     ],
   },
   {
+    id: "collaborator-sectors",
+    pauseWhileActive: true,
+    canStart: ({ state }) => state.collaboratorManagement.aggregateViewUnlocked,
+    steps: [
+      {
+        id: "collaborator-growth",
+        kind: "dialog",
+        speaker: "A.N.D.E.R.",
+        title: "Una squadra che cresce",
+        body: [
+          "Abbiamo raggiunto il nono Collaboratore delle Onde. Gestire ogni persona singolarmente stava diventando scomodo, quindi la sezione Collaboratori ora raggruppa l'organico per settore.",
+          "Il cambiamento è definitivo: da questo momento controllerai quante persone lavorano in ogni area, senza dover scegliere i singoli nomi.",
+        ],
+        focusRegions: ["main"],
+      },
+      {
+        id: "open-collaborator-sectors",
+        kind: "objective",
+        title: "Apri la gestione dei Collaboratori",
+        body: [
+          "Apri Iscritti dalla barra laterale per vedere i settori e il riepilogo Non assegnati/Totali.",
+        ],
+        focusRegions: ({ activeView }) =>
+          activeView === "contacts"
+            ? ["main", "collaborator-sectors"]
+            : ["navigation", "contacts-navigation"],
+        isComplete: ({ activeView }) => activeView === "contacts",
+      },
+      {
+        id: "collaborator-presets",
+        kind: "dialog",
+        speaker: "A.N.D.E.R.",
+        title: "Tre preset per l'organico",
+        body: [
+          "Ogni preset conserva il numero desiderato di Collaboratori in ciascun settore. Imposta i valori, salvalo e applicalo quando vuoi cambiare priorità.",
+          "I Collaboratori liberi si spostano subito. Chi è impegnato in un Evento o in una formazione conclude prima il lavoro; gli eventuali posti mancanti restano nel preset e saranno occupati automaticamente dai prossimi Collaboratori disponibili.",
+        ],
+        focusRegions: ["main", "collaborator-sectors"],
+        navigateTo: "contacts",
+      },
+    ],
+  },
+  {
     id: "social-evolution",
     pauseWhileActive: true,
     canStart: ({ state }) => state.unlocks.social,
@@ -357,10 +402,14 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         id: "assign-social-collaborator",
         kind: "objective",
         title: "Assegna un collaboratore ai Social",
-        body: [
-          "Imposta almeno un Collaboratore sui Social. Senza Collaboratori assegnati le Email e i contenuti online non avanzeranno automaticamente.",
+        body: ({ state }) => [
+          state.collaboratorManagement.aggregateViewUnlocked
+            ? "Imposta almeno un posto Social in un preset, salvalo e applicalo. Senza Collaboratori assegnati le Email e i contenuti online non avanzeranno automaticamente."
+            : "Imposta almeno un Collaboratore sui Social. Senza Collaboratori assegnati le Email e i contenuti online non avanzeranno automaticamente.",
         ],
-        focusRegions: ["main", "collaborator-social-assignment"],
+        focusRegions: ({ state }) => state.collaboratorManagement.aggregateViewUnlocked
+          ? ["main", "collaborator-sectors"]
+          : ["main", "collaborator-social-assignment"],
         isComplete: ({ state }) => state.collaborators.some(
           (collaborator) => collaborator.assignment === "writing",
         ),

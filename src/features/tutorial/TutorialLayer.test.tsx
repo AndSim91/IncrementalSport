@@ -27,6 +27,7 @@ describe("TutorialLayer", () => {
       { sceneId: "first-trial", stepId: "trial-booked", activeView: "mail", target: "first-trial-row" },
       { sceneId: "first-legendary", stepId: "legendary-rarities", activeView: "mail", target: "composer-header" },
       { sceneId: "first-enrollment", stepId: "open-upgrades", activeView: "events", target: "upgrades-navigation" },
+      { sceneId: "collaborator-sectors", stepId: "open-collaborator-sectors", activeView: "mail", target: "contacts-navigation" },
       { sceneId: "social-evolution", stepId: "open-collaborators", activeView: "mail", target: "contacts-navigation" },
       { sceneId: "social-evolution", stepId: "assign-social-collaborator", activeView: "contacts", target: "collaborator-social-assignment" },
     ];
@@ -39,6 +40,22 @@ describe("TutorialLayer", () => {
         activeView: expectation.activeView,
       })).toContain(expectation.target);
     }
+  });
+
+  it("starts the paused aggregate tutorial only after the permanent unlock", () => {
+    const scene = TUTORIAL_SCENES.find(({ id }) => id === "collaborator-sectors")!;
+    const initial = createInitialState(1_000, "Andrea Ungaro");
+    const unlocked = {
+      ...initial,
+      collaboratorManagement: {
+        ...initial.collaboratorManagement,
+        aggregateViewUnlocked: true,
+      },
+    };
+
+    expect(scene.pauseWhileActive).toBe(true);
+    expect(scene.canStart({ state: initial, activeView: "contacts" })).toBe(false);
+    expect(scene.canStart({ state: unlocked, activeView: "contacts" })).toBe(true);
   });
 
   it("starts the paused Social tutorial only after the permanent unlock", () => {
@@ -58,6 +75,16 @@ describe("TutorialLayer", () => {
     expect(assignmentStep.kind).toBe("objective");
     if (assignmentStep.kind !== "objective") return;
     expect(assignmentStep.isComplete({ state: unlocked, activeView: "contacts" })).toBe(false);
+    expect(resolveTutorialRegions(assignmentStep.focusRegions, {
+      state: {
+        ...unlocked,
+        collaboratorManagement: {
+          ...unlocked.collaboratorManagement,
+          aggregateViewUnlocked: true,
+        },
+      },
+      activeView: "contacts",
+    })).toContain("collaborator-sectors");
     expect(assignmentStep.isComplete({
       state: {
         ...unlocked,

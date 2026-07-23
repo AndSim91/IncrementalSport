@@ -748,7 +748,24 @@ Regole:
 - nella prima versione non esistono livelli, ritratti o personalità individuali;
 - non esiste un limite massimo di collaboratori;
 - ogni collaboratore svolge un solo incarico alla volta;
-- la riassegnazione è libera e immediata;
+- fino a otto collaboratori la riassegnazione individuale è libera e immediata;
+- al raggiungimento del nono collaboratore si sblocca definitivamente la vista
+  aggregata per settori, accompagnata da un tutorial che mette il gioco in
+  pausa; la vista individuale non torna disponibile anche se l'organico scende;
+- la vista aggregata mostra il rapporto **Non assegnati/Totali** e tre preset
+  numerici personalizzabili, inizialmente vuoti;
+- ogni preset conserva il numero desiderato di persone per Redazione/Social,
+  Eventi, Preparatore Atletico, Attrezzatura e Istruttore, senza legarsi alle
+  identità dei singoli collaboratori;
+- applicando un preset, i collaboratori liberi vengono riallocati subito e
+  quelli in eccesso restano non assegnati;
+- un collaboratore impegnato in un evento o in una formazione conserva
+  temporaneamente il proprio incarico, conclude l'attività e viene riallocato
+  prima che possa avviarne un'altra automaticamente; i lavori continui e
+  condivisi sono invece riassegnabili subito;
+- se un preset richiede più persone di quelle presenti, i posti mancanti
+  restano memorizzati e vengono occupati automaticamente dai nuovi
+  collaboratori liberi;
 - un collaboratore non leggendario può lasciare la scuola soltanto tramite
   eventi narrativi casuali;
 - i Leggendari non possono lasciare la scuola per inattività, mancato rinnovo o

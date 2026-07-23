@@ -295,6 +295,19 @@ export type CollaboratorAssignment =
 export type CollaboratorMasteryRole = Exclude<CollaboratorAssignment, null>;
 export type CollaboratorMastery = Record<CollaboratorMasteryRole, number>;
 
+export type CollaboratorPresetId = "preset-1" | "preset-2" | "preset-3";
+
+export interface CollaboratorSectorPreset {
+  saved: boolean;
+  targets: Record<CollaboratorMasteryRole, number>;
+}
+
+export interface CollaboratorManagementState {
+  aggregateViewUnlocked: boolean;
+  activePresetId: CollaboratorPresetId | null;
+  presets: Record<CollaboratorPresetId, CollaboratorSectorPreset>;
+}
+
 export type FormId =
   | "form-1"
   | "course-x"
@@ -606,6 +619,7 @@ export interface GameState {
   legendaryCollaborators: LegendaryCollaboratorProgress;
   tournaments: TournamentState;
   collaborators: Collaborator[];
+  collaboratorManagement: CollaboratorManagementState;
   automation: {
     lastProcessedAt: number;
     autoSendEmails: boolean;
@@ -661,6 +675,15 @@ export type GameAction =
       collaboratorId: string;
       assignment: CollaboratorAssignment;
       now: number;
+    }
+  | {
+      type: "SAVE_COLLABORATOR_PRESET";
+      presetId: CollaboratorPresetId;
+      targets: Record<CollaboratorMasteryRole, number>;
+    }
+  | {
+      type: "APPLY_COLLABORATOR_PRESET";
+      presetId: CollaboratorPresetId;
     }
   | {
       type: "TOGGLE_INSTRUCTOR_AUTOMATION";

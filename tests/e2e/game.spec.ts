@@ -109,14 +109,66 @@ test("avvia un evento e aggiorna il progresso usando il tempo reale del gioco", 
   await page.getByRole("button", { name: "Eventi", exact: true }).click();
   await page.getByRole("button", { name: "Partecipa gratis" }).click();
 
-  await expect(page.getByRole("button", { name: "Attività in corso…" })).toBeDisabled();
-  const progress = page.getByRole("progressbar", { name: "Avanzamento Sparring al parco" });
+  const sparring = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "Sparring al parco" }),
+  });
+  await expect(sparring.getByRole("button", { name: "Annulla evento" })).toBeVisible();
+  const progress = sparring.getByRole("progressbar", { name: "Avanzamento Sparring al parco" });
   await expect(progress).toBeVisible();
   const initialProgress = Number(await progress.getAttribute("aria-valuenow"));
   await expect.poll(
     async () => Number(await progress.getAttribute("aria-valuenow")),
     { timeout: 3_000 },
   ).toBeGreaterThan(initialProgress);
+});
+
+test("salva e applica un preset nella gestione aggregata dei collaboratori", async ({ page }) => {
+  const state = createProgressedGameSave();
+  const andrea = state.contacts.find(
+    (contact) => contact.specialProfileId === "andrea-simonazzi",
+  );
+  if (!andrea) throw new Error("La fixture deve contenere Andrea Simonazzi");
+  state.collaborators = Array.from({ length: 9 }, (_, index) => ({
+    id: `aggregate-${index}`,
+    contactId: index === 0 ? andrea.id : `aggregate-contact-${index}`,
+    displayName: index === 0
+      ? `${andrea.firstName} ${andrea.lastName}`
+      : `Collaboratore Aggregato ${index}`,
+    joinedAt: state.createdAt + index,
+    forms: [],
+    instructorForms: [],
+    formBranchPreferences: [],
+    autoTeachingEnabled: true,
+    assignment: null,
+    mastery: { writing: 0, events: 0, lessons: 0, equipment: 0, instructor: 0 },
+    rarity: index === 0 ? "legendary" as const : "ultra-rare" as const,
+    specialProfileId: index === 0 ? "andrea-simonazzi" as const : undefined,
+  }));
+  state.unlocks.collaborators = true;
+  state.collaboratorManagement.aggregateViewUnlocked = true;
+  await installGameSave(page, state);
+  await page.goto("/");
+  await expect(page.getByText(`Profilo: ${E2E_PLAYER_NAME}`)).toBeVisible();
+  await page.getByRole("button", { name: "Iscritti", exact: true }).click();
+
+  const aggregateView = page.getByRole("region", {
+    name: "Gestione aggregata dei collaboratori",
+  });
+  await expect(aggregateView).toBeVisible();
+  const preset = aggregateView.locator(".collaborator-preset-card").filter({ hasText: "Preset 1" });
+  await preset.getByLabel("Preset 1: collaboratori in Redazione").fill("2");
+  await preset.getByLabel("Preset 1: collaboratori in Eventi").fill("1");
+  await preset.getByRole("button", { name: "Salva preset" }).click();
+  await expect(preset.getByRole("button", { name: "Applica" })).toBeEnabled();
+  await preset.getByRole("button", { name: "Applica" }).click();
+
+  await expect(page.getByText("Non assegnati/Totali 6/9")).toBeVisible();
+  await expect(
+    aggregateView.locator(".collaborator-sector-card").filter({ hasText: "Redazione" }),
+  ).toContainText(/2\s*\/\s*2/);
+  await expect(
+    aggregateView.locator(".collaborator-sector-card").filter({ hasText: "Eventi" }),
+  ).toContainText(/1\s*\/\s*1/);
 });
 
 test("acquista un Upgrade, salva e mantiene il livello dopo il reload", async ({ page }) => {

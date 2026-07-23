@@ -11,6 +11,10 @@ import { markAllMessagesRead, markMessageRead } from "./inboxFlow";
 import { cancelMemberEnrollment } from "./membershipFlow";
 import { toggleMemberFavorite } from "./memberPreferences";
 import { playChroniclesHand } from "./chroniclesFlow";
+import {
+  applyCollaboratorPreset,
+  saveCollaboratorPreset,
+} from "./collaboratorManagement";
 import { freezeGameState } from "./offline";
 import { updateProfileName } from "./profileFlow";
 import { foundSchool } from "./schoolProgressionFlow";
@@ -109,6 +113,15 @@ export function createGameActionHandlers(
       action.collaboratorId,
       action.assignment,
       action.now,
+    ),
+    SAVE_COLLABORATOR_PRESET: (state, action) => saveCollaboratorPreset(
+      state,
+      action.presetId,
+      action.targets,
+    ),
+    APPLY_COLLABORATOR_PRESET: (state, action) => applyCollaboratorPreset(
+      state,
+      action.presetId,
     ),
     TOGGLE_INSTRUCTOR_AUTOMATION: (state, action) => toggleInstructorAutomation(
       state,

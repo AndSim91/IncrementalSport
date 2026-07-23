@@ -9,6 +9,7 @@ import {
   isSecretLegendaryId,
 } from "./legendaryAvailability";
 import type { GameState } from "./types";
+import { COLLABORATOR_PRESET_IDS } from "./collaboratorManagement";
 
 const CONTACT_SOURCES: GameState["contacts"][number]["source"][] = [
   "tutorial",
@@ -147,6 +148,32 @@ function hasValidChroniclesProgress(state: Partial<GameState>): boolean {
     );
 }
 
+function hasValidCollaboratorManagement(state: Partial<GameState>): boolean {
+  const management = state.collaboratorManagement;
+  return Boolean(
+    management &&
+    typeof management.aggregateViewUnlocked === "boolean" &&
+    (
+      management.activePresetId === null ||
+      COLLABORATOR_PRESET_IDS.includes(management.activePresetId)
+    ) &&
+    COLLABORATOR_PRESET_IDS.every((presetId) => {
+      const preset = management.presets?.[presetId];
+      return Boolean(
+        preset &&
+        typeof preset.saved === "boolean" &&
+        COLLABORATOR_MASTERY_ROLES.every((role) =>
+          isNonNegativeSafeInteger(preset.targets?.[role])
+        ),
+      );
+    }) &&
+    (
+      management.activePresetId === null ||
+      management.presets[management.activePresetId].saved
+    )
+  );
+}
+
 export function isValidGameState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const state = value as Partial<GameState>;
@@ -255,6 +282,7 @@ export function isValidGameState(value: unknown): value is GameState {
       ) &&
       hasValidTraining(collaborator.training)
     ) &&
+    hasValidCollaboratorManagement(state) &&
     hasValidLegendaryAssignments(state) &&
     typeof state.upgrades?.["instructor-versatility"] === "number" &&
     typeof state.upgrades?.["technical-arena"] === "number" &&

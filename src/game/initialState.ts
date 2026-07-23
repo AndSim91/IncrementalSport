@@ -6,6 +6,7 @@ import { createInitialContacts } from "./contacts";
 import type { GameState, LegendaryCollaboratorProgress } from "./types";
 import { createEmptyHistoryArchive } from "./historyArchive";
 import { createSecretLegendaryProgress } from "./legendaryAvailability";
+import { createInitialCollaboratorManagement } from "./collaboratorManagement";
 
 export function createInitialState(
   now = Date.now(),
@@ -90,6 +91,7 @@ export function createInitialState(
       chronicles: { unlocked: false, keys: 0 },
     },
     collaborators: [],
+    collaboratorManagement: createInitialCollaboratorManagement(),
     automation: {
       lastProcessedAt: now,
       autoSendEmails: true,

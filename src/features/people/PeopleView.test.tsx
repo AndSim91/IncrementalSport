@@ -10,6 +10,89 @@ afterEach(() => {
 });
 
 describe("PeopleView", () => {
+  it("replaces the individual list with three numeric presets after the aggregate unlock", () => {
+    const initial = createInitialState(1_000);
+    const collaborators = Array.from({ length: 9 }, (_, index) => ({
+      id: `aggregate-${index}`,
+      contactId: initial.contacts[0].id,
+      displayName: `Collaboratore Aggregato ${index}`,
+      joinedAt: 1_000 + index,
+      forms: [] as FormId[],
+      instructorForms: [] as FormId[],
+      formBranchPreferences: [],
+      autoTeachingEnabled: true,
+      assignment: null,
+      mastery: { writing: 0, events: 0, lessons: 0, equipment: 0, instructor: 0 },
+      rarity: "ultra-rare" as const,
+    }));
+    const state = {
+      ...initial,
+      collaborators,
+      unlocks: { ...initial.unlocks, collaborators: true },
+      collaboratorManagement: {
+        ...initial.collaboratorManagement,
+        aggregateViewUnlocked: true,
+      },
+    };
+    const onSave = vi.fn();
+    const onApply = vi.fn();
+    const view = render(
+      <PeopleView
+        state={state}
+        onAssign={() => undefined}
+        onStartTraining={() => undefined}
+        onSaveCollaboratorPreset={onSave}
+        onApplyCollaboratorPreset={onApply}
+      />,
+    );
+
+    expect(screen.getByText("Non assegnati/Totali 9/9")).toBeVisible();
+    expect(screen.getByRole("region", { name: "Gestione aggregata dei collaboratori" })).toBeVisible();
+    expect(screen.queryByText("Collaboratore Aggregato 0")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: /Preset [123]/ })).toHaveLength(3);
+
+    const presetOne = screen.getByRole("heading", { name: "Preset 1" }).closest("article");
+    expect(presetOne).not.toBeNull();
+    fireEvent.change(within(presetOne!).getByLabelText("Preset 1: collaboratori in Redazione"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(within(presetOne!).getByRole("button", { name: "Salva preset" }));
+    expect(onSave).toHaveBeenCalledWith("preset-1", {
+      writing: 2,
+      events: 0,
+      lessons: 0,
+      equipment: 0,
+      instructor: 0,
+    });
+    expect(within(presetOne!).getByRole("button", { name: "Applica" })).toBeDisabled();
+
+    const savedState = {
+      ...state,
+      collaboratorManagement: {
+        ...state.collaboratorManagement,
+        presets: {
+          ...state.collaboratorManagement.presets,
+          "preset-1": {
+            saved: true,
+            targets: { writing: 2, events: 0, lessons: 0, equipment: 0, instructor: 0 },
+          },
+        },
+      },
+    };
+    view.rerender(
+      <PeopleView
+        state={savedState}
+        onAssign={() => undefined}
+        onStartTraining={() => undefined}
+        onSaveCollaboratorPreset={onSave}
+        onApplyCollaboratorPreset={onApply}
+      />,
+    );
+    const savedPresetOne = screen.getByRole("heading", { name: "Preset 1" }).closest("article");
+    fireEvent.click(within(savedPresetOne!).getByRole("button", { name: "Applica" }));
+    expect(onApply).toHaveBeenCalledWith("preset-1");
+  });
+
   it("lets users add and remove an enrolled athlete from favorites", () => {
     const initial = createInitialState(1_000);
     const favorite = {
@@ -627,7 +710,7 @@ describe("PeopleView", () => {
     expect(screen.getByText("Lezioni all'aperto")).toBeVisible();
     expect(screen.getByText("Ultimo atleta migliorato: Mario Rossi")).toBeVisible();
     expect(screen.getByText(/5% follower · 0,5% contatto/)).toBeVisible();
-    expect(screen.getByText("Carico attrezzatura: 42/100")).toBeVisible();
+    expect(screen.getByText("Usura attrezzatura: 42")).toBeVisible();
     expect(screen.getByRole("progressbar", {
       name: "Condizione attrezzatura di Collaboratore 3",
     })).toHaveClass("is-aggregate");

@@ -10,6 +10,7 @@ import {
   recruitCollaborator,
   recruitEnrolledLegendaryCollaborators,
 } from "./collaboratorFlow";
+import { reconcileCollaboratorManagement } from "./collaboratorManagement";
 import {
   finalizeEmail,
   resolveEmailOutcome,
@@ -157,6 +158,7 @@ function tick(state: GameState, now: number, gainMultiplier: number): GameState 
   nextState = processWaitingTrainings(nextState, now, trainingDependencies);
   nextState = refreshInstructorTrainingDurations(nextState, now);
   nextState = collectFees(nextState, now, gainMultiplier);
+  nextState = reconcileCollaboratorManagement(nextState);
   nextState = processAutomaticTeaching(
     nextState,
     now,
@@ -197,7 +199,9 @@ function compactChangedHistory(
 export function gameReducer(state: GameState, action: GameAction): GameState {
   const nextState = dispatchGameAction(state, action, ACTION_HANDLERS);
   const now = "now" in action ? action.now : state.lastSavedAt;
-  const reconciledState = recruitEnrolledLegendaryCollaborators(nextState, now);
+  const reconciledState = reconcileCollaboratorManagement(
+    recruitEnrolledLegendaryCollaborators(nextState, now),
+  );
   if (action.type === "RESUME_FROM_PAUSE") {
     return compactChangedHistory(state, reconciledState, action);
   }

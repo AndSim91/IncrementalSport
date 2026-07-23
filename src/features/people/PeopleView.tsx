@@ -1,13 +1,22 @@
 import { useMemo } from "react";
 import { Icon } from "../../components/common/Icon";
 import { GAME_CONFIG } from "../../game/config";
-import type { CollaboratorAssignment, FormId, GameState } from "../../game/types";
+import type {
+  CollaboratorAssignment,
+  CollaboratorMasteryRole,
+  CollaboratorPresetId,
+  FormId,
+  GameState,
+} from "../../game/types";
 import { isCollaboratorAreaVisible } from "../../game/unlocks";
 import { CollaboratorList } from "./CollaboratorList";
+import { CollaboratorSectorView } from "./CollaboratorSectorView";
 import { MemberList } from "./MemberList";
 import { RarityOverview } from "./RarityOverview";
 
 const ignoreFavoriteToggle = () => undefined;
+const ignorePresetSave = () => undefined;
+const ignorePresetApply = () => undefined;
 
 export function PeopleView({
   state,
@@ -17,6 +26,8 @@ export function PeopleView({
   onCancelEnrollment,
   onPayInstructorCertificates,
   onToggleInstructorAutomation,
+  onSaveCollaboratorPreset,
+  onApplyCollaboratorPreset,
 }: {
   state: GameState;
   onAssign: (collaboratorId: string, assignment: CollaboratorAssignment) => void;
@@ -25,6 +36,11 @@ export function PeopleView({
   onCancelEnrollment?: (contactId: string) => void;
   onPayInstructorCertificates?: (collaboratorId: string) => void;
   onToggleInstructorAutomation?: (collaboratorId: string, enabled: boolean) => void;
+  onSaveCollaboratorPreset?: (
+    presetId: CollaboratorPresetId,
+    targets: Record<CollaboratorMasteryRole, number>,
+  ) => void;
+  onApplyCollaboratorPreset?: (presetId: CollaboratorPresetId) => void;
 }) {
   const collaboratorsByContactId = useMemo(
     () =>
@@ -41,6 +57,10 @@ export function PeopleView({
     [state.collaborators],
   );
   const showCollaborators = isCollaboratorAreaVisible(state);
+  const showAggregateCollaborators = state.collaboratorManagement.aggregateViewUnlocked;
+  const unassignedCollaborators = state.collaborators.filter(
+    (collaborator) => collaborator.assignment === null,
+  ).length;
   const showRarityOverview =
     state.statistics.emailsSent >= GAME_CONFIG.rarityOverviewEmailsSent ||
     members.some((contact) => contact.rarity !== "common") ||
@@ -59,16 +79,28 @@ export function PeopleView({
         <section className="people-section">
           <div className="people-section-heading">
             <h2>Collaboratori</h2>
-            <span>{state.collaborators.length}</span>
+            <span>
+              {showAggregateCollaborators
+                ? `Non assegnati/Totali ${unassignedCollaborators}/${state.collaborators.length}`
+                : state.collaborators.length}
+            </span>
           </div>
-          <CollaboratorList
-            state={state}
-            onAssign={onAssign}
-            onStartTraining={onStartTraining}
-            onPayInstructorCertificates={onPayInstructorCertificates}
-            onToggleInstructorAutomation={onToggleInstructorAutomation}
-            collaboratorsById={collaboratorsById}
-          />
+          {showAggregateCollaborators ? (
+            <CollaboratorSectorView
+              state={state}
+              onSavePreset={onSaveCollaboratorPreset ?? ignorePresetSave}
+              onApplyPreset={onApplyCollaboratorPreset ?? ignorePresetApply}
+            />
+          ) : (
+            <CollaboratorList
+              state={state}
+              onAssign={onAssign}
+              onStartTraining={onStartTraining}
+              onPayInstructorCertificates={onPayInstructorCertificates}
+              onToggleInstructorAutomation={onToggleInstructorAutomation}
+              collaboratorsById={collaboratorsById}
+            />
+          )}
         </section>
       ) : null}
 

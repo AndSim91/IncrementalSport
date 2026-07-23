@@ -1,0 +1,224 @@
+.collaborator-sector-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.collaborator-sector-summary,
+.collaborator-presets-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.collaborator-sector-summary h3,
+.collaborator-presets-heading h3,
+.collaborator-preset-card h4 {
+  margin: 0;
+  color: var(--ink);
+}
+
+.collaborator-sector-summary h3,
+.collaborator-presets-heading h3 {
+  font-size: 15px;
+}
+
+.collaborator-sector-summary p,
+.collaborator-presets-heading p,
+.collaborator-sector-card p {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.collaborator-sector-summary > span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--blue-700);
+  background: var(--blue-050);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.collaborator-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.collaborator-sector-card,
+.collaborator-preset-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.collaborator-sector-card {
+  min-width: 0;
+  padding: 14px;
+}
+
+.collaborator-sector-card > span {
+  display: block;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collaborator-sector-card > strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--blue-700);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.collaborator-sector-card > strong small {
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.collaborator-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.collaborator-preset-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.collaborator-preset-card.is-active {
+  border-color: var(--blue-600);
+  box-shadow: inset 0 3px var(--blue-600);
+}
+
+.collaborator-preset-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.collaborator-preset-card h4 {
+  font-size: 13px;
+}
+
+.collaborator-preset-card header span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.collaborator-preset-card header > strong {
+  color: var(--blue-700);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.collaborator-preset-fields {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.collaborator-preset-fields label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px;
+  align-items: center;
+  gap: 10px;
+}
+
+.collaborator-preset-fields label > span {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collaborator-preset-fields input {
+  width: 100%;
+  min-height: 32px;
+  padding: 0 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: var(--surface);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.collaborator-preset-status {
+  min-height: 34px;
+  margin-top: 12px;
+  color: var(--ink-muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.collaborator-preset-status .is-warning {
+  color: #9a5d00;
+  font-weight: 600;
+}
+
+.collaborator-preset-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.collaborator-preset-actions button {
+  min-height: 34px;
+  border: 1px solid var(--blue-600);
+  border-radius: var(--radius-sm);
+  color: var(--blue-700);
+  background: var(--surface);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.collaborator-preset-actions button.primary {
+  color: #fff;
+  background: var(--blue-600);
+}
+
+.collaborator-preset-actions button:disabled {
+  border-color: var(--line-strong);
+  color: var(--ink-muted);
+  background: var(--surface-muted);
+}
+
+@media (max-width: 1180px) {
+  .collaborator-sector-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collaborator-preset-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .collaborator-sector-summary,
+  .collaborator-presets-heading {
+    flex-direction: column;
+  }
+
+  .collaborator-sector-grid {
+    grid-template-columns: 1fr;
+  }
+}
