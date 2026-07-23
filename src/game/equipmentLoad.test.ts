@@ -154,7 +154,7 @@ describe("prenotazione delle spade", () => {
     });
     expect(completed.contacts[0].training).toBeUndefined();
     expect(completed.equipment.availableSwords).toBe(1);
-    expect(completed.equipment.wear).toBe(5);
+    expect(completed.equipment.wear).toBe(10);
   });
 
   it("annulla una prova senza spada al termine dell'attesa", () => {

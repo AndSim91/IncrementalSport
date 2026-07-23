@@ -356,11 +356,11 @@ Gli imprevisti narrativi dell'Attrezzatura sostituiscono quelli precedenti:
 
 | Evento | Descrizione breve | Effetto |
 | ------ | ----------------- | -------: |
-| Un piccolo disastro | Non so cosa sia successo, non sono stato io! | +15 carico e 1 spada rotta |
-| Spada caduta: Fanne 5 | Capita a tutti prima o poi... | +5 carico |
+| Un piccolo disastro | Non so cosa sia successo, non sono stato io! | +30 carico e 1 spada rotta |
+| Spada caduta: Fanne 5 | Capita a tutti prima o poi... | +10 carico |
 | Il portaspade di legno perfetto | Direttamente dall'Ordine del Vento di Trieste, è stupendo! | -20 carico |
 | Un nuovo Sabersmith all’orizzonte? | Sembra proprio che uno dei nostri sappia saldare... | -30 carico e 1 spada riparata |
-| Si può avere nera? | Certe domande dovrebbero non essere mai fatte. | +15 carico |
+| Si può avere nera? | Certe domande dovrebbero non essere mai fatte. | +30 carico |
 | Un Pini al lavoro | Darth Modificus alla riscossa! | -30 carico |
 
 ### 5.7 Reputazione di rete
@@ -555,8 +555,8 @@ Le prenotazioni delle lezioni di prova non generano messaggi in Posta in arrivo:
 sono visibili nel Calendario e nello stato dell'email inviata.
 
 Nel prototipo l'attesa è fissata a 30 secondi. La prova ordinaria dura 15
-secondi, riserva una spada e aggiunge 1 punto di carico alla conclusione. La
-prova di un Leggendario Segreto dura 30 secondi e aggiunge 20 punti. Se al
+secondi, riserva una spada e aggiunge 2 punti di carico alla conclusione. La
+prova di un Leggendario Segreto dura 30 secondi e aggiunge 40 punti. Se al
 termine dell'attesa manca una spada, la prova è annullata come una mancata
 iscrizione.
 
@@ -606,18 +606,18 @@ sui contatti.
 
 | Evento                              | Sblocco |   Costo | Impiegati | Spade | Carico | Potenzialità |
 | ----------------------------------- | ------: | ------: | --------: | ----: | -----: | -----------: |
-| Sparring al parco                   |       0 |      €0 |         0 |     2 |      5 |  molto bassa |
+| Sparring al parco                   |       0 |      €0 |         0 |     2 |     10 |  molto bassa |
 | Volantinaggio organizzato benissimo |       0 |     €40 |         1 |     2 |      0 |  molto bassa |
-| Lezioni all'aperto                  |       5 |    €120 |         2 |     4 |     10 |        bassa |
-| Evento sportivo                     |      10 |    €240 |         4 |     6 |     20 |        bassa |
-| Mele Comics                         |      20 |    €400 |         6 |     8 |     30 |        media |
-| CairoMix                            |      35 |    €640 |         8 |    10 |     50 |        media |
-| CogoComix                           |      60 |  €1.200 |        12 |    12 |     75 |         alta |
-| Burtomics                           |      90 |  €1.800 |        16 |    16 |    100 |         alta |
-| Genova Comics & Games               |     120 |  €2.600 |        20 |    20 |    125 |         alta |
-| Megacon Genova                      |     180 |  €4.200 |        28 |    24 |    250 |    altissima |
-| Lucca Comics & Games                |     250 |  €7.000 |        40 |    30 |    350 |    altissima |
-| Milan Games Week & Cartoomics       |     350 | €10.000 |        50 |    36 |    500 |    altissima |
+| Lezioni all'aperto                  |       5 |    €120 |         2 |     4 |     20 |        bassa |
+| Evento sportivo                     |      10 |    €240 |         4 |     6 |     40 |        bassa |
+| Mele Comics                         |      20 |    €400 |         6 |     8 |     60 |        media |
+| CairoMix                            |      35 |    €640 |         8 |    10 |    100 |        media |
+| CogoComix                           |      60 |  €1.200 |        12 |    12 |    150 |         alta |
+| Burtomics                           |      90 |  €1.800 |        16 |    16 |    200 |         alta |
+| Genova Comics & Games               |     120 |  €2.600 |        20 |    20 |    250 |         alta |
+| Megacon Genova                      |     180 |  €4.200 |        28 |    24 |    500 |    altissima |
+| Lucca Comics & Games                |     250 |  €7.000 |        40 |    30 |    700 |    altissima |
+| Milan Games Week & Cartoomics       |     350 | €10.000 |        50 |    36 |  1.000 |    altissima |
 
 ### 8.2 Persone incontrate e contatti ottenuti
 
@@ -881,15 +881,15 @@ Regole:
 
 | Corso o Forma | Spade per atleta | Carico per spada |
 | ------------- | ----------------: | ----------------: |
-| Forma 1, Corso X, Forma 2 | 1 | 5 |
-| Corso Y | 2 | 5 |
-| Forme 3 e 4 Spada Lunga | 1 | 5 |
-| Forme 3 e 4 Staffa o Doppie Spade | 2 | 5 |
-| Forma 5 Spada Lunga | 1 | 16 |
-| Forma 5 Staffa o Doppie Spade | 2 | 16 |
-| Forma 6 | 2 | 10 |
-| Forma 7 | 3 | 10 |
-| Corso Agonisti | da 1 a 3 secondo le Forme note | 10 |
+| Forma 1, Corso X, Forma 2 | 1 | 10 |
+| Corso Y | 2 | 10 |
+| Forme 3 e 4 Spada Lunga | 1 | 10 |
+| Forme 3 e 4 Staffa o Doppie Spade | 2 | 10 |
+| Forma 5 Spada Lunga | 1 | 32 |
+| Forma 5 Staffa o Doppie Spade | 2 | 32 |
+| Forma 6 | 2 | 20 |
+| Forma 7 | 3 | 20 |
+| Corso Agonisti | da 1 a 3 secondo le Forme note | 20 |
 
 Forma 5 ha intenzionalmente il carico per spada più alto del gioco. Forma 6 e
 Forma 7 possono produrre più carico totale perché impiegano rispettivamente due

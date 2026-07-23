@@ -94,7 +94,7 @@ describe("game engine: operations", () => {
     expect(completed.statistics.eventsCompleted).toBe(1);
     expect(started.equipment.availableSwords).toBe(4);
     expect(completed.equipment.availableSwords).toBe(6);
-    expect(completed.equipment.wear).toBe(5);
+    expect(completed.equipment.wear).toBe(10);
     expect(tickedAgain.contacts).toHaveLength(completed.contacts.length);
   });
 
@@ -240,7 +240,7 @@ describe("game engine: operations", () => {
     expect(damaged.equipment).toMatchObject({
       availableSwords: 5,
       damagedSwords: 1,
-      wear: 15,
+      wear: 30,
     });
 
     const eventReady = {
@@ -256,7 +256,7 @@ describe("game engine: operations", () => {
     expect(blocked).toBe(eventReady);
 
     const maintained = gameReducer(
-      { ...damaged, school: { ...damaged.school, euros: 280 } },
+      { ...damaged, school: { ...damaged.school, euros: 310 } },
       { type: "MAINTAIN_EQUIPMENT", now: 4_000 },
     );
 
