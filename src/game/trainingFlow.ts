@@ -41,6 +41,7 @@ import {
   getTrainingDurationMultiplier,
   getTrainingPhase,
   getTrainingTrack,
+  refreshTrainingDurations,
   scheduleTraining,
 } from "./teacherTrainingFlow";
 import type {
@@ -203,7 +204,7 @@ export function startAgonistCourse(
       trainingPhase: "agonist",
     },
   );
-  return {
+  return refreshTrainingDurations({
     ...state,
     equipment: reservedEquipment,
     school: { ...state.school, euros: roundCurrency(state.school.euros - cost) },
@@ -229,7 +230,7 @@ export function startAgonistCourse(
           }
         : candidate)
       : state.collaborators,
-  };
+  }, now);
 }
 
 export function startFormTraining(
@@ -407,7 +408,7 @@ export function startFormTraining(
         : candidate)
       : state.collaborators,
   };
-  return nextState;
+  return refreshTrainingDurations(nextState, now);
 }
 
 export function chooseFormBranchPreferences(seed: number): {

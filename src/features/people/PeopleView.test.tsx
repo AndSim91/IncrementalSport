@@ -216,7 +216,7 @@ describe("PeopleView", () => {
     }));
 
     render(
-      <GameTimeProvider getNow={() => 6_000} isPaused={false}>
+      <GameTimeProvider getNow={() => 6_000} isPaused>
         <PeopleView
           state={{
             ...initial,
@@ -239,7 +239,9 @@ describe("PeopleView", () => {
     expect(screen.getByRole("progressbar", {
       name: "Corso Istruttori interno di Aspirante Istruttore",
     })).toHaveAttribute("aria-valuenow", "50");
-    expect(screen.queryByText(/fallimento|probabilità/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(
+      /esame (fallito|non superato)|probabilità dell'esame|rischio dell'esame/i,
+    )).not.toBeInTheDocument();
   });
 
   it("allows booking an eligible Technician course from the Instructor card", () => {

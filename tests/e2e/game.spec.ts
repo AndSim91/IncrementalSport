@@ -173,9 +173,7 @@ test("gestisce direttamente l'organico aggregato dei collaboratori", async ({ pa
   await expect(instructorPanel.getByLabel("Formazione istruttore")).toBeVisible();
   await instructorPanel.getByRole("button", { name: "Chiudi pannello Istruttori" }).click();
 
-  const collaboratorCount = page.locator(
-    ".people-section-heading.is-collaborator-heading span",
-  );
+  const collaboratorCount = page.getByText(/\d+\/\d+ liberi/);
   await expect(collaboratorCount).toHaveText(/\d+\/\d+ liberi/);
   const countMatch = (await collaboratorCount.textContent())?.match(/(\d+)\/(\d+)/);
   expect(countMatch).not.toBeNull();
