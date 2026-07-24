@@ -206,7 +206,7 @@ export function processAutomation(
     nextState = dependencies.addMessage(
       nextState,
       now,
-      "Contenuto Social pubblicato",
+      "Contenuti Social pubblicati",
       [
         `${outcome.cycles === 1 ? "Un contenuto pubblicato" : `${outcome.cycles} contenuti pubblicati`}.`,
         outcome.followersGained > 0

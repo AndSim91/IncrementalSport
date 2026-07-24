@@ -106,7 +106,7 @@ function getUpgradeBenefitsSummary(state: GameState) {
   if (state.unlocks.social) {
     benefits.push(
       {
-        label: "Contenuto Social",
+        label: "Contenuti Social",
         value: `${formatNumber(getSocialContentCharacters(state.upgrades))} caratteri`,
       },
       {

@@ -125,10 +125,10 @@ export function getCollaboratorAutomationPresentation({
       ) * GAME_CONFIG.collaboratorWritingPerSecond * state.player.writingPower *
         (1 + getUpgradeEffectTotal(state.upgrades, "automationMultiplier"));
       return {
-        title: "Contenuto Social",
+        title: "Contenuti Social",
         detail: `${formatPercent(getSocialFollowerChance(state.upgrades))} follower · ${formatPercent(getSocialContactChance(state.school.followers, state.upgrades))} contatto · ${formatCurrency(getMonthlySocialIncome(state))}/mese`,
         progress,
-        progressLabel: "Produzione del prossimo contenuto Social",
+        progressLabel: "Produzione dei prossimi contenuti Social",
         durationMs: writingRate > 0
           ? requiredCharacters / writingRate * 1_000
           : undefined,

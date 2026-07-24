@@ -894,7 +894,7 @@ describe("PeopleView", () => {
     );
 
     expect(screen.queryByText("Corso Agonisti")).not.toBeInTheDocument();
-    expect(screen.getByText("Contenuto Social")).toBeVisible();
+    expect(screen.getByText("Contenuti Social")).toBeVisible();
     expect(screen.getByText("Lezioni all'aperto")).toBeVisible();
     expect(screen.getByText("In attesa di un allievo")).toBeVisible();
     expect(screen.getByText(/5% follower · 0,5% contatto/)).toBeVisible();

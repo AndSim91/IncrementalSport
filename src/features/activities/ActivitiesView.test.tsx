@@ -20,7 +20,7 @@ describe("ActivitiesView", () => {
     expect(within(social).getByText("5%")).toBeVisible();
     expect(within(social).getByText(/1,5%/)).toBeVisible();
     expect(within(social).getByText(/1,00 €/)).toBeVisible();
-    expect(screen.getByRole("progressbar", { name: "Progresso contenuto Social" }))
+    expect(screen.getByRole("progressbar", { name: "Progresso Contenuti Social" }))
       .toHaveAttribute("aria-valuenow", "50");
   });
 

@@ -103,7 +103,7 @@ export function ActivitiesView({ state }: { state: GameState }) {
           <span><small>Sponsorizzazioni</small><strong>{formatCurrency(socialMonthlyIncome)} <small>al mese · {formatFollowerValue(socialFollowerValue)}/follower</small></strong></span>
         </div>
         <div className="social-progress-label"><span>Contenuto online · {Math.floor(state.automation.socialContentBuffer).toLocaleString("it-IT")}/{socialContentCharacters.toLocaleString("it-IT")} caratteri</span><strong>{socialProgress}%</strong></div>
-        <ProgressBar className="social-progress" label="Progresso contenuto Social" value={socialProgress} />
+        <ProgressBar className="social-progress" label="Progresso Contenuti Social" value={socialProgress} />
       </section> : null}
 
       <section className="operations-report" aria-label="Report operativo">

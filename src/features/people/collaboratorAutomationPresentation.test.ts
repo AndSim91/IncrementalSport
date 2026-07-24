@@ -170,10 +170,10 @@ describe("getCollaboratorAutomationPresentation", () => {
       activeEmail: undefined,
     });
 
-    expect(presentation.title).toBe("Contenuto Social");
+    expect(presentation.title).toBe("Contenuti Social");
     expect(presentation.detail).toBe("5% follower · 1,5% contatto · 1,00\u00a0€/mese");
     expect(presentation.progress).toBe(50);
-    expect(presentation.progressLabel).toBe("Produzione del prossimo contenuto Social");
+    expect(presentation.progressLabel).toBe("Produzione dei prossimi contenuti Social");
     expect(presentation.durationMs).toBeGreaterThan(0);
   });
 });
