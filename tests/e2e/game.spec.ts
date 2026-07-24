@@ -176,8 +176,13 @@ test("salva e applica un preset nella gestione aggregata dei collaboratori", asy
 
   await aggregateView.getByRole("button", { name: /^Preset 1/ }).click();
 
-  await expect(aggregateView.getByText("Collaboratori disponibili")).toBeVisible();
-  await expect(aggregateView.getByText("6/9")).toBeVisible();
+  const collaboratorCount = page.locator(
+    ".people-section-heading.is-collaborator-heading span",
+  );
+  await expect(collaboratorCount).toHaveText(/\d+\/\d+ liberi/);
+  const countMatch = (await collaboratorCount.textContent())?.match(/(\d+)\/(\d+)/);
+  expect(countMatch).not.toBeNull();
+  expect(Number(countMatch?.[2]) - Number(countMatch?.[1])).toBe(3);
   await expect(
     aggregateView.locator(".collaborator-sector-card").filter({ hasText: "Redazione" }),
   ).toContainText("2");

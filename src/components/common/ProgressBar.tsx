@@ -11,6 +11,7 @@ interface ProgressBarProps {
   variant?: "linear" | "circular";
   title?: string;
   valueText?: string;
+  indeterminate?: boolean;
 }
 
 export function ProgressBar({
@@ -23,13 +24,15 @@ export function ProgressBar({
   variant = "linear",
   title,
   valueText,
+  indeterminate: forceIndeterminate = false,
 }: ProgressBarProps) {
   const safeMax = Math.max(1, max);
   const boundedValue = Math.min(safeMax, Math.max(0, value));
   const accessibleValue = Math.round(boundedValue * 1_000) / 1_000;
   const percent = (boundedValue / safeMax) * 100;
-  const indeterminate = durationMs !== undefined &&
-    durationMs < GAME_CONFIG.progressUpdateIntervalMs;
+  const indeterminate = forceIndeterminate || (
+    durationMs !== undefined && durationMs < GAME_CONFIG.progressUpdateIntervalMs
+  );
   const transitionIntervalMs = durationMs === undefined
     ? GAME_CONFIG.gameTickMs
     : GAME_CONFIG.progressUpdateIntervalMs;
@@ -59,7 +62,7 @@ export function ProgressBar({
       aria-valuenow={ariaHidden || indeterminate ? undefined : accessibleValue}
       aria-valuetext={ariaHidden
         ? undefined
-        : indeterminate ? "Avanzamento in corso" : valueText}
+        : indeterminate ? valueText ?? "Avanzamento in corso" : valueText}
       title={title}
       style={progressStyle}
     >

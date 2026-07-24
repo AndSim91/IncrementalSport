@@ -1,5 +1,4 @@
-import { Icon } from "../../components/common/Icon";
-import { getFormLogo } from "../../content/formLogos";
+import { AGONIST_COURSE_LOGO, getFormLogo } from "../../content/formLogos";
 import {
   getFormDefinition,
   getTrainingCourseTitle,
@@ -23,8 +22,11 @@ function TeachingCourseLogo({
   const title = getTrainingCourseTitle(courseId, technicalArenaLevel);
   if (isAgonistCourse(courseId)) {
     return (
-      <span className="aggregated-teaching-course-logo is-agonist" title={title}>
-        <Icon name="trophy" />
+      <span className="aggregated-teaching-course-logo" title={title}>
+        <img
+          src={AGONIST_COURSE_LOGO.assetPath}
+          alt={`${title} — emblema generato`}
+        />
       </span>
     );
   }
@@ -59,10 +61,13 @@ export function AggregatedTeachingBar({
         const title = getTrainingCourseTitle(group.courseId, technicalArenaLevel);
         return (
           <div className="aggregated-teaching-group" key={group.courseId}>
-            <TeachingCourseLogo
-              courseId={group.courseId}
-              technicalArenaLevel={technicalArenaLevel}
-            />
+            <span className="aggregated-teaching-course">
+              <TeachingCourseLogo
+                courseId={group.courseId}
+                technicalArenaLevel={technicalArenaLevel}
+              />
+              <strong title={title}>{title}</strong>
+            </span>
             <span
               className="aggregated-teaching-bar"
               role="progressbar"

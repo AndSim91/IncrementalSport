@@ -12,6 +12,11 @@ export interface InstructorTeachingEntry {
   instructorId: string;
 }
 
+export interface AvailableInstructorCourse {
+  instructor: Collaborator;
+  formId: FormId;
+}
+
 function getRequestedInstructorId(training: FormTraining): string | undefined {
   return training.instructorId ?? training.requestedInstructorId;
 }
@@ -80,9 +85,14 @@ export function getInstructorCoverageForms(
 export function getAvailableInstructorCourseCount(
   instructors: readonly Collaborator[],
 ): number {
-  return instructors.reduce(
-    (total, instructor) => total + getMissingInstructorForms(instructor).length,
-    0,
+  return getAvailableInstructorCourses(instructors).length;
+}
+
+export function getAvailableInstructorCourses(
+  instructors: readonly Collaborator[],
+): AvailableInstructorCourse[] {
+  return instructors.flatMap((instructor) =>
+    getMissingInstructorForms(instructor).map((formId) => ({ instructor, formId })),
   );
 }
 

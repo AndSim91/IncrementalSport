@@ -61,6 +61,9 @@ export function PeopleView({
   );
   const showCollaborators = isCollaboratorAreaVisible(state);
   const showAggregateCollaborators = state.collaboratorManagement.aggregateViewUnlocked;
+  const availableCollaborators = state.collaborators.filter(
+    (collaborator) => collaborator.assignment === null,
+  ).length;
   const showRarityOverview =
     state.statistics.emailsSent >= GAME_CONFIG.rarityOverviewEmailsSent ||
     members.some((contact) => contact.rarity !== "common") ||
@@ -77,9 +80,11 @@ export function PeopleView({
       </header>
       {showCollaborators ? (
         <section className="people-section">
-          <div className="people-section-heading">
+          <div className="people-section-heading is-inline-count">
             <h2>Collaboratori</h2>
-            {!showAggregateCollaborators ? <span>{state.collaborators.length}</span> : null}
+            <span>{showAggregateCollaborators
+              ? `${availableCollaborators}/${state.collaborators.length} liberi`
+              : state.collaborators.length}</span>
           </div>
           {showAggregateCollaborators ? (
             <CollaboratorSectorView
@@ -105,7 +110,7 @@ export function PeopleView({
       ) : null}
 
       <section className="people-section">
-        <div className="people-section-heading">
+        <div className="people-section-heading is-inline-count">
           <h2>Iscritti attivi</h2>
           <span>{members.length}</span>
         </div>

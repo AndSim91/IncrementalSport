@@ -8,6 +8,11 @@ export interface FormLogoDefinition {
   sourceUrl?: string;
 }
 
+export const AGONIST_COURSE_LOGO: FormLogoDefinition = {
+  assetPath: "/form-assets/logos/agonist-course.png",
+  source: "generated",
+};
+
 const OFFICIAL_FORMS_OVERVIEW_URL =
   "https://www.ludosport.net/images/bg/7forme2.jpg";
 const OFFICIAL_LEARNING_PATH_URL =

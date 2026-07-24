@@ -50,6 +50,22 @@ describe("ProgressBar", () => {
     expect(progress).toHaveAttribute("aria-valuetext", "Avanzamento in corso");
   });
 
+  it("supports an explicit continuous indeterminate state", () => {
+    render(
+      <ProgressBar
+        label="Attività continuativa"
+        value={42}
+        valueText="Lavoro costante"
+        indeterminate
+      />,
+    );
+
+    const progress = screen.getByRole("progressbar", { name: "Attività continuativa" });
+    expect(progress).toHaveClass("is-indeterminate");
+    expect(progress).not.toHaveAttribute("aria-valuenow");
+    expect(progress).toHaveAttribute("aria-valuetext", "Lavoro costante");
+  });
+
   it("renders circular progress through the same component", () => {
     render(<ProgressBar variant="circular" label="Verso Iniziato" value={25} />);
 

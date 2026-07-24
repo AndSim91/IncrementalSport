@@ -5,6 +5,7 @@ import type { Collaborator } from "../../game/types";
 import {
   getAggregateInstructorProgress,
   getAvailableInstructorCourseCount,
+  getAvailableInstructorCourses,
   getInstructorCoverageForms,
   getInstructorTeachingEntries,
 } from "./instructorGroupPresentation";
@@ -38,6 +39,12 @@ describe("instructor group presentation", () => {
     second.forms = ["form-1", "course-x", "form-2", "course-y"];
 
     expect(getAvailableInstructorCourseCount([first, second])).toBe(4);
+    expect(getAvailableInstructorCourses([first, second])).toEqual([
+      { instructor: first, formId: "course-x" },
+      { instructor: first, formId: "form-2" },
+      { instructor: second, formId: "form-2" },
+      { instructor: second, formId: "course-y" },
+    ]);
   });
 
   it("averages active lessons and keeps equipment waits at zero", () => {

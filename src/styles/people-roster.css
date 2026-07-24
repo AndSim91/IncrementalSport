@@ -99,6 +99,11 @@
   max-width: none;
 }
 
+.people-section-heading.is-inline-count {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
 .overview-view.people-view {
   overflow-x: hidden;
 }

@@ -333,7 +333,7 @@ export const TUTORIAL_SCENES: readonly TutorialSceneDefinition[] = [
         kind: "objective",
         title: "Apri la gestione dei Collaboratori",
         body: [
-          "Apri Iscritti dalla barra laterale per vedere i settori e il riepilogo Collaboratori disponibili.",
+          "Apri Iscritti dalla barra laterale per vedere i settori e il conteggio dei Collaboratori liberi accanto al titolo.",
         ],
         focusRegions: ({ activeView }) =>
           activeView === "contacts"

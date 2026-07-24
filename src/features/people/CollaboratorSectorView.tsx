@@ -21,10 +21,11 @@ import { AggregatedTeachingBar } from "./AggregatedTeachingBar";
 import { CollaboratorSectorPanel } from "./CollaboratorSectorPanel";
 import { getCollaboratorAutomationPresentation } from "./collaboratorAutomationPresentation";
 import {
-  getAvailableInstructorCourseCount,
+  getAvailableInstructorCourses,
   getInstructorCoverageForms,
   getInstructorTeachingEntries,
 } from "./instructorGroupPresentation";
+import { InstructorCourseShortcut } from "./InstructorCourseShortcut";
 import { FormLogoStrip } from "./PersonPresentation";
 import { SectorMasteryIndicator } from "./SectorMasteryIndicator";
 
@@ -62,12 +63,10 @@ function getPresetLabel(presetId: CollaboratorPresetId): string {
 
 function CollaboratorPresetToolbar({
   state,
-  available,
   onSave,
   onApply,
 }: {
   state: GameState;
-  available: number;
   onSave: (
     presetId: CollaboratorPresetId,
     targets: Record<CollaboratorMasteryRole, number>,
@@ -76,12 +75,6 @@ function CollaboratorPresetToolbar({
 }) {
   return (
     <div className="collaborator-command-rail">
-      <div className="collaborator-availability">
-        <Icon name="people" />
-        <span>Collaboratori disponibili</span>
-        <strong>{available}/{state.collaborators.length}</strong>
-      </div>
-
       <div className="collaborator-preset-toolbar" aria-label="Preset collaboratori">
         {COLLABORATOR_PRESET_IDS.map((presetId) => {
           const preset = state.collaboratorManagement.presets[presetId];
@@ -211,7 +204,7 @@ function StandardSectorCard({
       })
     : { title: "In attesa", detail: "Nessun collaboratore assegnato" };
   return (
-    <article className="collaborator-sector-card">
+    <article className={`collaborator-sector-card${assigned.length === 0 ? " is-empty" : ""}`}>
       <header>
         <span className="sector-card-icon"><Icon name={ROLE_PRESENTATION[role].icon} /></span>
         <span>
@@ -230,7 +223,6 @@ function StandardSectorCard({
 
       <div className="sector-card-activity">
         <span>
-          <small>Attività del gruppo</small>
           <strong>{activity.title}</strong>
           {activity.detail ? <span>{activity.detail}</span> : null}
         </span>
@@ -249,7 +241,7 @@ function StandardSectorCard({
           />
         </div>
       ) : activity.progress === undefined ? (
-        <div className="sector-card-waiting"><span /><small>In attesa</small></div>
+        <div className="sector-card-waiting" aria-label="Nessuna attività in corso"><span /></div>
       ) : (
         <div className="sector-card-progress">
           <ProgressBar
@@ -283,6 +275,7 @@ function InstructorSectorCard({
   onIncrement,
   onDecrement,
   onOpen,
+  onStartTraining,
 }: {
   state: GameState;
   actual: number;
@@ -292,6 +285,7 @@ function InstructorSectorCard({
   onIncrement: () => void;
   onDecrement: () => void;
   onOpen: () => void;
+  onStartTraining: (personId: string, formId: FormId) => void;
 }) {
   const instructors = state.collaborators.filter(
     (collaborator) => collaborator.assignment === "instructor",
@@ -301,11 +295,13 @@ function InstructorSectorCard({
     instructorIds.has(entry.instructorId),
   );
   const coverage = getInstructorCoverageForms(instructors);
-  const availableInstructorCourses = getAvailableInstructorCourseCount(instructors);
+  const availableInstructorCourses = getAvailableInstructorCourses(instructors);
+  const singleInstructorCourse = availableInstructorCourses.length === 1
+    ? availableInstructorCourses[0]
+    : undefined;
   const instructorsTeaching = new Set(entries.map((entry) => entry.instructorId));
   const idleInstructors = Math.max(0, instructors.length - instructorsTeaching.size);
   const prepUnlocked = (state.upgrades["athletic-preparation"] ?? 0) > 0;
-  const prepProgress = Math.min(100, Math.max(0, state.automation.lessonBuffer * 100));
   const prepIsPrimary = entries.length === 0 && prepUnlocked && instructors.length > 0;
 
   return (
@@ -333,14 +329,11 @@ function InstructorSectorCard({
         <section className="instructor-main-activity">
           <div>
             <span className="sector-status-dot" aria-hidden="true" />
-            <span>
-              <small>Attività principale</small>
-              <strong>{entries.length > 0
-                ? "Insegnamento in corso..."
-                : prepIsPrimary
-                  ? "Preparazione atletica in corso..."
-                  : "In attesa"}</strong>
-            </span>
+            <strong>{entries.length > 0
+              ? "Insegnamento in corso..."
+              : prepIsPrimary
+                ? "Preparazione atletica in corso..."
+                : "In attesa"}</strong>
           </div>
           {entries.length > 0 ? (
             <>
@@ -355,8 +348,14 @@ function InstructorSectorCard({
             </>
           ) : prepIsPrimary ? (
             <>
-              <ProgressBar label="Preparazione atletica" value={prepProgress} />
-              <p><strong>{idleInstructors} istruttori disponibili</strong><span>{Math.round(prepProgress)}% prossimo miglioramento</span></p>
+              <ProgressBar
+                className="instructor-preparation-loop"
+                label="Preparazione atletica continuativa"
+                value={0}
+                valueText="Attività continuativa"
+                indeterminate
+              />
+              <p><strong>{idleInstructors} istruttori disponibili</strong><span>Attività continuativa</span></p>
             </>
           ) : (
             <div className="instructor-empty-progress"><span /><small>Nessun allievo compatibile</small></div>
@@ -364,30 +363,36 @@ function InstructorSectorCard({
         </section>
 
         <section className="instructor-coverage">
-          <header>
+          <div className="instructor-coverage-forms">
             <span><small>Copertura didattica</small><strong>{coverage.length} Forme insegnabili</strong></span>
-            <span className="instructor-coverage-actions">
-              <SectorMasteryIndicator collaborators={instructors} role="instructor" />
-              {availableInstructorCourses > 0 ? (
-                <button
-                  type="button"
-                  className="instructor-courses-link"
-                  aria-label={`Apri ${availableInstructorCourses} ${availableInstructorCourses === 1 ? "Corso Istruttori disponibile" : "Corsi Istruttori disponibili"}`}
-                  onClick={onOpen}
-                >
-                  Corsi Istruttori disponibili
-                  <Icon name="arrowRight" />
-                </button>
-              ) : null}
-            </span>
-          </header>
-          <FormLogoStrip
-            className="sector-form-strip"
-            forms={coverage}
-            instructorForms={coverage}
-            showLabels={false}
-          />
-          {coverage.length === 0 ? <small>Forma gli istruttori per ampliare la copertura.</small> : null}
+            <FormLogoStrip
+              className="sector-form-strip"
+              forms={coverage}
+              instructorForms={coverage}
+              showLabels={false}
+            />
+            {coverage.length === 0 ? <small>Forma gli istruttori per ampliare la copertura.</small> : null}
+          </div>
+          <div className="instructor-coverage-actions">
+            <SectorMasteryIndicator collaborators={instructors} role="instructor" />
+            {singleInstructorCourse ? (
+              <InstructorCourseShortcut
+                course={singleInstructorCourse}
+                state={state}
+                onStartTraining={onStartTraining}
+              />
+            ) : availableInstructorCourses.length > 0 ? (
+              <button
+                type="button"
+                className="instructor-courses-link"
+                aria-label={`Apri ${availableInstructorCourses.length} Corsi Istruttori disponibili`}
+                onClick={onOpen}
+              >
+                Corsi Istruttori disponibili
+                <Icon name="arrowRight" />
+              </button>
+            ) : null}
+          </div>
         </section>
       </div>
 
@@ -400,8 +405,13 @@ function InstructorSectorCard({
               ? `Attività secondaria · ${idleInstructors} istruttori senza lezioni`
               : "In attesa · tutti gli istruttori stanno insegnando"}</small>
           </span>
-          <ProgressBar label="Prossimo miglioramento atletico" value={prepProgress} />
-          <strong>{Math.round(prepProgress)}%</strong>
+          <ProgressBar
+            className="instructor-preparation-loop"
+            label="Preparazione atletica continuativa"
+            value={0}
+            valueText="Attività continuativa"
+            indeterminate
+          />
         </div>
       ) : null}
 
@@ -457,7 +467,6 @@ export function CollaboratorSectorView({
     >
       <CollaboratorPresetToolbar
         state={state}
-        available={available}
         onSave={onSavePreset}
         onApply={onApplyPreset}
       />
@@ -471,6 +480,7 @@ export function CollaboratorSectorView({
         onIncrement={() => onIncrement("instructor")}
         onDecrement={() => onDecrement("instructor")}
         onOpen={() => setOpenRole("instructor")}
+        onStartTraining={onStartTraining}
       />
 
       <div className="collaborator-sector-grid">

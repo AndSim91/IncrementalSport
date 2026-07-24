@@ -47,8 +47,8 @@ describe("PeopleView", () => {
       />,
     );
 
-    expect(screen.getByText("Collaboratori disponibili")).toBeVisible();
-    expect(screen.getByText("9/9")).toBeVisible();
+    expect(screen.getByText("9/9 liberi")).toBeVisible();
+    expect(screen.queryByText("Collaboratori disponibili")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Gestione aggregata dei collaboratori" })).toBeVisible();
     expect(screen.queryByText("Collaboratore Aggregato 0")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Preset [123]/ })).toHaveLength(3);
@@ -136,14 +136,16 @@ describe("PeopleView", () => {
 
     const writingCard = screen.getByRole("heading", { name: "Redazione" }).closest("article");
     expect(writingCard).not.toBeNull();
+    expect(writingCard).not.toHaveClass("is-empty");
     expect(within(writingCard as HTMLElement).getByRole("button", { name: "Gestisci settore" })).toBeEnabled();
 
     const eventsCard = screen.getByRole("heading", { name: "Eventi" }).closest("article");
     expect(eventsCard).not.toBeNull();
+    expect(eventsCard).toHaveClass("is-empty");
     expect(within(eventsCard as HTMLElement).getByRole("button", { name: "Gestisci settore" })).toBeDisabled();
   });
 
-  it("avoids duplicate athletic preparation and links available instructor courses", () => {
+  it("shows continuous athletic preparation and the single instructor course action", () => {
     const initial = createInitialState(1_000);
     const collaborators = Array.from({ length: 9 }, (_, index) => ({
       id: `aggregate-instructor-${index}`,
@@ -158,10 +160,12 @@ describe("PeopleView", () => {
       rarity: "ultra-rare" as const,
     }));
 
+    const onStartTraining = vi.fn();
     render(
       <PeopleView
         state={{
           ...initial,
+          school: { ...initial.school, euros: 1_000 },
           collaborators,
           upgrades: { ...initial.upgrades, "athletic-preparation": 1 },
           unlocks: { ...initial.unlocks, collaborators: true },
@@ -172,19 +176,23 @@ describe("PeopleView", () => {
           },
         }}
         onAssign={() => undefined}
-        onStartTraining={() => undefined}
+        onStartTraining={onStartTraining}
       />,
     );
 
     expect(screen.getByText("Preparazione atletica in corso...")).toBeVisible();
     expect(document.querySelector(".instructor-preparation-row")).not.toBeInTheDocument();
+    expect(screen.queryByText("Attività principale")).not.toBeInTheDocument();
+    expect(screen.queryByText("Attività del gruppo")).not.toBeInTheDocument();
+    expect(screen.getByRole("progressbar", {
+      name: "Preparazione atletica continuativa",
+    })).toHaveClass("is-indeterminate");
+    expect(screen.getByText("Corso Istruttori disponibile")).toBeVisible();
+    expect(screen.getByText("Istruttore Operativo")).toBeVisible();
 
-    const coursesLink = screen.getByRole("button", {
-      name: "Apri 1 Corso Istruttori disponibile",
-    });
-    expect(coursesLink).toHaveTextContent("Corsi Istruttori disponibili");
-    fireEvent.click(coursesLink);
-    expect(screen.getByRole("dialog", { name: "Istruttori" })).toBeVisible();
+    const courseAction = screen.getByRole("button", { name: /Ottieni qualifica/ });
+    fireEvent.click(courseAction);
+    expect(onStartTraining).toHaveBeenCalledWith("aggregate-instructor-0", "course-x");
   });
 
   it("keeps the idle equipment status separate from its wear indicator", () => {
@@ -499,6 +507,7 @@ describe("PeopleView", () => {
 
     const membersHeading = screen.getByRole("heading", { name: "Iscritti attivi" });
     expect(membersHeading).toBeVisible();
+    expect(membersHeading.parentElement).toHaveClass("is-inline-count");
     expect(membersHeading.parentElement).toHaveTextContent("3");
     expect(screen.getAllByText("Iscritto")).toHaveLength(3);
     expect(screen.queryByText("Ha lasciato la scuola")).not.toBeInTheDocument();
