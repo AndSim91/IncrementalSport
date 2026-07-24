@@ -195,6 +195,50 @@ describe("PeopleView", () => {
     expect(onStartTraining).toHaveBeenCalledWith("aggregate-instructor-0", "course-x");
   });
 
+  it.each([7, 8])(
+    "shows the athletic preparation summer break in aggregate month %i",
+    (currentMonth) => {
+      const initial = createInitialState(1_000);
+      const instructor = {
+        id: "summer-instructor",
+        contactId: initial.contacts[0].id,
+        displayName: "Istruttore Estivo",
+        joinedAt: 1_000,
+        forms: [] as FormId[],
+        instructorForms: [] as FormId[],
+        formBranchPreferences: [],
+        assignment: "instructor" as const,
+        mastery: { writing: 0, events: 0, equipment: 0, instructor: 0 },
+        rarity: "ultra-rare" as const,
+      };
+
+      render(
+        <PeopleView
+          state={{
+            ...initial,
+            school: { ...initial.school, currentMonth },
+            collaborators: [instructor],
+            upgrades: { ...initial.upgrades, "athletic-preparation": 1 },
+            unlocks: { ...initial.unlocks, collaborators: true },
+            collaboratorManagement: {
+              ...initial.collaboratorManagement,
+              aggregateViewUnlocked: true,
+            },
+          }}
+          onAssign={() => undefined}
+          onStartTraining={() => undefined}
+        />,
+      );
+
+      expect(screen.getByText("Pausa estiva")).toBeVisible();
+      expect(screen.getByText("Preparazione atletica sospesa")).toBeVisible();
+      expect(screen.queryByText("Preparazione atletica in corso...")).not.toBeInTheDocument();
+      expect(screen.queryByRole("progressbar", {
+        name: "Preparazione atletica continuativa",
+      })).not.toBeInTheDocument();
+    },
+  );
+
   it("keeps the idle equipment status separate from its wear indicator", () => {
     const initial = createInitialState(1_000);
     const equipmentCollaborator = {

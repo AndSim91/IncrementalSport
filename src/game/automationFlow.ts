@@ -27,7 +27,11 @@ import {
 } from "./equipment";
 import { getAthleteImmunityStatus, isAthleteImmuneFromDeparture } from "./athleteImmunity";
 import { getMemberAnnualDepartureChance } from "./formulas";
-import { selectActiveEmail, selectInstructorCapacity } from "./selectors";
+import {
+  compareInstructorTeachingPriority,
+  selectActiveEmail,
+  selectInstructorCapacity,
+} from "./selectors";
 import { getSocialContentCharacters } from "./social";
 import { getInstructorTeachingCounts } from "./runtimeIndexes";
 import { getAutomaticFormCandidates } from "./trainingFlow";
@@ -247,6 +251,7 @@ export function processInstructorAthleticPreparation(
   }
   if (
     safeElapsedMs <= 0 ||
+    isSummerBreak(state.school.currentMonth) ||
     (state.upgrades["athletic-preparation"] ?? 0) <= 0
   ) return state;
 
@@ -497,12 +502,7 @@ export function processAutomaticTeaching(
         (instructorLoads.get(candidate.id) ?? 0) < capacity
       )
       .sort((left, right) =>
-        (instructorLoads.get(left.id) ?? 0) -
-          (instructorLoads.get(right.id) ?? 0) ||
-        getCollaboratorProductivity(right, "instructor") -
-          getCollaboratorProductivity(left, "instructor") ||
-        left.joinedAt - right.joinedAt ||
-        left.id.localeCompare(right.id)
+        compareInstructorTeachingPriority(left, right, instructorLoads)
       )[0];
     if (!instructor) continue;
     const startedState = startAgonistCourse(

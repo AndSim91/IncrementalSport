@@ -1,5 +1,6 @@
 import type {
   CampaignEmail,
+  Collaborator,
   Contact,
   FormId,
   GameState,
@@ -86,6 +87,20 @@ export function canInstructorTeachForm(
   );
 }
 
+export function compareInstructorTeachingPriority(
+  left: Collaborator,
+  right: Collaborator,
+  teachingCounts: ReadonlyMap<string, number>,
+): number {
+  return left.instructorForms.length - right.instructorForms.length ||
+    (teachingCounts.get(left.id) ?? 0) -
+      (teachingCounts.get(right.id) ?? 0) ||
+    getCollaboratorProductivity(right, "instructor") -
+      getCollaboratorProductivity(left, "instructor") ||
+    left.joinedAt - right.joinedAt ||
+    left.id.localeCompare(right.id);
+}
+
 export function selectAvailableInstructor(
   state: GameState,
   formId: FormId,
@@ -103,12 +118,7 @@ export function selectAvailableInstructor(
       !busyInstructorIds.has(collaborator.id)
     )
     .sort((left, right) =>
-      (teachingCounts.get(left.id) ?? 0) -
-        (teachingCounts.get(right.id) ?? 0) ||
-      getCollaboratorProductivity(right, "instructor") -
-        getCollaboratorProductivity(left, "instructor") ||
-      left.joinedAt - right.joinedAt ||
-      left.id.localeCompare(right.id)
+      compareInstructorTeachingPriority(left, right, teachingCounts)
     )[0];
 }
 

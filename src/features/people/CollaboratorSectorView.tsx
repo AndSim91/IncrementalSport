@@ -9,6 +9,7 @@ import {
   COLLABORATOR_PRESET_IDS,
   getCollaboratorAssignmentCounts,
 } from "../../game/collaboratorManagement";
+import { isSummerBreak } from "../../game/calendar";
 import { selectActiveEmail } from "../../game/selectors";
 import type {
   Collaborator,
@@ -303,6 +304,7 @@ function InstructorSectorCard({
   const idleInstructors = Math.max(0, instructors.length - instructorsTeaching.size);
   const prepUnlocked = (state.upgrades["athletic-preparation"] ?? 0) > 0;
   const prepIsPrimary = entries.length === 0 && prepUnlocked && instructors.length > 0;
+  const summerBreak = isSummerBreak(state.school.currentMonth);
 
   return (
     <article className="instructor-sector-card">
@@ -332,7 +334,9 @@ function InstructorSectorCard({
             <strong>{entries.length > 0
               ? "Insegnamento in corso..."
               : prepIsPrimary
-                ? "Preparazione atletica in corso..."
+                ? summerBreak
+                  ? "Pausa estiva"
+                  : "Preparazione atletica in corso..."
                 : "In attesa"}</strong>
           </div>
           {entries.length > 0 ? (
@@ -346,6 +350,11 @@ function InstructorSectorCard({
                 <strong>{entries.length} {entries.length === 1 ? "corso attivo" : "corsi attivi"}</strong>
               </p>
             </>
+          ) : prepIsPrimary && summerBreak ? (
+            <div className="instructor-empty-progress">
+              <span />
+              <small>Preparazione atletica sospesa</small>
+            </div>
           ) : prepIsPrimary ? (
             <>
               <ProgressBar
@@ -401,16 +410,20 @@ function InstructorSectorCard({
           <span className="sector-card-icon"><Icon name="trend" /></span>
           <span>
             <strong>Preparazione atletica</strong>
-            <small>{idleInstructors > 0
-              ? `Attività secondaria · ${idleInstructors} istruttori senza lezioni`
-              : "In attesa · tutti gli istruttori stanno insegnando"}</small>
+            <small>{summerBreak
+              ? "Pausa estiva"
+              : idleInstructors > 0
+                ? `Attività secondaria · ${idleInstructors} istruttori senza lezioni`
+                : "In attesa · tutti gli istruttori stanno insegnando"}</small>
           </span>
           <ProgressBar
             className="instructor-preparation-loop"
-            label="Preparazione atletica continuativa"
+            label={summerBreak
+              ? "Preparazione atletica in pausa"
+              : "Preparazione atletica continuativa"}
             value={0}
-            valueText="Attività continuativa"
-            indeterminate
+            valueText={summerBreak ? "Pausa estiva" : "Attività continuativa"}
+            indeterminate={!summerBreak}
           />
         </div>
       ) : null}

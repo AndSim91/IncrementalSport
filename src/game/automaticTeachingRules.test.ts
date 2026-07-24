@@ -113,7 +113,62 @@ describe("automatic teaching rules", () => {
     expect(training?.instructorId).toBe(unrelatedCertificate.id);
   });
 
-  it("selects lower load before productivity, then the most productive instructor", () => {
+  it("uses the less versatile instructor for the Agonist Course", () => {
+    const initial = teachingState();
+    const student = branchStudent(initial.contacts[0], "staff-student");
+    const specialist = instructor("specialist", "ultra-rare", ["form-1"]);
+    const expert = instructor(
+      "expert",
+      "legendary",
+      ["form-1", "course-x", "form-2"],
+    );
+    const state: GameState = {
+      ...initial,
+      school: { ...initial.school, activeMembers: 1 },
+      contacts: [student],
+      collaborators: [expert, specialist],
+    };
+
+    const processed = gameReducer(state, { type: "TICK", now: 2_000 });
+    const training = processed.contacts[0].training;
+
+    expect(training?.formId).toBe("agonist-course");
+    expect(training?.instructorId).toBe(specialist.id);
+  });
+
+  it("prefers the instructor with fewer teachable Forms, even with a higher load", () => {
+    const initial = teachingState();
+    const specialist = instructor("specialist", "ultra-rare", ["form-1"]);
+    const expert = instructor(
+      "expert",
+      "legendary",
+      ["form-1", "course-x", "form-2"],
+    );
+    const loadedStudent = {
+      ...initial.contacts[0],
+      status: "enrolled" as const,
+      training: {
+        formId: "form-1" as const,
+        startedAt: 1_000,
+        completesAt: 10_000,
+        status: "running" as const,
+        instructorId: specialist.id,
+      },
+    };
+    const state: GameState = {
+      ...initial,
+      contacts: [loadedStudent],
+      collaborators: [expert, specialist],
+      upgrades: {
+        ...initial.upgrades,
+        "promiscuous-instructor": 1,
+      },
+    };
+
+    expect(selectAvailableInstructor(state, "form-1")?.id).toBe(specialist.id);
+  });
+
+  it("balances equal teaching coverage by load, then productivity", () => {
     const initial = teachingState();
     const weak = instructor("weak", "ultra-rare", ["form-1"]);
     const strong = instructor("strong", "legendary", ["form-1"]);

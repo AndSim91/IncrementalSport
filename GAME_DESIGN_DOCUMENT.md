@@ -1062,6 +1062,14 @@ Regole:
   poi la prossima formazione secondo la progressione dalla Forma 1 verso l'alto,
   includendo il Corso Agonisti come fallback, e infine il contatto con
   `acquiredAt` più recente; a parità completa conserva l'ordine originale;
+- tra gli Istruttori disponibili e compatibili, l'automazione privilegia chi ha
+  meno Forme insegnabili, così da conservare la disponibilità degli Istruttori
+  più avanzati per gli allievi che ne hanno bisogno; a parità distribuisce prima
+  il carico corrente, poi sceglie l'Istruttore più produttivo e infine quello
+  entrato prima nella scuola;
+- la Preparazione atletica è attiva da settembre a giugno ed è sospesa sia a
+  luglio sia ad agosto; durante la sospensione la schermata aggregata dei
+  Collaboratori mostra **Pausa estiva**;
 - disattivare l'automazione del singolo Istruttore o riassegnarlo lascia
   terminare le lezioni già iniziate, ma non ne avvia altre;
 - annullare manualmente un'iscrizione è disponibile fin dall'inizio. La X nella

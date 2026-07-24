@@ -84,6 +84,21 @@ describe("instructor athletic preparation", () => {
     expect(busy.collaborators[0].mastery?.instructor).toBe(1);
   });
 
+  it.each([7, 8])(
+    "pauses athletic preparation during summer month %i",
+    (currentMonth) => {
+      const state = preparationState(1);
+      const paused = gameReducer({
+        ...state,
+        school: { ...state.school, currentMonth },
+      }, { type: "TICK", now: 2_000 });
+
+      expect(paused.contacts[0].arenaBase).toBe(10);
+      expect(paused.contacts[0].styleBase).toBe(10);
+      expect(paused.automation.lessonBuffer).toBe(0.99);
+    },
+  );
+
   it("applies Staffa bonuses only from certified instructor forms", () => {
     const knownOnly = instructor("known");
     const certified = instructor("certified", ["form-3-staff"]);
