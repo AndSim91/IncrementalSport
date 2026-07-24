@@ -144,12 +144,18 @@ export function cancelMemberEnrollment(
   return {
     ...departed,
     contacts: departed.contacts.map((contact) =>
-      removedCollaboratorId && contact.training?.instructorId === removedCollaboratorId
+      removedCollaboratorId && (
+        contact.training?.instructorId === removedCollaboratorId ||
+        contact.training?.technicianId === removedCollaboratorId
+      )
         ? { ...contact, training: undefined }
         : contact,
     ),
     collaborators: departed.collaborators.map((collaborator) =>
-      removedCollaboratorId && collaborator.training?.instructorId === removedCollaboratorId
+      removedCollaboratorId && (
+        collaborator.training?.instructorId === removedCollaboratorId ||
+        collaborator.training?.technicianId === removedCollaboratorId
+      )
         ? { ...collaborator, training: undefined }
         : collaborator,
     ),

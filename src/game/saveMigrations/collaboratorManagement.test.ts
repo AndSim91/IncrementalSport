@@ -6,7 +6,7 @@ import { migrate } from "../saveMigrations";
 import { isValidGameState } from "../saveValidation";
 
 describe("collaborator management save migration", () => {
-  it("creates empty presets and preserves existing assignments", () => {
+  it("creates aggregate targets and preserves existing assignments", () => {
     const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
     legacy.version = 52;
     delete legacy.collaboratorManagement;
@@ -27,20 +27,44 @@ describe("collaborator management save migration", () => {
 
     expect(migrated.version).toBe(GAME_CONFIG.version);
     expect(migrated.collaboratorManagement.aggregateViewUnlocked).toBe(true);
-    expect(migrated.collaboratorManagement.activePresetId).toBeNull();
-    expect(migrated.collaboratorManagement.hasUnsavedChanges).toBe(false);
     expect(migrated.collaboratorManagement.targets).toEqual({
       writing: 0,
       events: 1,
       equipment: 0,
       instructor: 0,
     });
-    expect(Object.values(migrated.collaboratorManagement.presets)).toEqual([
-      { saved: false, targets: { writing: 0, events: 0, equipment: 0, instructor: 0 } },
-      { saved: false, targets: { writing: 0, events: 0, equipment: 0, instructor: 0 } },
-      { saved: false, targets: { writing: 0, events: 0, equipment: 0, instructor: 0 } },
-    ]);
     expect(migrated.collaborators[0].assignment).toBe("events");
+    expect(isValidGameState(migrated)).toBe(true);
+  });
+
+  it("removes legacy preset data while preserving current sector targets", () => {
+    const legacy = JSON.parse(JSON.stringify(createInitialState(1_000)));
+    legacy.version = 56;
+    legacy.collaboratorManagement = {
+      ...legacy.collaboratorManagement,
+      activePresetId: "preset-1",
+      hasUnsavedChanges: true,
+      presets: {
+        "preset-1": {
+          saved: true,
+          targets: { writing: 9, events: 0, equipment: 0, instructor: 0 },
+        },
+      },
+      targets: { writing: 2, events: 1, equipment: 0, instructor: 1 },
+    };
+
+    const migrated = migrate(legacy) as ReturnType<typeof createInitialState>;
+
+    expect(migrated.version).toBe(GAME_CONFIG.version);
+    expect(migrated.collaboratorManagement.targets).toEqual({
+      writing: 2,
+      events: 1,
+      equipment: 0,
+      instructor: 1,
+    });
+    expect(migrated.collaboratorManagement).not.toHaveProperty("activePresetId");
+    expect(migrated.collaboratorManagement).not.toHaveProperty("hasUnsavedChanges");
+    expect(migrated.collaboratorManagement).not.toHaveProperty("presets");
     expect(isValidGameState(migrated)).toBe(true);
   });
 });

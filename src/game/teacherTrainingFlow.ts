@@ -85,7 +85,6 @@ export function getTrainingDurationMultiplier(
   training: FormTraining,
 ): number {
   const track = getTrainingTrack(training);
-  const phase = getTrainingPhase(training);
   let speed = 1 + getPagoSportAllCourseSpeedBonus(state.upgrades);
   if (
     isSummerBreak(state.school.currentMonth) &&
@@ -358,9 +357,13 @@ export function processAutomaticInstructorQualifications(
   for (const candidate of candidates) {
     if (startedCollaboratorIds.has(candidate.collaboratorId)) continue;
     const definition = getFormDefinition(candidate.formId);
-    if (!definition) continue;
+    const trainee = nextState.collaborators.find(
+      (collaborator) => collaborator.id === candidate.collaboratorId,
+    );
+    if (!definition || !trainee || trainee.training) continue;
     const technician = nextState.collaborators
       .filter((collaborator) =>
+        collaborator.id !== candidate.collaboratorId &&
         collaborator.assignment === "instructor" &&
         !usedTechnicianIds.has(collaborator.id) &&
         (collaborator.technicianForms ?? []).includes(candidate.formId)
@@ -368,19 +371,14 @@ export function processAutomaticInstructorQualifications(
       .sort((left, right) => left.joinedAt - right.joinedAt || left.id.localeCompare(right.id))[0];
     if (!technician) continue;
     const cost = getInternalInstructorQualificationCost(definition.cost);
-    if (nextState.school.euros < cost) continue;
+    if (nextState.school.euros < cost) break;
 
     const training = scheduleTraining(
       nextState,
       candidate.collaboratorId,
       now,
       getInstructorQualificationDuration(definition.durationMs) /
-        getCollaboratorProductivity(
-          nextState.collaborators.find(
-            (collaborator) => collaborator.id === candidate.collaboratorId,
-          )!,
-          "instructor",
-        ),
+        getCollaboratorProductivity(trainee, "instructor"),
       {
         formId: candidate.formId,
         status: "running",

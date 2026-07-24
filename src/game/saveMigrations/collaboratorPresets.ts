@@ -13,9 +13,7 @@ type LegacyCollaboratorManagement = {
   presets?: unknown;
 };
 
-export function migrateCollaboratorPresetsState(
-  state: MigratableState,
-): MigratableState {
+export function migrateCollaboratorPresetsState(state: MigratableState): MigratableState {
   if (state.version !== 56) return state;
 
   const defaults = createInitialCollaboratorManagement();

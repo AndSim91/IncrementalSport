@@ -237,7 +237,6 @@ export function startFormTraining(
   personId: string,
   formId: FormId,
   now: number,
-  _dependencies: TrainingFlowDependencies,
 ): GameState {
   if (!state.unlocks.forms) return state;
   const collaborator = state.collaborators.find((candidate) => candidate.id === personId);
@@ -725,7 +724,6 @@ export function resolveFormTraining(
 export function processWaitingTrainings(
   state: GameState,
   now: number,
-  dependencies: TrainingFlowDependencies,
 ): GameState {
   const waitingIds = [...state.contacts, ...state.collaborators]
     .filter((person) => person.training?.status === "waitingForEquipment")
@@ -767,7 +765,7 @@ export function processWaitingTrainings(
           waiting.requestedInstructorId ?? "",
           now,
         )
-      : startFormTraining(nextState, personId, waiting.formId, now, dependencies);
+      : startFormTraining(nextState, personId, waiting.formId, now);
 
     const restarted = nextState.collaborators.find((candidate) => candidate.id === personId) ??
       nextState.contacts.find((candidate) => candidate.id === personId);

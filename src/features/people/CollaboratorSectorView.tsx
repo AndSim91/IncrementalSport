@@ -427,8 +427,6 @@ function InstructorSectorCard({
 export function CollaboratorSectorView({
   state,
   collaboratorsById,
-  onSavePreset,
-  onApplyPreset,
   onIncrement,
   onDecrement,
   onStartTraining,

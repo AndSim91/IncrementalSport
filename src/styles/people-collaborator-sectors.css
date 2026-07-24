@@ -1252,6 +1252,19 @@
   .instructor-operations-grid { grid-template-columns: 1fr; }
   .instructor-main-activity { border-right: 0; border-bottom: 1px solid var(--line); }
 
+  .internal-instructor-courses {
+    grid-template-columns: 1fr;
+  }
+
+  .internal-instructor-course {
+    grid-template-columns: auto minmax(0, 1fr) 28px;
+  }
+
+  .internal-instructor-course .progress-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
   .aggregated-teaching-group {
     grid-template-columns: minmax(94px, .9fr) minmax(64px, 1fr) 18px;
     gap: 6px;

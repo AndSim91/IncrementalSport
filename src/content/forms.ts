@@ -159,6 +159,7 @@ export function getMissingInstructorForms(collaborator: Collaborator): FormId[] 
   if (
     trainingFormId &&
     isInstructorForm(trainingFormId) &&
+    !collaborator.instructorForms.includes(trainingFormId) &&
     !collaborator.training?.includesInstructorCertification &&
     !missing.includes(trainingFormId)
   ) {

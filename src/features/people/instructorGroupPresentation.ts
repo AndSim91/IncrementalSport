@@ -114,7 +114,6 @@ export function getInternalInstructorCourseEntries(
     return training &&
       technician &&
       training.trainingPhase === "instructor" &&
-      !isNaN(training.completesAt) &&
       training.formId !== "agonist-course"
       ? [{ trainee, technician, formId: training.formId, training }]
       : [];

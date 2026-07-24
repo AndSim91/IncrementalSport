@@ -122,7 +122,7 @@ test("avvia un evento e aggiorna il progresso usando il tempo reale del gioco", 
   ).toBeGreaterThan(initialProgress);
 });
 
-test("salva e applica un preset nella gestione aggregata dei collaboratori", async ({ page }) => {
+test("gestisce direttamente l'organico aggregato dei collaboratori", async ({ page }) => {
   const state = createProgressedGameSave();
   const andrea = state.contacts.find(
     (contact) => contact.specialProfileId === "andrea-simonazzi",
@@ -160,11 +160,10 @@ test("salva e applica un preset nella gestione aggregata dei collaboratori", asy
     name: "Gestione aggregata dei collaboratori",
   });
   await expect(aggregateView).toBeVisible();
+  await expect(aggregateView.getByText(/Preset/)).toHaveCount(0);
   await aggregateView.getByRole("button", { name: "Aumenta collaboratori in Redazione" }).click();
   await aggregateView.getByRole("button", { name: "Aumenta collaboratori in Redazione" }).click();
   await aggregateView.getByRole("button", { name: "Aumenta collaboratori in Eventi" }).click();
-  await expect(aggregateView.getByText("Modifiche non salvate")).toBeVisible();
-  await aggregateView.getByRole("button", { name: "Salva preset 1" }).click();
   await aggregateView.getByRole("button", { name: "Aumenta collaboratori in Istruttori" }).click();
 
   await aggregateView.getByRole("button", { name: "Apri centro didattico" }).click();
@@ -174,15 +173,13 @@ test("salva e applica un preset nella gestione aggregata dei collaboratori", asy
   await expect(instructorPanel.getByLabel("Formazione istruttore")).toBeVisible();
   await instructorPanel.getByRole("button", { name: "Chiudi pannello Istruttori" }).click();
 
-  await aggregateView.getByRole("button", { name: /^Preset 1/ }).click();
-
   const collaboratorCount = page.locator(
     ".people-section-heading.is-collaborator-heading span",
   );
   await expect(collaboratorCount).toHaveText(/\d+\/\d+ liberi/);
   const countMatch = (await collaboratorCount.textContent())?.match(/(\d+)\/(\d+)/);
   expect(countMatch).not.toBeNull();
-  expect(Number(countMatch?.[2]) - Number(countMatch?.[1])).toBe(3);
+  expect(Number(countMatch?.[2]) - Number(countMatch?.[1])).toBe(4);
   await expect(
     aggregateView.locator(".collaborator-sector-card").filter({ hasText: "Redazione" }),
   ).toContainText("2");

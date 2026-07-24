@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createInitialCollaboratorMastery } from "../content/mastery";
 import {
-  applyCollaboratorPreset,
   decrementCollaboratorAssignment,
   getCollaboratorAssignmentCounts,
   incrementCollaboratorAssignment,
   reconcileCollaboratorManagement,
-  saveCollaboratorPreset,
 } from "./collaboratorManagement";
 import { createInitialState } from "./initialState";
 import { gameReducer } from "./engine";
@@ -30,13 +28,6 @@ function collaborator(
   };
 }
 
-const targets = {
-  writing: 2,
-  events: 1,
-  equipment: 1,
-  instructor: 2,
-};
-
 describe("collaborator aggregate management", () => {
   it("unlocks permanently when the ninth collaborator joins", () => {
     const initial = createInitialState(1_000);
@@ -54,43 +45,24 @@ describe("collaborator aggregate management", () => {
     expect(afterDepartures.collaboratorManagement.aggregateViewUnlocked).toBe(true);
   });
 
-  it("applies a saved numeric preset and leaves excess collaborators unassigned", () => {
-    const initial = createInitialState(1_000);
-    const unlocked = reconcileCollaboratorManagement({
-      ...initial,
-      collaborators: Array.from({ length: 9 }, (_, index) => collaborator(index)),
-    });
-    const saved = saveCollaboratorPreset(unlocked, "preset-1", targets);
-    const applied = applyCollaboratorPreset(saved, "preset-1");
-
-    expect(applied.collaboratorManagement.activePresetId).toBe("preset-1");
-    expect(getCollaboratorAssignmentCounts(applied)).toEqual(targets);
-    expect(applied.collaborators.filter((candidate) => candidate.assignment === null)).toHaveLength(3);
-  });
-
   it("keeps missing positions and fills them as soon as a collaborator becomes available", () => {
     const initial = createInitialState(1_000);
-    const unlocked: GameState = {
+    const configured: GameState = {
       ...initial,
       collaborators: [collaborator(1), collaborator(2)],
       collaboratorManagement: {
         ...initial.collaboratorManagement,
         aggregateViewUnlocked: true,
+        targets: { writing: 3, events: 0, equipment: 0, instructor: 0 },
       },
     };
-    const saved = saveCollaboratorPreset(unlocked, "preset-1", {
-      writing: 3,
-      events: 0,
-      equipment: 0,
-      instructor: 0,
-    });
-    const applied = applyCollaboratorPreset(saved, "preset-1");
+    const applied = reconcileCollaboratorManagement(configured);
 
     expect(applied.collaborators.map((candidate) => candidate.assignment)).toEqual([
       "writing",
       "writing",
     ]);
-    expect(applied.collaboratorManagement.presets["preset-1"].targets.writing).toBe(3);
+    expect(applied.collaboratorManagement.targets.writing).toBe(3);
 
     const filled = reconcileCollaboratorManagement({
       ...applied,
@@ -128,13 +100,13 @@ describe("collaborator aggregate management", () => {
         aggregateViewUnlocked: true,
       },
     };
-    const saved = saveCollaboratorPreset(unlocked, "preset-1", {
-      writing: 1,
-      events: 0,
-      equipment: 0,
-      instructor: 0,
+    const applied = reconcileCollaboratorManagement({
+      ...unlocked,
+      collaboratorManagement: {
+        ...unlocked.collaboratorManagement,
+        targets: { writing: 1, events: 0, equipment: 0, instructor: 0 },
+      },
     });
-    const applied = applyCollaboratorPreset(saved, "preset-1");
 
     expect(applied.collaborators[0].assignment).toBe("events");
 
@@ -173,15 +145,18 @@ describe("collaborator aggregate management", () => {
         aggregateViewUnlocked: true,
       },
     };
-    const applied = applyCollaboratorPreset(
-      saveCollaboratorPreset(unlocked, "preset-1", {
+    const applied = reconcileCollaboratorManagement({
+      ...unlocked,
+      collaboratorManagement: {
+        ...unlocked.collaboratorManagement,
+        targets: {
         writing: 1,
         events: 0,
         equipment: 0,
         instructor: 0,
-      }),
-      "preset-1",
-    );
+        },
+      },
+    });
 
     const completed = gameReducer(applied, { type: "TICK", now: 5_000 });
 
@@ -189,7 +164,7 @@ describe("collaborator aggregate management", () => {
     expect(completed.acquisitionEvents.filter((event) => event.status === "running")).toHaveLength(0);
   });
 
-  it("marks direct sector changes as unsaved and uses only unassigned collaborators", () => {
+  it("uses only unassigned collaborators for direct sector changes", () => {
     const initial = createInitialState(1_000);
     const unlocked = reconcileCollaboratorManagement({
       ...initial,
@@ -200,8 +175,6 @@ describe("collaborator aggregate management", () => {
 
     const incremented = incrementCollaboratorAssignment(unlocked, "writing");
 
-    expect(incremented.collaboratorManagement.hasUnsavedChanges).toBe(true);
-    expect(incremented.collaboratorManagement.activePresetId).toBeNull();
     expect(getCollaboratorAssignmentCounts(incremented)).toMatchObject({
       writing: 1,
       events: 1,

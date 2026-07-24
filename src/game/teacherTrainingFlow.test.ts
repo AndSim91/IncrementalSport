@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   getCollaboratorProductivity,
+  getInstructorFormCost,
+  getInstructorFormDuration,
+  getInstructorQualificationCost,
+  getInstructorQualificationDuration,
   getInternalInstructorQualificationCost,
   getTechnicianCourseCost,
   getTechnicianCourseDuration,
@@ -38,6 +42,16 @@ function instructor(
 }
 
 describe("Tecnici e Corsi Istruttori interni", () => {
+  it("uses the agreed cost and duration percentages", () => {
+    expect(getInstructorQualificationCost(100)).toBe(250);
+    expect(getInstructorFormCost(100)).toBe(350);
+    expect(getInternalInstructorQualificationCost(100)).toBe(187.5);
+    expect(getTechnicianCourseCost(100)).toBe(1_000);
+    expect(getInstructorQualificationDuration(20_000)).toBe(10_000);
+    expect(getInstructorFormDuration(20_000)).toBe(30_000);
+    expect(getTechnicianCourseDuration(20_000)).toBe(100_000);
+  });
+
   it("charges a SIS booking immediately and starts it in the next July", () => {
     const initial = createInitialState(1_000, "", false);
     const candidate = instructor(
@@ -216,6 +230,26 @@ describe("Tecnici e Corsi Istruttori interni", () => {
       technician.id,
       technicalTraining,
     )).toBeCloseTo(1 / 3);
+    expect(getTrainingDurationMultiplier(
+      summerPago,
+      technician.id,
+      { ...technicalTraining, trainingTrack: "instructor", trainingPhase: "instructor" },
+    )).toBeCloseTo(1 / 2.5);
+    expect(getTrainingDurationMultiplier(
+      summerPago,
+      technician.id,
+      { ...technicalTraining, trainingTrack: "athlete", trainingPhase: "athlete" },
+    )).toBeCloseTo(1 / 1.5);
+    expect(getTrainingDurationMultiplier(
+      summerPago,
+      technician.id,
+      {
+        ...technicalTraining,
+        formId: "agonist-course",
+        trainingTrack: "agonist",
+        trainingPhase: "agonist",
+      },
+    )).toBeCloseTo(1 / 1.5);
 
     const teaching = {
       ...summerPago,

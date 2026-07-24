@@ -34,16 +34,12 @@ describe("PeopleView", () => {
         aggregateViewUnlocked: true,
       },
     };
-    const onSave = vi.fn();
-    const onApply = vi.fn();
     const onIncrement = vi.fn();
-    const view = render(
+    render(
       <PeopleView
         state={state}
         onAssign={() => undefined}
         onStartTraining={() => undefined}
-        onSaveCollaboratorPreset={onSave}
-        onApplyCollaboratorPreset={onApply}
         onIncrementCollaboratorAssignment={onIncrement}
       />,
     );
@@ -52,7 +48,7 @@ describe("PeopleView", () => {
     expect(screen.queryByText("Collaboratori disponibili")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Gestione aggregata dei collaboratori" })).toBeVisible();
     expect(screen.queryByText("Collaboratore Aggregato 0")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Preset [123]/ })).toHaveLength(3);
+    expect(screen.queryByText(/Preset/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Gestisci settore" })).toHaveLength(3);
     screen.getAllByRole("button", { name: "Gestisci settore" }).forEach((button) => {
       expect(button).toBeDisabled();
@@ -60,40 +56,6 @@ describe("PeopleView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Aumenta collaboratori in Redazione" }));
     expect(onIncrement).toHaveBeenCalledWith("writing");
-    fireEvent.click(screen.getByRole("button", { name: "Salva preset 1" }));
-    expect(onSave).toHaveBeenCalledWith("preset-1", {
-      writing: 0,
-      events: 0,
-      equipment: 0,
-      instructor: 0,
-    });
-    expect(screen.getByRole("button", { name: /^Preset 1/ })).toBeDisabled();
-
-    const savedState = {
-      ...state,
-      collaboratorManagement: {
-        ...state.collaboratorManagement,
-        presets: {
-          ...state.collaboratorManagement.presets,
-          "preset-1": {
-            saved: true,
-            targets: { writing: 2, events: 0, equipment: 0, instructor: 0 },
-          },
-        },
-      },
-    };
-    view.rerender(
-      <PeopleView
-        state={savedState}
-        onAssign={() => undefined}
-        onStartTraining={() => undefined}
-        onSaveCollaboratorPreset={onSave}
-        onApplyCollaboratorPreset={onApply}
-        onIncrementCollaboratorAssignment={onIncrement}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /^Preset 1/ }));
-    expect(onApply).toHaveBeenCalledWith("preset-1");
   });
 
   it("enables sector management only when the sector has assigned collaborators", () => {
@@ -129,8 +91,6 @@ describe("PeopleView", () => {
         state={state}
         onAssign={() => undefined}
         onStartTraining={() => undefined}
-        onSaveCollaboratorPreset={() => undefined}
-        onApplyCollaboratorPreset={() => undefined}
         onIncrementCollaboratorAssignment={() => undefined}
       />,
     );

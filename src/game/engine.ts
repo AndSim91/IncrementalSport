@@ -82,7 +82,7 @@ function startFormTraining(
   formId: FormId,
   now: number,
 ): GameState {
-  return beginFormTraining(state, personId, formId, now, trainingDependencies);
+  return beginFormTraining(state, personId, formId, now);
 }
 
 function resolveFormTraining(state: GameState, personId: string, now: number): GameState {
@@ -164,7 +164,7 @@ function tick(state: GameState, now: number, gainMultiplier: number): GameState 
       nextState = resolveTrial(nextState, trial, now, gainMultiplier);
     }
   }
-  nextState = processWaitingTrainings(nextState, now, trainingDependencies);
+  nextState = processWaitingTrainings(nextState, now);
   nextState = collectFees(nextState, now, gainMultiplier);
   nextState = reconcileCollaboratorManagement(nextState);
   nextState = processAutomaticTeaching(

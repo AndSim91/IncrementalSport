@@ -33,6 +33,7 @@ describe("collaborator operations save migration", () => {
       },
     ];
     legacy.collaboratorManagement.aggregateViewUnlocked = true;
+    legacy.collaboratorManagement.presets = {};
     legacy.collaboratorManagement.presets["preset-1"] = {
       saved: true,
       targets: {
@@ -65,9 +66,7 @@ describe("collaborator operations save migration", () => {
     expect(migrated.collaborators[0]).not.toHaveProperty("autoTeachingEnabled");
     expect(migrated.collaborators[0].mastery).not.toHaveProperty("lessons");
     expect(migrated.collaboratorManagement.targets.instructor).toBe(3);
-    expect(
-      migrated.collaboratorManagement.presets["preset-1"].targets.instructor,
-    ).toBe(3);
+    expect(migrated.collaboratorManagement).not.toHaveProperty("presets");
     expect(
       migrated.legendaryCollaborators.retainedProgress["eva-parodi"]?.mastery
         ?.instructor,

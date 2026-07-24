@@ -149,6 +149,10 @@ function hasValidTraining(training: GameState["contacts"][number]["training"]): 
       Number.isFinite(training.trainingDurationMultiplier) &&
       training.trainingDurationMultiplier > 0
     )) &&
+    (training.instructorTrainingDurationMultiplier === undefined || (
+      Number.isFinite(training.instructorTrainingDurationMultiplier) &&
+      training.instructorTrainingDurationMultiplier > 0
+    )) &&
     (training.examFailures === undefined || isNonNegativeSafeInteger(training.examFailures)) &&
     (training.wearPerSword === undefined || (
       Number.isFinite(training.wearPerSword) && training.wearPerSword >= 0
@@ -268,6 +272,9 @@ export function isValidGameState(value: unknown): value is GameState {
         isUniqueFormIdList(progress.forms) &&
         isUniqueFormIdList(progress.instructorForms) &&
         isUniqueFormIdList(progress.technicianForms ?? []) &&
+        (progress.technicianForms ?? []).every((formId) =>
+          progress.forms.includes(formId) && progress.instructorForms.includes(formId)
+        ) &&
         (progress.agonistCourseArenaBonus === undefined ||
           isNonNegativeSafeInteger(progress.agonistCourseArenaBonus)) &&
         (progress.agonistCourseStyleBonus === undefined ||
@@ -292,8 +299,16 @@ export function isValidGameState(value: unknown): value is GameState {
       isUniqueFormIdList(collaborator.forms) &&
       isUniqueFormIdList(collaborator.instructorForms) &&
       isUniqueFormIdList(collaborator.technicianForms ?? []) &&
+      (collaborator.technicianForms ?? []).every((formId) =>
+        collaborator.forms.includes(formId) && collaborator.instructorForms.includes(formId)
+      ) &&
       (collaborator.technicianCourseReservation === undefined || (
         isUniqueFormIdList([collaborator.technicianCourseReservation.formId]) &&
+        collaborator.forms.includes(collaborator.technicianCourseReservation.formId) &&
+        collaborator.instructorForms.includes(collaborator.technicianCourseReservation.formId) &&
+        !(collaborator.technicianForms ?? []).includes(
+          collaborator.technicianCourseReservation.formId,
+        ) &&
         Number.isFinite(collaborator.technicianCourseReservation.bookedAt) &&
         Number.isSafeInteger(collaborator.technicianCourseReservation.eligibleMonth) &&
         collaborator.technicianCourseReservation.eligibleMonth >= 1
