@@ -166,6 +166,14 @@ test("salva e applica un preset nella gestione aggregata dei collaboratori", asy
   await expect(aggregateView.getByText("Modifiche non salvate")).toBeVisible();
   await aggregateView.getByRole("button", { name: "Salva preset 1" }).click();
   await aggregateView.getByRole("button", { name: "Aumenta collaboratori in Istruttori" }).click();
+
+  await aggregateView.getByRole("button", { name: "Apri centro didattico" }).click();
+  const instructorPanel = page.getByRole("dialog", { name: "Istruttori" });
+  await expect(instructorPanel).toBeVisible();
+  await expect(instructorPanel.getByText("Formazione", { exact: true })).toBeVisible();
+  await expect(instructorPanel.getByLabel("Formazione istruttore")).toBeVisible();
+  await instructorPanel.getByRole("button", { name: "Chiudi pannello Istruttori" }).click();
+
   await aggregateView.getByRole("button", { name: /^Preset 1/ }).click();
 
   await expect(aggregateView.getByText("Collaboratori disponibili")).toBeVisible();

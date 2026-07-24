@@ -3,7 +3,6 @@ import { Icon } from "../../components/common/Icon";
 import { OfficialStatValue } from "../../components/common/OfficialStatValue";
 import { ProgressBar } from "../../components/common/ProgressBar";
 import { getCollaboratorAssignmentLabel } from "../../content/collaboratorRoles";
-import { FORM_DEFINITIONS, getCollaboratorProductivity } from "../../content/forms";
 import {
   createInitialCollaboratorMastery,
   getCollaboratorMasteryProgress,
@@ -22,15 +21,10 @@ import type {
 import { getRarityClassName } from "../../shared/rarityPresentation";
 import { CollaboratorDetailDrawer } from "./CollaboratorDetailDrawer";
 import { getCollaboratorAutomationPresentation } from "./collaboratorAutomationPresentation";
-import {
-  getInstructorCoverageForms,
-  getInstructorTeachingEntries,
-  getInstructorTeachingTitle,
-  getInstructorTrainingProgress,
-} from "./instructorGroupPresentation";
+import { getInstructorCoverageForms, getInstructorTeachingEntries } from "./instructorGroupPresentation";
 import { FormLogoStrip, PersonName } from "./PersonPresentation";
-
-type InstructorPanelTab = "lessons" | "instructors" | "coverage";
+import { SectorMasteryIndicator } from "./SectorMasteryIndicator";
+import { InstructorCompactActivity, InstructorCompactTraining } from "./TrainingControl";
 
 function getInitials(displayName: string): string {
   return displayName
@@ -40,46 +34,26 @@ function getInitials(displayName: string): string {
     .join("");
 }
 
-function getInstructorActivity(
-  collaborator: Collaborator,
-  state: GameState,
-  teachingCount: number,
-): { title: string; detail: string } {
-  if (teachingCount > 0) {
-    return {
-      title: "Insegnamento in corso...",
-      detail: `${teachingCount} ${teachingCount === 1 ? "allievo seguito" : "allievi seguiti"}`,
-    };
-  }
-  if (collaborator.training) {
-    return { title: "Formazione personale", detail: "Forma o attestato in corso" };
-  }
-  if ((state.upgrades["athletic-preparation"] ?? 0) > 0) {
-    return {
-      title: "Preparazione atletica",
-      detail: "Disponibile come priorità finale",
-    };
-  }
-  return { title: "In attesa", detail: "Nessun allievo compatibile" };
-}
-
 function SectorCollaboratorRow({
   state,
   collaborator,
   contact,
   now,
+  collaboratorsById,
+  onStartTraining,
+  onPayInstructorCertificates,
   onOpen,
 }: {
   state: GameState;
   collaborator: Collaborator;
   contact?: Contact;
   now: number;
+  collaboratorsById: Map<string, Collaborator>;
+  onStartTraining: (personId: string, formId: FormId) => void;
+  onPayInstructorCertificates?: (collaboratorId: string) => void;
   onOpen: () => void;
 }) {
   const activeEmail = selectActiveEmail(state);
-  const teachingEntries = getInstructorTeachingEntries(state).filter(
-    (entry) => entry.instructorId === collaborator.id,
-  );
   const automation = collaborator.assignment === "instructor"
     ? undefined
     : getCollaboratorAutomationPresentation({
@@ -89,12 +63,10 @@ function SectorCollaboratorRow({
         now,
         activeEmail,
       });
-  const activity = collaborator.assignment === "instructor"
-    ? getInstructorActivity(collaborator, state, teachingEntries.length)
-    : {
-        title: automation?.title ?? "In attesa",
-        detail: automation?.detail ?? "Nessuna attività in corso",
-      };
+  const activity = {
+    title: automation?.title ?? "In attesa",
+    detail: automation?.detail ?? "Nessuna attività in corso",
+  };
   const mastery = collaborator.mastery ?? createInitialCollaboratorMastery();
   const masteryProgress = getCollaboratorMasteryProgress(
     mastery[collaborator.assignment ?? "instructor"],
@@ -105,7 +77,7 @@ function SectorCollaboratorRow({
 
   return (
     <article
-      className={`sector-roster-row ${getRarityClassName(
+      className={`sector-roster-row${collaborator.assignment === "instructor" ? " is-instructor" : ""} ${getRarityClassName(
         collaborator.rarity,
         Boolean(contact?.secretLegendaryId),
       )}`}
@@ -140,8 +112,14 @@ function SectorCollaboratorRow({
       </div>
 
       <div className="sector-roster-activity" data-label="Attività">
-        <strong>{activity.title}</strong>
-        <small>{activity.detail}</small>
+        {collaborator.assignment === "instructor" ? (
+          <InstructorCompactActivity collaborator={collaborator} state={state} />
+        ) : (
+          <>
+            <strong>{activity.title}</strong>
+            <small>{activity.detail}</small>
+          </>
+        )}
       </div>
 
       <div className="sector-roster-stats" data-label="Arena / Stile">
@@ -156,6 +134,18 @@ function SectorCollaboratorRow({
         showLabels={false}
       />
 
+      {collaborator.assignment === "instructor" ? (
+        <div className="sector-roster-training" data-label="Formazione">
+          <InstructorCompactTraining
+            collaborator={collaborator}
+            state={state}
+            collaboratorsById={collaboratorsById}
+            onStartTraining={onStartTraining}
+            onPayInstructorCertificates={onPayInstructorCertificates}
+          />
+        </div>
+      ) : null}
+
       <button
         type="button"
         className="sector-roster-details"
@@ -166,92 +156,6 @@ function SectorCollaboratorRow({
         <Icon name="arrowRight" />
       </button>
     </article>
-  );
-}
-
-function InstructorLessonsPanel({ state, now }: { state: GameState; now: number }) {
-  const entries = getInstructorTeachingEntries(state);
-  if (entries.length === 0) {
-    return (
-      <div className="sector-panel-empty">
-        <Icon name="clock" />
-        <strong>In attesa</strong>
-        <span>Nessuna lezione o Corso Agonisti è in corso.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="sector-lessons-list">
-      {entries.map((entry) => {
-        const progress = getInstructorTrainingProgress(entry.training, now);
-        const waiting = entry.training.status === "waitingForEquipment";
-        const instructor = state.collaborators.find(
-          (candidate) => candidate.id === entry.instructorId,
-        );
-        return (
-          <article key={`${entry.id}-${entry.training.startedAt}`}>
-            <span>
-              <strong>{entry.displayName}</strong>
-              <small>{getInstructorTeachingTitle(entry, state.upgrades["technical-arena"] ?? 0)}</small>
-            </span>
-            <span>
-              <strong>{instructor?.displayName ?? "Istruttore in assegnazione"}</strong>
-              <small>{waiting ? "In attesa di spade" : "Lezione in corso"}</small>
-            </span>
-            <span className="sector-lesson-progress">
-              <strong>{waiting ? "In attesa" : `${Math.round(progress)}%`}</strong>
-              <ProgressBar
-                label={`Formazione di ${entry.displayName}`}
-                value={progress}
-                durationMs={entry.training.completesAt - entry.training.startedAt}
-              />
-            </span>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function InstructorCoveragePanel({ instructors }: { instructors: Collaborator[] }) {
-  const coverageForms = new Set(getInstructorCoverageForms(instructors));
-  const definitions = FORM_DEFINITIONS.filter((definition) => coverageForms.has(definition.id));
-  if (definitions.length === 0) {
-    return (
-      <div className="sector-panel-empty">
-        <Icon name="warning" />
-        <strong>Nessuna Forma coperta</strong>
-        <span>Forma gli istruttori e ottieni gli attestati per avviare le lezioni automatiche.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="sector-coverage-list">
-      {definitions.map((definition) => {
-        const certified = instructors.filter((instructor) =>
-          instructor.instructorForms.includes(definition.id),
-        );
-        return (
-          <article key={definition.id}>
-            <FormLogoStrip
-              className="sector-form-strip"
-              forms={[definition.id]}
-              instructorForms={[definition.id]}
-              showLabels={false}
-            />
-            <span>
-              <strong>{definition.longName}</strong>
-              <small>{definition.branch ?? "Percorso lineare"}</small>
-            </span>
-            <span>
-              {certified.map((instructor) => instructor.displayName).join(", ")}
-            </span>
-          </article>
-        );
-      })}
-    </div>
   );
 }
 
@@ -270,9 +174,6 @@ export function CollaboratorSectorPanel({
   onPayInstructorCertificates?: (collaboratorId: string) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<InstructorPanelTab>(
-    role === "instructor" ? "lessons" : "instructors",
-  );
   const [selectedCollaboratorId, setSelectedCollaboratorId] = useState<string | null>(null);
   const assigned = useMemo(
     () => state.collaborators.filter((collaborator) => collaborator.assignment === role),
@@ -309,10 +210,6 @@ export function CollaboratorSectorPanel({
   const roleLabel = role === "instructor"
     ? "Istruttori"
     : getCollaboratorAssignmentLabel(role, state.unlocks.social);
-  const productivity = assigned.reduce(
-    (total, collaborator) => total + getCollaboratorProductivity(collaborator, role),
-    0,
-  );
 
   return (
     <>
@@ -322,7 +219,11 @@ export function CollaboratorSectorPanel({
         aria-label={`Chiudi ${roleLabel} cliccando sullo sfondo`}
         onClick={onClose}
       />
-      <aside className="collaborator-sector-panel" role="dialog" aria-labelledby="sector-panel-title">
+      <aside
+        className={`collaborator-sector-panel${role === "instructor" ? " is-instructor" : ""}`}
+        role="dialog"
+        aria-labelledby="sector-panel-title"
+      >
         <header>
           <div>
             <span>{role === "instructor" ? "Centro didattico" : "Settore operativo"}</span>
@@ -335,26 +236,18 @@ export function CollaboratorSectorPanel({
 
         <div className="sector-panel-summary">
           <span><strong>{assigned.length}</strong><small>Collaboratori</small></span>
-          <span><strong>{productivity.toFixed(1)}×</strong><small>Potenza complessiva</small></span>
+          <SectorMasteryIndicator
+            className="sector-panel-mastery-summary"
+            collaborators={assigned}
+            role={role}
+          />
           {role === "instructor" ? (
             <span><strong>{getInstructorCoverageForms(assigned).length}</strong><small>Forme coperte</small></span>
           ) : null}
         </div>
 
-        {role === "instructor" ? (
-          <nav className="sector-panel-tabs" aria-label="Sezioni del centro didattico">
-            <button type="button" className={tab === "lessons" ? "is-active" : ""} onClick={() => setTab("lessons")}>Lezioni</button>
-            <button type="button" className={tab === "instructors" ? "is-active" : ""} onClick={() => setTab("instructors")}>Istruttori</button>
-            <button type="button" className={tab === "coverage" ? "is-active" : ""} onClick={() => setTab("coverage")}>Copertura Forme</button>
-          </nav>
-        ) : null}
-
         <div className="sector-panel-content">
-          {role === "instructor" && tab === "lessons" ? (
-            <InstructorLessonsPanel state={state} now={now} />
-          ) : role === "instructor" && tab === "coverage" ? (
-            <InstructorCoveragePanel instructors={assigned} />
-          ) : assigned.length === 0 ? (
+          {assigned.length === 0 ? (
             <div className="sector-panel-empty">
               <Icon name="people" />
               <strong>Nessun collaboratore assegnato</strong>
@@ -363,7 +256,9 @@ export function CollaboratorSectorPanel({
           ) : (
             <div className="sector-roster">
               <div className="sector-roster-head" aria-hidden="true">
-                <span>Collaboratore</span><span>Maestria</span><span>Attività</span><span>Arena / Stile</span><span>Forme</span><span />
+                <span>Collaboratore</span><span>Maestria</span><span>Attività</span><span>Arena / Stile</span><span>Forme</span>
+                {role === "instructor" ? <span>Formazione</span> : null}
+                <span />
               </div>
               {assigned.map((collaborator) => (
                 <SectorCollaboratorRow
@@ -372,6 +267,9 @@ export function CollaboratorSectorPanel({
                   collaborator={collaborator}
                   contact={contactsById.get(collaborator.contactId)}
                   now={now}
+                  collaboratorsById={collaboratorsById}
+                  onStartTraining={onStartTraining}
+                  onPayInstructorCertificates={onPayInstructorCertificates}
                   onOpen={() => setSelectedCollaboratorId(collaborator.id)}
                 />
               ))}

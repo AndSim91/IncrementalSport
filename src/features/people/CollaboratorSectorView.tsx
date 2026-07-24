@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Icon, type IconName } from "../../components/common/Icon";
 import { ProgressBar } from "../../components/common/ProgressBar";
+import { EquipmentConditionBar } from "../../components/equipment/EquipmentConditionBar";
 import { getCollaboratorAssignmentLabel } from "../../content/collaboratorRoles";
-import { getCollaboratorProductivity } from "../../content/forms";
 import { GAME_CONFIG } from "../../game/config";
 import { useGameTime } from "../../game/GameTimeContext";
 import {
@@ -20,12 +20,9 @@ import type {
 import { AggregatedTeachingBar } from "./AggregatedTeachingBar";
 import { CollaboratorSectorPanel } from "./CollaboratorSectorPanel";
 import { getCollaboratorAutomationPresentation } from "./collaboratorAutomationPresentation";
-import {
-  getAggregateInstructorProgress,
-  getInstructorCoverageForms,
-  getInstructorTeachingEntries,
-} from "./instructorGroupPresentation";
+import { getInstructorCoverageForms, getInstructorTeachingEntries } from "./instructorGroupPresentation";
 import { FormLogoStrip } from "./PersonPresentation";
+import { SectorMasteryIndicator } from "./SectorMasteryIndicator";
 
 const STANDARD_ROLES: readonly CollaboratorMasteryRole[] = [
   "writing",
@@ -209,11 +206,6 @@ function StandardSectorCard({
         activeEmail,
       })
     : { title: "In attesa", detail: "Nessun collaboratore assegnato" };
-  const productivity = assigned.reduce(
-    (total, collaborator) => total + getCollaboratorProductivity(collaborator, role),
-    0,
-  );
-
   return (
     <article className="collaborator-sector-card">
       <header>
@@ -238,9 +230,17 @@ function StandardSectorCard({
           <strong>{activity.title}</strong>
           {activity.detail ? <span>{activity.detail}</span> : null}
         </span>
-        <strong className="sector-productivity">{productivity.toFixed(1)}×</strong>
+        <SectorMasteryIndicator collaborators={assigned} role={role} />
       </div>
-      {activity.progress === undefined ? (
+      {role === "equipment" ? (
+        <div className="sector-card-equipment">
+          <EquipmentConditionBar
+            equipment={state.equipment}
+            compact
+            ariaLabel="Condizione attrezzatura del settore Attrezzatura"
+          />
+        </div>
+      ) : activity.progress === undefined ? (
         <div className="sector-card-waiting"><span /><small>In attesa</small></div>
       ) : (
         <div className="sector-card-progress">
@@ -292,12 +292,7 @@ function InstructorSectorCard({
   const idleInstructors = Math.max(0, instructors.length - instructorsTeaching.size);
   const prepUnlocked = (state.upgrades["athletic-preparation"] ?? 0) > 0;
   const prepProgress = Math.min(100, Math.max(0, state.automation.lessonBuffer * 100));
-  const teachingProgress = getAggregateInstructorProgress(entries, now);
   const prepIsPrimary = entries.length === 0 && prepUnlocked && instructors.length > 0;
-  const productivity = instructors.reduce(
-    (total, collaborator) => total + getCollaboratorProductivity(collaborator, "instructor"),
-    0,
-  );
 
   return (
     <article className="instructor-sector-card">
@@ -306,7 +301,9 @@ function InstructorSectorCard({
         <span className="instructor-sector-title">
           <span>Centro didattico</span>
           <h3>Istruttori</h3>
-          <small>{ROLE_PRESENTATION.instructor.description}</small>
+          <small>{prepUnlocked
+            ? ROLE_PRESENTATION.instructor.description
+            : "Forme e Corso Agonisti."}</small>
         </span>
         <StaffingStepper
           label="Istruttori"
@@ -333,10 +330,13 @@ function InstructorSectorCard({
           </div>
           {entries.length > 0 ? (
             <>
-              <AggregatedTeachingBar entries={entries} now={now} />
+              <AggregatedTeachingBar
+                entries={entries}
+                now={now}
+                technicalArenaLevel={state.upgrades["technical-arena"] ?? 0}
+              />
               <p>
                 <strong>{entries.length} {entries.length === 1 ? "corso attivo" : "corsi attivi"}</strong>
-                <span>{Math.round(teachingProgress ?? 0)}% avanzamento medio</span>
               </p>
             </>
           ) : prepIsPrimary ? (
@@ -352,7 +352,7 @@ function InstructorSectorCard({
         <section className="instructor-coverage">
           <header>
             <span><small>Copertura didattica</small><strong>{coverage.length} Forme insegnabili</strong></span>
-            <strong>{productivity.toFixed(1)}×</strong>
+            <SectorMasteryIndicator collaborators={instructors} role="instructor" />
           </header>
           <FormLogoStrip
             className="sector-form-strip"

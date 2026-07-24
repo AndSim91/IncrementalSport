@@ -342,10 +342,56 @@
   min-width: 0;
   height: 9px;
   gap: 2px;
-  margin-top: 13px;
   overflow: hidden;
   border-radius: 2px;
   background: var(--surface-muted);
+}
+
+.aggregated-teaching-groups {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.aggregated-teaching-group {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 8px;
+}
+
+.aggregated-teaching-course-logo {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.aggregated-teaching-course-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.aggregated-teaching-course-logo.is-agonist {
+  color: var(--blue-700);
+  background: var(--blue-100);
+}
+
+.aggregated-teaching-course-logo.is-agonist svg {
+  width: 15px;
+  height: 15px;
+}
+
+.aggregated-teaching-group > small {
+  color: var(--ink-muted);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .aggregated-teaching-segment {
@@ -432,24 +478,17 @@
   gap: 8px;
 }
 
-.instructor-coverage header strong {
+.instructor-coverage header > span:first-child > strong {
   display: block;
   margin-top: 2px;
   color: var(--ink);
   font-size: 10px;
 }
 
-.instructor-coverage header > strong {
-  margin: 0;
-  color: var(--blue-700);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
 .sector-form-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 4px;
 }
 
 .instructor-coverage .sector-form-strip {
@@ -457,19 +496,19 @@
 }
 
 .sector-form-strip .form-logo-item {
-  min-width: 16px;
+  min-width: 28px;
 }
 
 .sector-form-strip .form-logo-mark,
 .sector-form-strip .form-logo-mark img {
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
 }
 
 .sector-form-strip .form-instructor-crown {
   right: -2px;
   bottom: -2px;
-  font-size: 6px;
+  font-size: 8px;
 }
 
 .sector-form-strip .form-logo-empty {
@@ -562,7 +601,7 @@
   min-width: 0;
 }
 
-.sector-card-activity strong:not(.sector-productivity) {
+.sector-card-activity > span:first-child > strong {
   display: block;
   overflow: hidden;
   margin-top: 4px;
@@ -583,11 +622,46 @@
   -webkit-line-clamp: 2;
 }
 
-.sector-productivity {
+.sector-mastery-average {
+  display: inline-flex;
+  min-width: 0;
   flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.sector-mastery-average > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sector-mastery-average small {
+  color: var(--ink-muted);
+  font-size: 7px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.sector-mastery-average strong {
+  overflow: hidden;
   color: var(--blue-700);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sector-mastery-average .progress-bar-circular {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+
+.sector-mastery-average .progress-bar-circular > span {
+  width: 14px;
+  height: 14px;
 }
 
 .sector-card-progress,
@@ -614,6 +688,18 @@
   color: var(--ink-muted);
   font-size: 8px;
   font-variant-numeric: tabular-nums;
+}
+
+.sector-card-equipment {
+  padding: 0 11px 11px;
+}
+
+.sector-card-equipment .equipment-condition {
+  width: 100%;
+}
+
+.sector-card-equipment .equipment-condition-bar {
+  height: 7px;
 }
 
 .collaborator-sector-placeholder {
@@ -655,12 +741,16 @@
   right: 0;
   bottom: 26px;
   display: grid;
-  grid-template-rows: 58px auto auto minmax(0, 1fr);
+  grid-template-rows: 58px auto minmax(0, 1fr);
   width: min(960px, calc(100vw - 88px));
   border-left: 1px solid var(--line-strong);
   background: var(--surface);
   box-shadow: -8px 0 26px rgb(20 47 71 / 18%);
   animation: collaborator-sector-panel-enter 150ms ease-out;
+}
+
+.collaborator-sector-panel.is-instructor {
+  width: min(1180px, calc(100vw - 52px));
 }
 
 @keyframes collaborator-sector-panel-enter {
@@ -732,6 +822,16 @@
 .sector-panel-summary > span:first-child { padding-left: 0; }
 .sector-panel-summary > span:last-child { border-right: 0; }
 
+.sector-panel-summary > .sector-panel-mastery-summary {
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+}
+
+.sector-panel-summary > .sector-panel-mastery-summary > span:last-child {
+  gap: 1px;
+}
+
 .sector-panel-summary strong {
   color: var(--ink);
   font-size: 15px;
@@ -787,6 +887,18 @@
   grid-template-columns: minmax(190px, 1.2fr) minmax(105px, .65fr) minmax(150px, 1fr) 105px minmax(90px, .7fr) 74px;
   min-width: 0;
   align-items: center;
+}
+
+.collaborator-sector-panel.is-instructor .sector-roster-head,
+.sector-roster-row.is-instructor {
+  grid-template-columns:
+    minmax(190px, 1.05fr)
+    minmax(105px, .55fr)
+    minmax(180px, .9fr)
+    105px
+    minmax(110px, .65fr)
+    minmax(185px, 1fr)
+    74px;
 }
 
 .sector-roster-head {
@@ -860,6 +972,12 @@
 }
 
 .sector-roster-mastery .progress-bar { width: 100%; margin-top: 2px; }
+
+.sector-roster-training .instructor-compact-training {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
 
 .sector-roster-stats {
   display: grid;
@@ -981,10 +1099,20 @@
   .sector-roster-head { display: none; }
 
   .sector-roster-row {
-    grid-template-columns: minmax(180px, 1.3fr) minmax(120px, .8fr) minmax(170px, 1fr) 100px 74px;
+    grid-template-columns: minmax(180px, 1.3fr) minmax(120px, .8fr) minmax(170px, 1fr) 100px minmax(90px, auto) 74px;
   }
 
-  .sector-roster-row > .sector-form-strip { display: none; }
+  .collaborator-sector-panel.is-instructor .sector-roster-head,
+  .sector-roster-row.is-instructor {
+    grid-template-columns:
+      minmax(150px, 1fr)
+      100px
+      minmax(150px, .9fr)
+      90px
+      minmax(90px, .65fr)
+      minmax(160px, 1fr)
+      66px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1021,6 +1149,33 @@
   .instructor-operations-grid { grid-template-columns: 1fr; }
   .instructor-main-activity { border-right: 0; border-bottom: 1px solid var(--line); }
 
+  .aggregated-teaching-group {
+    grid-template-columns: 18px minmax(0, 1fr) 18px;
+    gap: 6px;
+  }
+
+  .aggregated-teaching-course-logo {
+    width: 18px;
+    height: 18px;
+  }
+
+  .aggregated-teaching-course-logo.is-agonist svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .sector-form-strip { gap: 2px; }
+
+  .sector-form-strip .form-logo-item { min-width: 16px; }
+
+  .sector-form-strip .form-logo-mark,
+  .sector-form-strip .form-logo-mark img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sector-form-strip .form-instructor-crown { font-size: 6px; }
+
   .instructor-preparation-row {
     grid-template-columns: 30px minmax(0, 1fr) 34px;
   }
@@ -1041,6 +1196,8 @@
     width: 100vw;
     border-left: 0;
   }
+
+  .collaborator-sector-panel.is-instructor { width: 100vw; }
 
   .sector-panel-summary { overflow: hidden; padding: 0 12px; }
   .sector-panel-summary > span { min-width: 0; flex: 1; padding: 0 10px; }
@@ -1065,6 +1222,10 @@
     border-radius: var(--radius-md);
   }
 
+  .sector-roster-row.is-instructor {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .sector-roster-row > * { padding: 9px 10px; }
   .sector-roster-row > [data-label]::before {
     display: block;
@@ -1081,6 +1242,34 @@
   .sector-roster-activity { grid-column: 1 / -1; border-top: 1px solid var(--line); }
   .sector-roster-stats { grid-column: 1; border-top: 1px solid var(--line); }
   .sector-roster-details { grid-column: 2; border-top: 1px solid var(--line); }
+
+  .sector-roster-row > .sector-form-strip {
+    grid-column: 1 / -1;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-top: 1px solid var(--line);
+  }
+
+  .sector-roster-row.is-instructor .sector-roster-stats {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .sector-roster-row.is-instructor > .sector-form-strip {
+    grid-row: 4;
+  }
+
+  .sector-roster-row.is-instructor .sector-roster-training {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    border-top: 1px solid var(--line);
+  }
+
+  .sector-roster-row.is-instructor .sector-roster-details {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    justify-content: flex-end;
+  }
 
   .sector-lessons-list { border: 0; overflow: visible; }
   .sector-lessons-list article {
